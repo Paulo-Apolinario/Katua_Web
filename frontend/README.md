@@ -1,6 +1,6 @@
 # trashsync — Frontend (React + Vite)
 
-This is the admin dashboard for trashsync. It connects to the Express/MySQL backend and provides route planning, collections tracking, staff/vehicle management, analytics, and exports.
+Este é o painel de administração do TrashSync. Ele se conecta ao banco de dados Express/MySQL e oferece planejamento de rotas, rastreamento de coletas, gerenciamento de funcionários/veículos, análises e exportações.
 
 ## Requirements
 - Node.js 18+
