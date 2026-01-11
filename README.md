@@ -1,6 +1,6 @@
 # trashsync — Waste Collection Management System
 
-A full‑stack waste management system for municipalities and private operators. Includes staff & vehicle management, smart routes, waste collection tracking, reporting, and document management.
+Um sistema completo de gestão de resíduos para municípios e operadores privados. Inclui gestão de pessoal e veículos, rotas inteligentes, rastreamento da coleta de resíduos, relatórios e gestão de documentos.
 
 ## Features
 - Authentication 
