@@ -1,0 +1,1740 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="720kb">
+
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+	<meta name="description" content="">
+	<meta name="author" content="">
+    <title>trashsync Documentation</title>
+
+	<!-- Bootstrap core CSS -->
+	<link href="assets/css/bootstrap.min.css" rel="stylesheet">
+
+	<!-- Custom fonts for this template -->
+	<link href="assets/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+
+	<!-- Custom fonts for this template -->
+	<link href="assets/css/themify.css" rel="stylesheet" type="text/css">
+
+	<!-- Angular Tooltip Css -->
+	<link href="assets/css/angular-tooltips.css" rel="stylesheet">
+
+	<!-- Page level plugin CSS -->
+	<link href="assets/plugins/datatables/dataTables.bootstrap4.css" rel="stylesheet">
+
+	<!-- Page level plugin CSS -->
+	<link href="assets/css/animate.css" rel="stylesheet">
+
+	<!-- Page level plugin CSS -->
+	<link href="assets/css/prism.css" rel="stylesheet">
+
+	<!-- Custom styles for this template -->
+	<link href="assets/css/style.css" rel="stylesheet">
+	<link href="assets/css/responsive.css" rel="stylesheet">
+</head>
+
+<body class="fixed-nav sticky-footer" id="page-top">
+
+	<!-- Navigation-->
+	<nav class="navbar navbar-expand-lg bb-1 navbar-light bg-white fixed-top" id="mainNav">
+
+		<!-- Start Header -->
+		<header class="header-logo bg-white bb-1 br-1">
+			<a class="nav-link text-center mr-lg-3 hidden-xs" id="sidenavToggler"><i class="ti-align-left"></i></a>
+		</header>
+		<!-- End Header -->
+
+		<button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse"
+			data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false"
+			aria-label="Toggle navigation">
+			<span class="ti-align-left"></span>
+		</button>
+
+		<div class="collapse navbar-collapse" id="navbarResponsive">
+
+			<!-- =============== Start Side Menu ============== -->
+			<div class="navbar-side" id="spy">
+				<ul class="navbar-nav navbar-sidenav anchor" id="exampleAccordion">
+					<!-- Start projects -->
+					<li class="nav-item">
+						<a class="nav-link" href="#intro">
+							<i class="ti i-cl-2 ti-arrow-circle-right"></i>
+							<span class="nav-link-text">Introduction</span>
+						</a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link" href="#system">
+							<i class="ti i-cl-2 ti-arrow-circle-right"></i>
+							<span class="nav-link-text">Requirements</span>
+						</a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link" href="#local-installation">
+							<i class="ti i-cl-2 ti-arrow-circle-right"></i>
+							<span class="nav-link-text">Local Installation</span>
+						</a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link" href="#backend">
+							<i class="ti i-cl-2 ti-arrow-circle-right"></i>
+							<span class="nav-link-text">Backend Installation</span>
+						</a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link" href="#frontend">
+							<i class="ti i-cl-2 ti-arrow-circle-right"></i>
+							<span class="nav-link-text">Frontend Installation</span>
+						</a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link" href="#credentials">
+							<i class="ti i-cl-2 ti-arrow-circle-right"></i>
+							<span class="nav-link-text">Credentials</span>
+						</a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link" href="#waste">
+							<i class="ti i-cl-2 ti-arrow-circle-right"></i>
+							<span class="nav-link-text">Manage Waste</span>
+						</a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link" href="#bin">
+							<i class="ti i-cl-2 ti-arrow-circle-right"></i>
+							<span class="nav-link-text">Manage Bin</span>
+						</a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link" href="#zone">
+							<i class="ti i-cl-2 ti-arrow-circle-right"></i>
+							<span class="nav-link-text">Manage Zone</span>
+						</a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link" href="#vehicle">
+							<i class="ti i-cl-2 ti-arrow-circle-right"></i>
+							<span class="nav-link-text">Manage Vehicle</span>
+						</a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link" href="#route">
+							<i class="ti i-cl-2 ti-arrow-circle-right"></i>
+							<span class="nav-link-text">Manage Route</span>
+						</a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link" href="#staff">
+							<i class="ti i-cl-2 ti-arrow-circle-right"></i>
+							<span class="nav-link-text">Manage Staff</span>
+						</a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link" href="#waste_type">
+							<i class="ti i-cl-2 ti-arrow-circle-right"></i>
+							<span class="nav-link-text">Manage Waste Types</span>
+						</a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link" href="#setting">
+							<i class="ti i-cl-2 ti-arrow-circle-right"></i>
+							<span class="nav-link-text">Manage General Setting</span>
+						</a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link" href="#smtp">
+							<i class="ti i-cl-2 ti-arrow-circle-right"></i>
+							<span class="nav-link-text">Manage SMTP Config</span>
+						</a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link" href="#api-docs">
+							<i class="ti i-cl-2 ti-arrow-circle-right"></i>
+							<span class="nav-link-text">API Documentation</span>
+						</a>
+					</li>
+                    <li class="nav-item">
+						<a class="nav-link" href="#credits">
+							<i class="ti i-cl-2 ti-arrow-circle-right"></i>
+							<span class="nav-link-text">Credits</span>
+						</a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link" href="#support">
+							<i class="ti i-cl-2 ti-arrow-circle-right"></i>
+							<span class="nav-link-text">Support</span>
+						</a>
+					</li>
+					<li class="nav-item">
+						<a class="nav-link" href="#faqs">
+							<i class="ti i-cl-2 ti-arrow-circle-right"></i>
+							<span class="nav-link-text">FAQs</span>
+						</a>
+					</li>
+					<!-- End Projects -->
+				</ul>
+			</div>
+			<!-- =============== End Side Menu ============== -->
+		</div>
+	</nav>
+	<!-- =====================================================
+		                    End Navigations
+		======================================================= -->
+
+	<div class="content-wrapper">
+		<div class="container-fluid" data-spy="scroll" data-target="#spy">
+			<!-- Title & Breadcrumbs-->
+			<div class="row page-titles" id="intro">
+				<div class="col-md-12 align-self-center">
+                    <h4 class="text-themecolor">trashsync - Waste Collection Management System (Documentation)</h4>
+				</div>
+			</div>
+			<!-- Title & Breadcrumbs-->
+			<div class="row">
+				<div class="col-md-12">
+					<!-- introduction -->
+					<div class="card">
+						<div class="card-body">
+							<h3>1. Introduction</h3>
+                            <p>trashsync is a comprehensive web application built with modern technologies to streamline waste collection, processing, and management operations. This system combines the power of Express.js for robust backend API development and React.js for an intuitive, responsive frontend experience.
+							<p>
+							<h4>Technology Stack</h4>
+							<p><b>Backend:</b></p>
+							<ul>
+								<li>Express.js - Fast, unopinionated web framework for Node.js with REST API architecture</li>
+							</ul>
+							<p><b>Frontend:</b></p>
+							<ul>
+								<li>React.js with modern JavaScript (ES6+)</li>
+							</ul>
+							<p><b>Database:</b></p>
+							<ul>
+								<li>MySQL</li>
+							</ul>
+							<p><b>Authentication:</b></p>
+							<ul>
+								<li>JWT (JSON Web Tokens) - Provides stateless, secure authentication for API endpoints</li>
+							</ul>
+							<p><b>Styling:</b></p>
+							<ul>
+								<li>Bootstrap with responsive design principles</li>
+							</ul>
+
+						</div>
+					</div>
+					<!-- System Requirements -->
+					<div class="card" id="local-installation">
+						<div class="card-body">
+							<h3>Local Installation (Windows)</h3>
+							<p>Follow these steps to run trashsync locally on your computer.</p>
+							<hr>
+							<h5><b>1) Prerequisites</b></h5>
+							<ul>
+								<li>Node.js 20.x (recommended) — <a href="https://nodejs.org/en" target="_blank">https://nodejs.org/en</a></li>
+								<li>Xampp — <a href="https://www.apachefriends.org/" target="_blank">https://www.apachefriends.org/</a></li>
+								<li>Git (optional) — <a href="https://git-scm.com/downloads" target="_blank">https://git-scm.com/downloads</a></li>
+							</ul>
+
+						<h5><b>2) Database Setup (XAMPP)</b></h5>
+						<p>Use XAMPP's MySQL (MariaDB) and phpMyAdmin for local database.</p>
+						<ol>
+							<li>Install & open <b>XAMPP Control Panel</b>.</li>
+							<li>Start <b>Apache</b> and <b>MySQL</b> services.</li>
+							<li>Open <b>phpMyAdmin</b>: <code>http://localhost/phpmyadmin</code>.</li>
+							<li>Create database: <code>trashsync</code> (Collation: <code>utf8mb4_general_ci</code>).</li>
+							<li>Go to <b>Import</b> tab and choose <code>database.sql</code> from the project root.</li>
+							<li>Click <b>Import</b> and wait until success confirmation appears.</li>
+						</ol>
+
+							<h5><b>3) Backend Setup</b></h5>
+							<ol>
+								<li>Open terminal in <code>backend</code> folder.</li>
+								<li>Install dependencies:
+									<pre><code>npm install</code></pre>
+								</li>
+								<li>Copy <code>env.example</code> to <code>.env</code> and update values (XAMPP defaults):
+									<pre><code>NODE_ENV=development
+PORT=3000
+BACKEND_URL=http://localhost:3000
+FRONTEND_URL=http://localhost:5173
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=
+DB_NAME=trashsync
+JWT_SECRET=change_me_securely
+JWT_EXPIRES_IN=24h</code></pre>
+								</li>
+								<li>(Optional) Run migrations if needed:
+									<pre><code>npm run db:migrate</code></pre>
+                                    <pre><code>npm run db:seed</code></pre>
+								</li>
+								<li>Start API server:
+									<pre><code>npm run dev</code></pre>
+									<p>Server: <code>http://localhost:3000</code></p>
+								</li>
+							</ol>
+
+							<h5><b>4) Frontend Setup</b></h5>
+							<ol>
+								<li>Open terminal in <code>frontend</code> folder.</li>
+								<li>Open <code>.env</code> and update value
+									<pre><code>VITE_API_BASE_URL=http://localhost:3000</code></pre>
+								</li>
+								<li>Install dependencies:
+									<pre><code>npm install</code></pre>
+								</li>
+								<li>Run development server:
+									<pre><code>npm run dev</code></pre>
+									<p>App: <code>http://localhost:5173</code></p>
+								</li>
+							</ol>
+
+							<h5><b>5) Test Login</b></h5>
+							<ul>
+								<li>Open <code>http://localhost:5173/login</code></li>
+								<li>Use the credentials from the <b>Reviewer Credentials</b> section or your own created user.</li>
+							</ul>
+
+							<h5><b>Troubleshooting (Local)</b></h5>
+							<ul>
+								<li>PORT in use: change <code>PORT</code> in <code>.env</code> or stop existing process.</li>
+								<li>CORS error: ensure <code>FRONTEND_URL</code> matches <code>http://localhost:5173</code>.</li>
+								<li>Database error: ensure XAMPP MySQL is running and <code>DB_PASSWORD</code> is empty if you didn't set one.</li>
+								<li>phpMyAdmin not loading: verify Apache is started in XAMPP.</li>
+							</ul>
+						</div>
+					</div>
+					<div class="card" id="system">
+                        <div class="card-body">
+                            <h3>2. System Requirements</h3>
+                            <p>Before installing and running trashsync, ensure your server meets the following requirements:</p>
+							<hr>
+							<p><b>1. Web Server</b></p>
+							<ul>
+								<li>Apache (with mod_rewrite enabled), Nginx, or any HTTP server capable of reverse proxy</li>
+							</ul>
+                            <p><b>2. Node.js Runtime:</b></p>
+							<ul>
+                                <li>Node.js >= 20.x</li>
+                                <li>NPM >= 9.x or Yarn >= 1.22.x</li>
+							</ul>
+							<p><b>3. Database:</b></p>
+							<ul>
+								<li>MySQL >= 8.0</li>
+							</ul>
+							<h5><b>Required Node.js Dependencies</b></h5>
+							<p>The backend application requires the following core dependencies:</p>
+							<ul>
+								<li class="mb-2"><b>Express:</b> Web application framework</li>
+								<li class="mb-2"><b>Drizzle-orm:</b> JavaScript ORM for database operations</li>
+								<li class="mb-2"><b>Mysql2:</b> MySQL client for Node.js</li>
+								<li class="mb-2"><b>Jsonwebtoken:</b> JWT implementation for authentication</li>
+								<li class="mb-2"><b>Bcryptjs:</b> Password hashing utility</li>
+								<li class="mb-2"><b>Cors:</b> Cross-Origin Resource Sharing middleware</li>
+								<li class="mb-2"><b>Dotenv:</b> Environment variable management</li>
+								<li><b>Zod:</b> Input validation middleware</li>
+							</ul>
+							<h5><b>Recommended Environment Configuration</b></h5>
+                            <p>For optimal performance and security of the trashsync Express.js application, configure the following environment variables:</p>
+							<ul>
+								<li class="mb-2"><b>NODE_ENV=production</b> (for production deployment)</li>
+								<li class="mb-2"><b>PORT=3000</b>(or your preferred port)</li>
+								<li class="mb-2"><b>post_max_size 64M</b></li>
+								<li class="mb-2"><b>DB_HOST=localhost</b></li>
+								<li class="mb-2"><b>DB_PORT=3306</b></li>
+								<li class="mb-2"><b>DB_USER=your_db_user</b></li>
+								<li class="mb-2"><b>DB_PASSWORD=your_db_password</b></li>
+                                <li class="mb-2"><b>DB_NAME=trashsync</b></li>
+								<li class="mb-2"><b>JWT_SECRET=your_secure_jwt_secret</b></li>
+								<li><b>JWT_EXPIRES_IN=24h</b></li>
+							</ul>
+							<h5><b>Node.js & NPM</b></h5>
+							<p>Required for React.js frontend development:</p>
+							<ul>
+								<li><b>Node.js:</b> >= 20.x</li>
+								<li><b>NPM:</b> >= 10.x</li>
+							</ul>
+						</div>
+					</div>
+					<!-- System Requirements -->
+					<div class="card">
+						<div class="card-body">
+                            <h3>Download from CodeCanyon</h3>
+							<p><b>1. Log in to CodeCanyon:</b></p>
+							<ul>
+								<li>Access your Envato account on CodeCanyon.</li>
+								<li>Navigate to the <b>Downloads</b> tab in your account dashboard.</li>
+							</ul>
+                            <p><b>2. Locate trashsync:</b></p>
+							<ul>
+                                <li>Find the <b>trashsync</b> project in your purchased items list.</li>
+								<li>Click the <b>Download</b> button and select <b>All Files & Documentation to
+                                        download</b> the complete package, which includes the <b>trashsync</b> folder
+									containing <span class="text-danger bg-danger-light px-1">backend.zip</span>, <span
+										class="text-danger bg-danger-light px-1">frontend.zip</span>, <span
+										class="text-danger bg-danger-light px-1">and documentation</span> .
+								</li>
+							</ul>
+						<p><b>3. Extract the Package:</b></p>
+							<ul>
+							<li>Unzip the downloaded file to your local computer.</li>
+							<li>Inside the <b>trashsync</b> folder, you will find:</li>
+								<img src="./assets/img/find_files.png" alt="">
+							</ul>
+						</div>
+					</div>
+					<!-- System Requirements -->
+					<div class="card" id="backend">
+						<div class="card-body">
+							<h3>Installation Guide: Backend</h3>
+							<h5><b>1. Login to Cpanel</b></h5>
+							<p> Login to your hosting's cpanel using the login information. You will see an interface
+								like this:</p>
+							<img src="./assets/img/login_cpanel.png" alt="">
+							<hr>
+							<h5><b>2. Create Subdomain</b></h5>
+							<p class="mb-0">- Login to your cPanel server and click on domains in the domains section.
+							</p>
+							<p>- Create separate subdomains for Express js API, React frontend.</p>
+							<p class="px-3 py-2 bg-default-light">api.your-domain.com -> express API.</p>
+							<p><b>store.your-domain.com</b> for your specific frontend domain name or sub domain name,
+								<b>admin.your-domain.com</b> for your specific admin domain or sub domain name and also
+								same for your API domain as well.</p>
+							<img src="./assets/img/cpanel-domain.png" alt="">
+							<hr>
+							<img src="./assets/img/cpanel-domain-2.png" alt="">
+							<hr>
+							<img src="./assets/img/cpanel-domain-3.png" alt="">
+							<hr>
+							<img src="./assets/img/cpanel-domain-4.png" alt="">
+							<hr>
+							<h5><b>3. Upload Zip file on cPanel:</b></h5>
+							<p>- Upload the backend.zip file in the express.js subdomain (api.your-domain.com).</p>
+							<img src="./assets/img/cpanel-upload.png" alt="">
+							<hr>
+							<img src="./assets/img/cpanel-upload-2.png" alt="">
+							<hr>
+							<img src="./assets/img/select_backend_file.png" alt="">
+							<hr>
+							<p>- Click on the Go Back link after the file is 100% uploaded.</p>
+							<img src="./assets/img/cpanel-upload-3.png" alt="">
+							<hr>
+							<h5>4. Extract Express.js Zip File</h5>
+							<img src="./assets/img/cpanel-extract.png" alt="">
+							<hr>
+							<h5>5. Create MySQL Database:</h5>
+							<p>- Now move to cpanel manager and go to > MySQL Database Wizard</p>
+							<img src="./assets/img/cpanel-database-1.png" alt="">
+							<hr>
+							<p>- Create database in MySQL Database Wizard</p>
+							<img src="./assets/img/cpanel-database-2.png" alt="">
+							<hr>
+							<p>- Create database users and remember their passwords for the installation process.</p>
+							<img src="./assets/img/cpanel-databse-3.png" alt="">
+							<hr>
+							<p>- Add a user to the database, give them all the necessary permissions, and then click
+								'Make Changes.' After that, click 'Next Step.</p>
+							<img src="./assets/img/cpanel-database-4.png" alt="">
+							<hr>
+							<p>- Make a note of the database user, database name, and database password after creating
+								the database.</p>
+							<img src="./assets/img/cpanel-databse-5.png" alt="">
+							<hr>
+							<h5>6. Click on "phpMyAdmin" option</h5>
+							<img src="./assets/img/phpmyadmin.png" alt="">
+							<hr>
+							<p>Select the <b>database</b> and go to the <b>Import tab</b></p>
+							<img src="./assets/img/import_database.png" alt="">
+							<hr>
+							<p>Click <b>Choose File</b></p>
+							<img src="./assets/img/import_database2.png" alt="">
+							<hr>
+							<p>select your <b>backend/database.sql</b> file</p>
+							<img src="./assets/img/import_database3.png" alt="">
+							<hr>
+							<p>Click <b>import</b> button</p>
+							<img src="./assets/img/import_database4.png" alt="">
+							<hr>
+							<h5>7. Navigate to Node.js Setup </h5>
+							<p class="mb-0">1. Look for the Software section in the main dashboard </p>
+							<p class="mb-0">2. Click on <b>Setup Node.js App</b> (you'll see the Node.js logo) </p>
+							<img src="./assets/img/setup_nodejs.png" alt="">
+							<hr>
+							<h5>8. Create New Node.js Application </h5>
+							<p class="mb-0">1. Click on <b>"CREATE APPLICATION"</b> button</p>
+							<p class="mb-0">2. You'll be taken to the Node.js application creation form</p>
+							<img src="./assets/img/create_application.png" alt="">
+							<hr> 
+							<h5>9. Configure Application Settings</h5>
+							<p class="mb-0"><b>Basic Configuration</b></p>
+							<ul>
+								<li class="mb-2"><b>Node.js version:</b> Select 20.18.3 (recommended) or the latest available version</li>
+								<li class="mb-2"><b>Application mode:</b> Choose Production for live sites</li>
+								<li class="mb-2"><b>Application root:</b> Enter your desired folder name (e.g., my-express-app)</li>
+								<li class="mb-2"><b>Application URL:</b> This will be automatically generated based on your domain</li>
+								<li class="mb-2"><b>Application startup file:</b> Enter server.js</li>
+							</ul>
+							<img src="./assets/img/create_application2.png" alt="">
+							<hr>
+							<h5>10. Set Up Environment Variables</h5>
+							<p class="mb-0">Click on <b>"ADD VARIABLE"</b> to add necessary environment variables:</p>
+							<p class="mb-0"><b>Common Environment Variables for Express.js:</b></p>
+                            <ul>
+                                <li class="mb-2"><b>BACKEND_URL:</b> https://api.your-domain.com</li>
+                                <li class="mb-2"><b>FRONTEND_URL:</b> http://localhost:5173 (dev) or your frontend domain</li>
+								<li class="mb-2"><b>PORT:</b> Usually handled automatically by cPanel</li>
+								<li class="mb-2"><b>NODE_ENV:</b> Set to production</li>
+								<li class="mb-2"><b>Database Credentials:</b> DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, DB_PORT</li>
+								<li class="mb-2"><b>JWT_SECRET:</b> For authentication</li>
+							</ul>
+							<img src="./assets/img/add_env.png" alt="">
+							<hr>
+							<h5>11. Create the Application</h5>
+							<p class="mb-0">1. Review all your settings</p>
+							<p class="mb-0">2. Click the <b>"CREATE"</b> button</p>
+							<img src="./assets/img/create_application3.png" alt="">
+							<hr>
+							<h5>12. Install Dependencies</h5>
+							<p class="mb-0">1. <b>Click on "Run NPM Install" button</b> - this will install all dependencies from your package.json</p>
+							<p class="mb-0">2. <b>Wait for the installation to complete</b> - you'll see progress indicators</p>
+							<p class="mb-0">3. <b>After installation is complete, click the "SAVE" button</b> to save the application configuration</p>
+							<img src="./assets/img/create_application4.png" alt="">
+							<hr>
+							<h5>13. Start/Restart the Application</h5>
+							<p class="mb-0">1. In the Node.js application management page</p>
+							<p class="mb-0">2. Click on the restart button (circular arrow icon) for your application</p>
+							<p class="mb-0">3 Check the status - it should show as "started"</p>
+						</div>
+					</div>
+					<!-- Installation Guide -->
+					<div class="card" id="frontend">
+						<div class="card-body">
+                            <h3>Installation Guide: Frontend</h3>
+							<h5><b>1. Extract frontend.zip:</b></h5>
+							<p>Unzip the <b>frontend.zip</b> then go to <b>frontend</b> folder and open the terminal in that folder.</p>
+							<img src="./assets/img/unzip_frontend.png" alt="">
+							<hr>
+                            <h5><b>2. Set API Endpoint:</b></h5>
+                            <p class="mb-1">- Create/Edit <b>frontend/.env</b> file.</p>
+                            <p>- Set the API base URL to point to your backend, for example:</p>
+                            <pre><code>VITE_API_BASE_URL=https://api.your-domain.com</code></pre>
+							<img src="./assets/img/api_setup.png" alt="">
+							<p class="mt-2">Ensure the URL matches the deployed backend (e.g., <b>https://api.your-domain.com</b> or <b>http://localhost:3000</b> for local testing).</p>
+							<hr>
+							<h5><b>3. Build file:</b></h5>
+							<p>1. Open your <b>source-code/frontend</b> folder and open terminal or command prompt</p>
+							<p>2. Type <b>npm run build</b> to build the frontend file with upper information</p>
+							<p>3. It will take some time and it will build a file in the dist folder.</p>
+							<img src="./assets/img/npm_build.png" />
+							<hr>
+							<h5><b>4. Zip and Upload the File (Local Build):</b></h5>
+							<p> 1. Zip the dist folder with any compressor (e.g., WinRAR, 7-Zip).</p>
+							<img src="./assets/img/npm_build2.png" />
+							<hr>
+							<h5><b>5. Click Upload, select the zipped dist folder, and extract it to the target directory.</b></h5>
+							<p> Ensure the dist folder contains index.html, static/, and other assets.</p>
+							<img src="./assets/img/frontend_upload.png" />
+							<hr>
+							<img src="./assets/img/frontend_upload2.png" />
+							<hr>
+							<h5><b>6. Now Extract the file:</b></h5>
+							<p>1. Select the file you wish to uncompress</p>
+							<p>2. Hit Extract icon</p>
+							<p>3. Or right-click on the file and use Extract option</p>
+							<p>4. Define the path you wish to extract the file to</p>
+							<p>5. Once done, hit Extract File(s)</p>
+							<img src="./assets/img/frontend_upload3.png" />
+                            <br>
+                            <h5><b>7. Create .htaccess file (for React Router)</b></h5>
+							<p>Inside the folder where <b>index.html</b> is located, create a <b>.htaccess</b> file with the following content:</p>
+                <pre><code>Options -MultiViews
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^ index.html [QSA,L]
+
+# php -- BEGIN cPanel-generated handler, do not edit
+# Set the “ea-php83” package as the default “PHP” programming language.
+<IfModule mime_module>
+  AddHandler application/x-httpd-ea-php83___lsphp .php .php8 .phtml
+</IfModule>
+# php -- END cPanel-generated handler, do not edit
+</code></pre>
+<br>
+
+<h5><b>Final Checklist:</b></h5>
+
+  <ul>
+    <li><input type="checkbox"> <code>.env</code> file has correct API URL</li>
+    <li><input type="checkbox"> <code>npm run build</code> completed without errors</li>
+    <li><input type="checkbox"> <code>dist</code> folder zipped and uploaded</li>
+    <li><input type="checkbox"> All assets (HTML, static files) are present after extraction</li>
+    <li><input type="checkbox"> <code>.htaccess</code> file created and placed correctly</li>
+  </ul>
+						</div>
+					</div>
+					<div class="card" id="credentials">
+						<div class="card-body">
+                            <h3>Reviewer Credentials</h3>
+							<p>The default credentials of the script are:</p>
+							<hr>
+							<ul>
+                                <li><b>Demo URL:</b> https://demo.your-domain.com/login</li>
+                                <li><b>Login Email:</b> admin@trashsync.app</li>
+                                <li><b>Login Password:</b> Admin@12345</li>
+							</ul>
+
+						</div>
+					</div>
+					<div class="card" id="waste">
+						<div class="card-body">
+							<h3>Manage Waste</h3>
+							<p>The admin can manage waste by creating, editing, and deleting them. The admin can also view a list of all waste</p>
+							<p>Navigate to <b>"Waste Collection >> Waste List"</b>. See the example below:</p>
+							<img src="./assets/img/customize/waste.png" />
+							<hr>
+							<p class="text-danger"><b>Creating a Waste</b></p>
+							<img src="./assets/img/customize/add_waste.png" />
+							<hr>
+							<img src="./assets/img/customize/add_waste2.png" />
+						</div>
+					</div>
+					<div class="card" id="bin">
+						<div class="card-body">
+							<h3>Manage Bin</h3>
+							<p>The admin can manage Bin by creating, editing, and deleting them. The admin can also view a list of all Bin</p>
+							<p>Navigate to <b>"Bin Management >> Bin List"</b>. See the example below:</p>
+							<img src="./assets/img/customize/bin.png" />
+							<hr>
+							<p class="text-danger"><b>Creating a Bin</b></p>
+							<img src="./assets/img/customize/add_bin.png" />
+							<hr>
+							<img src="./assets/img/customize/add_bin2.png" />
+						</div>
+					</div>
+					<div class="card" id="zone">
+						<div class="card-body">
+							<h3>Manage Zone</h3>
+							<p>The admin can manage Zone by creating, editing, and deleting them. The admin can also view a list of all zone</p>
+							<p>Navigate to <b>"Zone & Area >> Zone List"</b>. See the example below:</p>
+							<img src="./assets/img/customize/zone.png" />
+							<hr>
+							<p class="text-danger"><b>Creating a Zone</b></p>
+							<img src="./assets/img/customize/add_zone.png" />
+							<hr>
+							<img src="./assets/img/customize/add_zone2.png" />
+						</div>
+					</div>
+					<div class="card" id="vehicle">
+						<div class="card-body">
+							<h3>Manage Vehicle</h3>
+							<p>The admin can manage Vehicle by creating, editing, and deleting them. The admin can also view a list of all Vehicle</p>
+							<p>Navigate to <b>"Vehicle Management >> Vehicle List"</b>. See the example below:</p>
+							<img src="./assets/img/customize/vehicle.png" />
+							<hr>
+							<p class="text-danger"><b>Creating a Vehicle</b></p>
+							<img src="./assets/img/customize/add_vehicle.png" />
+							<hr>
+							<img src="./assets/img/customize/add_vehicle2.png" />
+						</div>
+					</div>
+					<div class="card" id="route">
+						<div class="card-body">
+							<h3>Manage Route</h3>
+							<p>The admin can manage Route by creating, editing, and deleting them. The admin can also view a list of all Route</p>
+							<p>Navigate to <b>"Route Management >> Route List"</b>. See the example below:</p>
+							<img src="./assets/img/customize/route.png" />
+							<hr>
+							<p class="text-danger"><b>Creating a Route</b></p>
+							<img src="./assets/img/customize/add_route.png" />
+							<hr>
+							<img src="./assets/img/customize/add_route2.png" />
+						</div>
+					</div>
+					<div class="card" id="staff">
+						<div class="card-body">
+							<h3>Manage Staff</h3>
+							<p>The admin can manage Staff by creating, editing, and deleting them. The admin can also view a list of all Staff</p>
+							<p>Navigate to <b>"Driver & Staff >> Staff List"</b>. See the example below:</p>
+							<img src="./assets/img/customize/staff.png" />
+							<hr>
+							<p class="text-danger"><b>Creating a Staff</b></p>
+							<img src="./assets/img/customize/add_staff.png" />
+							<hr>
+							<img src="./assets/img/customize/add_staff2.png" />
+						</div>
+					</div>
+					<div class="card" id="waste_type">
+						<div class="card-body">
+							<h3>Manage Waste Types</h3>
+							<p>The admin can manage Waste Type by creating, editing, and deleting them. The admin can also view a list of all Waste Type</p>
+							<p>Navigate to <b>"Waste Types >> Waste Type List"</b>. See the example below:</p>
+							<img src="./assets/img/customize/waste_type.png" />
+						
+							<p class="text-danger"><b>Creating a Waste Type</b></p>
+							<img src="./assets/img/customize/add_waste_type.png" />
+							<hr>
+							<img src="./assets/img/customize/add_waste_type2.png" />
+						</div>
+					</div>
+					<div class="card" id="setting">
+						<div class="card-body">
+							<h3>General Setting</h3>
+							<p>You can find your general settings by navigating to <b>"System Settings >> Company Settings"</b>. See the example below:</p>
+							<img src="./assets/img/customize/setting.png" />
+						</div>
+					</div>
+					<div class="card" id="smtp">
+						<div class="card-body">
+							<h3>SMTP Config</h3>
+							<p>You can find your SMTP Config by navigating to <b>"System Settings >> SMTP Config"</b>. See the example below:</p>
+							<img src="./assets/img/customize/smtp.png" />
+						</div>
+					</div>
+					
+
+									<!-- Overview Section -->
+        <div class="card" id="api-docs">
+            <div class="card-header">
+                <h3>API Overview</h3>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <strong>Welcome to trashsync API!</strong> 
+                    A comprehensive REST API for waste management operations built with Express.js and JWT authentication.
+                </div>
+                
+                <h5 class="section-title">Base Information</h5>
+                <div class="table-responsive">
+                    <table class="table">
+                        <tr><th>Base URL</th><td><code>https://api.your-domain.com/api</code></td></tr>
+                        <tr><th>Authentication</th><td>JWT (Bearer token)</td></tr>
+                        <tr><th>Content Type</th><td><code>application/json</code></td></tr>
+                        <tr><th>Response Format</th><td>JSON</td></tr>
+                    </table>
+                </div>
+
+                <h5 class="section-title">Standard Response Format</h5>
+                <h6>Success Response:</h6>
+                <pre><code>{
+  "success": true,
+  "message": "Operation successful",
+  "data": {
+    // Response data here
+  }
+}</code></pre>
+
+                <h6>Error Response:</h6>
+                <pre><code>{
+  "success": false,
+  "message": "Error description",
+  "errors": {
+    "field_name": ["Validation error message"]
+  }
+}</code></pre>
+            </div>
+        </div>
+
+        <!-- Authentication Section -->
+        <div class="card" id="authentication">
+            <div class="card-header">
+                <h3>Authentication</h3>
+            </div>
+            <div class="card-body">
+                <p>trashsync API uses JWT for authentication. All protected routes require a valid token.</p>
+                
+                <div class="endpoint">
+                    <span class="method post">POST</span>
+                    <strong>/login</strong>
+                    <p class="mt-2">Authenticate user and receive access token</p>
+                </div>
+                
+                <h6>Request Body:</h6>
+                <pre><code>{
+  "email": "user@example.com",
+  "password": "password123"
+}</code></pre>
+
+                <h6>Success Response:</h6>
+                <pre><code>{
+  "success": true,
+  "message": "Login successful",
+  "data": {
+    "user": {
+      "id": 1,
+      "name": "John Doe",
+      "email": "user@example.com"
+    },
+    "token": "1|xyz123abc456def..."
+  }
+}</code></pre>
+
+                <div class="endpoint">
+                    <span class="method post">POST</span>
+                    <strong>/forgot-password</strong>
+                    <p class="mt-2">Request password reset</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method post">POST</span>
+                    <strong>/reset-password</strong>
+                    <p class="mt-2">Reset password with token</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method post">POST</span>
+                    <strong>/logout</strong>
+                    <p class="mt-2">Logout and revoke current token</p>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                </div>
+
+                <h5 class="section-title">Using Authentication Token</h5>
+                <p>All API endpoints require JWT authentication. Include the token in the Authorization header:</p>
+                <pre><code>Authorization: Bearer your_jwt_token_here</code></pre>
+            </div>
+        </div>
+
+        <!-- Dashboard Section -->
+        <div class="card" id="dashboard">
+            <div class="card-header">
+                <h3>Dashboard Endpoints</h3>
+            </div>
+            <div class="card-body">
+                <p>Get dashboard statistics and overview data.</p>
+                
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <strong>/me</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Get current authenticated user information</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <strong>/dashboard-stats</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Get dashboard statistics</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <strong>/waste-collected-per-zone</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Get waste collection data by zone</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <strong>/waste-distribution</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Get waste type distribution data</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <strong>/system-alerts</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Get system alerts and notifications</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <strong>/recent-wastes</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Get recent waste collection records</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <strong>/menu-links</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Search menu links for navigation</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Staff Management Section -->
+        <div class="card" id="staff-api">
+            <div class="card-header">
+                <h3>Staff Management</h3>
+            </div>
+            <div class="card-body">
+                <p>Manage staff members, attendance, and documents.</p>
+                
+                <h5 class="section-title">Staff CRUD Operations</h5>
+                
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <strong>/staff</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Get all staff members</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method post">POST</span>
+                    <strong>/staff</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Create new staff member</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <strong>/staff/{id}</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Get specific staff member</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method post">POST</span>
+                    <strong>/staff/{id}</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Update staff member</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method delete">DELETE</span>
+                    <strong>/staff/{id}</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Delete staff member</p>
+                </div>
+
+                <h5 class="section-title">Staff Attendance</h5>
+                
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <strong>/staff-attendance</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Get attendance records</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method post">POST</span>
+                    <strong>/staff-attendance</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Record staff attendance</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <strong>/staff-attendance/{id}</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Get specific attendance record</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method put">PUT</span>
+                    <strong>/staff-attendance/{id}</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Update attendance record</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method delete">DELETE</span>
+                    <strong>/staff-attendance/{id}</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Delete attendance record</p>
+                </div>
+
+                <h5 class="section-title">Staff Documents</h5>
+                
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <strong>/staff-documents</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Get staff documents</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method post">POST</span>
+                    <strong>/staff-documents</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Upload staff document</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <strong>/staff-documents/{id}</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Get specific staff document</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method post">POST</span>
+                    <strong>/staff-documents/{id}</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Update staff document</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method delete">DELETE</span>
+                    <strong>/staff-documents/{id}</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Delete staff document</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vehicle Management Section -->
+        <div class="card" id="vehicles">
+            <div class="card-header">
+                <h3>Vehicle Management</h3>
+            </div>
+            <div class="card-body">
+                <p>Manage vehicles, documents, and maintenance logs.</p>
+                
+                <h5 class="section-title">Vehicle CRUD Operations</h5>
+                
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <strong>/vehicles</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Get all vehicles</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method post">POST</span>
+                    <strong>/vehicles</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Create new vehicle</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <strong>/vehicles/{id}</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Get specific vehicle</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method put">PUT</span>
+                    <strong>/vehicles/{id}</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Update vehicle</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method delete">DELETE</span>
+                    <strong>/vehicles/{id}</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Delete vehicle</p>
+                </div>
+
+                <h5 class="section-title">Vehicle Documents</h5>
+                
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <strong>/vehicle-documents</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Get vehicle documents</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method post">POST</span>
+                    <strong>/vehicle-documents</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Upload vehicle document</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <strong>/vehicle-documents/{id}</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Get specific vehicle document</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method post">POST</span>
+                    <strong>/vehicle-documents/{id}</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Update vehicle document</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method delete">DELETE</span>
+                    <strong>/vehicle-documents/{id}</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Delete vehicle document</p>
+                </div>
+
+                <h5 class="section-title">Maintenance Logs</h5>
+                
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <strong>/maintenance-logs</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Get maintenance logs</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method post">POST</span>
+                    <strong>/maintenance-logs</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Create maintenance log entry</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <strong>/maintenance-logs/{id}</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Get specific maintenance log</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method post">POST</span>
+                    <strong>/maintenance-logs/{id}</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Update maintenance log</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method delete">DELETE</span>
+                    <strong>/maintenance-logs/{id}</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Delete maintenance log</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Waste Management Section -->
+        <div class="card" id="waste-api">
+            <div class="card-header">
+                <h3>Waste Management</h3>
+            </div>
+            <div class="card-body">
+                <p>Manage waste records, types, and bins.</p>
+                
+                <h5 class="section-title">Waste Records</h5>
+                
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <strong>/wastes</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Get all waste records</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method post">POST</span>
+                    <strong>/wastes</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Create waste record</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <strong>/wastes/{id}</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Get specific waste record</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method put">PUT</span>
+                    <strong>/wastes/{id}</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Update waste record</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method delete">DELETE</span>
+                    <strong>/wastes/{id}</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Delete waste record</p>
+                </div>
+
+                <h5 class="section-title">Waste Types</h5>
+                
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <strong>/waste-types</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Get all waste types</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method post">POST</span>
+                    <strong>/waste-types</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Create waste type</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <strong>/waste-types/{id}</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Get specific waste type</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method put">PUT</span>
+                    <strong>/waste-types/{id}</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Update waste type</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method delete">DELETE</span>
+                    <strong>/waste-types/{id}</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Delete waste type</p>
+                </div>
+
+                <h5 class="section-title">Bins Management</h5>
+                
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <strong>/bins</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Get all bins</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method post">POST</span>
+                    <strong>/bins</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Create bin record</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <strong>/bins/{id}</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Get specific bin</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method put">PUT</span>
+                    <strong>/bins/{id}</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Update bin record</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method delete">DELETE</span>
+                    <strong>/bins/{id}</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Delete bin record</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Routes & Areas Section -->
+        <div class="card" id="routes">
+            <div class="card-header">
+                <h3>Routes & Areas</h3>
+            </div>
+            <div class="card-body">
+                <p>Manage collection routes, assignments, and zones.</p>
+                
+                <h5 class="section-title">Routes Management</h5>
+                
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <strong>/routes</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Get all routes</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method post">POST</span>
+                    <strong>/routes</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Create new route</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <strong>/routes/{id}</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Get specific route</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method put">PUT</span>
+                    <strong>/routes/{id}</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Update route</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method delete">DELETE</span>
+                    <strong>/routes/{id}</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Delete route</p>
+                </div>
+
+                <h5 class="section-title">Route Assignments</h5>
+                
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <strong>/route-assignments</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Get route assignments</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method post">POST</span>
+                    <strong>/route-assignments</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Create route assignment</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <strong>/route-assignments/{id}</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Get specific route assignment</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method put">PUT</span>
+                    <strong>/route-assignments/{id}</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Update route assignment</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method delete">DELETE</span>
+                    <strong>/route-assignments/{id}</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Delete route assignment</p>
+                </div>
+
+                <h5 class="section-title">Zones Management</h5>
+                
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <strong>/zones</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Get all zones</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method post">POST</span>
+                    <strong>/zones</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Create new zone</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <strong>/zones/{id}</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Get specific zone</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method put">PUT</span>
+                    <strong>/zones/{id}</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Update zone</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method delete">DELETE</span>
+                    <strong>/zones/{id}</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Delete zone</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Section -->
+        <div class="card" id="settings">
+            <div class="card-header">
+                <h3>Settings & Configuration</h3>
+            </div>
+            <div class="card-body">
+                <p>Manage system settings and configurations.</p>
+                
+                <h5 class="section-title">Company Settings</h5>
+                
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <strong>/settings</strong>
+                    <p class="mt-2">Get company settings (Public endpoint)</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method post">POST</span>
+                    <strong>/settings</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Update company settings</p>
+                </div>
+
+                <h5 class="section-title">SMTP Configuration</h5>
+                
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <strong>/smtp-config</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Get SMTP configuration</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method post">POST</span>
+                    <strong>/smtp-config</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Update SMTP configuration</p>
+                </div>
+
+                <h5 class="section-title">System Alerts</h5>
+                
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <strong>/system-alert</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Get system alerts</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method post">POST</span>
+                    <strong>/system-alert</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Create system alert</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <strong>/system-alert/{id}</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Get specific system alert</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method put">PUT</span>
+                    <strong>/system-alert/{id}</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Update system alert</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method delete">DELETE</span>
+                    <strong>/system-alert/{id}</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Delete system alert</p>
+                </div>
+
+                <h5 class="section-title">Profile Management</h5>
+                
+                <div class="endpoint">
+                    <span class="method post">POST</span>
+                    <strong>/profile/update</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Update user profile</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method post">POST</span>
+                    <strong>/password/update</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Update user password</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reports Section -->
+        <div class="card" id="reports">
+            <div class="card-header">
+                <h3>Reports & Analytics</h3>
+            </div>
+            <div class="card-body">
+                <p>Generate various reports and analytics data.</p>
+                
+                <h5 class="section-title">Staff Reports</h5>
+                
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <strong>/staff-reports</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Get staff reports</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <strong>/staff-stats</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Get staff statistics</p>
+                </div>
+
+                <h5 class="section-title">Vehicle Reports</h5>
+                
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <strong>/vehicle-reports</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Get vehicle reports</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <strong>/vehicle-stats</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Get vehicle statistics</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <strong>/vehicle-status-distribution</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Get vehicle status distribution</p>
+                </div>
+
+                <h5 class="section-title">Waste Reports</h5>
+                
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <strong>/waste-type-reports</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Get waste type reports</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <strong>/waste-type-distribution</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Get waste type distribution</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <strong>/waste-collection-trends</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Get waste collection trends</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <strong>/waste-reports</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Get waste reports</p>
+                </div>
+
+                <div class="endpoint">
+                    <span class="method get">GET</span>
+                    <strong>/waste-stats</strong>
+                    <span class="badge-custom">🔒 Requires Authentication</span>
+                    <p class="mt-2">Get waste statistics</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- API Resource Notes Section -->
+        <div class="card" id="api-notes">
+            <div class="card-header">
+                <h3>API Resource Notes</h3>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <strong>Note:</strong> All resource endpoints (staff, vehicles, wastes, etc.) use Laravel's apiResource which automatically provides the following HTTP methods:
+                </div>
+                
+                <h5 class="section-title">Standard CRUD Operations</h5>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>HTTP Method</th>
+                                <th>Route Pattern</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><span class="method get">GET</span></td>
+                                <td><code>/resource</code></td>
+                                <td>Get all records (index)</td>
+                            </tr>
+                            <tr>
+                                <td><span class="method post">POST</span></td>
+                                <td><code>/resource</code></td>
+                                <td>Create new record (store)</td>
+                            </tr>
+                            <tr>
+                                <td><span class="method get">GET</span></td>
+                                <td><code>/resource/{id}</code></td>
+                                <td>Get specific record (show)</td>
+                            </tr>
+                            <tr>
+                                <td><span class="method put">PUT</span></td>
+                                <td><code>/resource/{id}</code></td>
+                                <td>Update record (update)</td>
+                            </tr>
+                            <tr>
+                                <td><span class="method delete">DELETE</span></td>
+                                <td><code>/resource/{id}</code></td>
+                                <td>Delete record (destroy)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <h5 class="section-title">Error Handling</h5>
+                <p>The API returns appropriate HTTP status codes:</p>
+                <ul>
+                    <li><code>200</code> - Success</li>
+                    <li><code>201</code> - Created successfully</li>
+                    <li><code>400</code> - Bad request/validation error</li>
+                    <li><code>401</code> - Unauthorized</li>
+                    <li><code>403</code> - Forbidden</li>
+                    <li><code>404</code> - Not found</li>
+                    <li><code>500</code> - Internal server error</li>
+                </ul>
+            </div>
+        </div>
+					
+					<!-- Troubleshooting -->
+					<div class="card" id="troubleshooting">
+						<div class="card-body">
+							<h3>Troubleshooting</h3>
+							<p>Common issues and their solutions:</p>
+							
+							<h5><b>1. Database Connection Issues:</b></h5>
+							<ul>
+								<li>Verify database credentials in .env file</li>
+								<li>Ensure MySQL server is running</li>
+								<li>Check database name and user permissions</li>
+								<li>Verify SSL settings for production</li>
+							</ul>
+							
+							<h5><b>2. JWT Authentication Errors:</b></h5>
+							<ul>
+								<li>Ensure JWT_SECRET is set in environment variables</li>
+								<li>Check token expiration time</li>
+								<li>Verify token format in Authorization header</li>
+							</ul>
+							
+							<h5><b>3. File Upload Issues:</b></h5>
+							<ul>
+								<li>Check file size limits (5MB default)</li>
+								<li>Verify allowed file types</li>
+								<li>Ensure uploads directory has write permissions</li>
+							</ul>
+							
+							<h5><b>4. CORS Issues:</b></h5>
+							<ul>
+								<li>Update FRONTEND_URL in environment variables</li>
+								<li>Check CORS configuration in app.js</li>
+							</ul>
+							
+							<h5><b>5. Node.js Application Won't Start:</b></h5>
+							<ul>
+								<li>Check all required environment variables are set</li>
+								<li>Verify Node.js version compatibility</li>
+								<li>Run npm install to ensure all dependencies are installed</li>
+								<li>Check application logs for specific error messages</li>
+							</ul>
+						</div>
+					</div>
+                    <div class="card" id="credits">
+                    <div class="card-header">
+                        <h3> Credits</h3>
+                    </div>
+                    <div class="card-body">
+                       <div class="table-responsive">
+                      <table class="table">
+                        <tr><th><h6>React 19+</h6></th><td><a href="https://react.dev/" target="_blank">https://react.dev/</a></td></tr>
+                        <tr><th><h6>Bootstrap</h6></th><td><a href="https://getbootstrap.com/" target="_blank">https://getbootstrap.com/</a></td></tr>
+                        <tr><th><h6>Google Font</h6></th><td><a href="https://fonts.google.com/specimen/Geist" target="_blank">https://fonts.google.com/specimen/Geist</a></td></tr>
+                        <tr><th><h6>Flaticon</h6></th><td><a href="https://www.flaticon.com/icons" target="_blank">https://www.flaticon.com/icons</a></td></tr>
+                        <tr><th><h6>lucide Icon</h6></th><td><a href="https://lucide.dev/icons/" target="_blank">https://lucide.dev/icons</a></td></tr>
+                        <tr><th><h6>React Hot Toast</h6></th><td><a href="https://react-hot-toast.com/" target="_blank">https://react-hot-toast.com/</a></td></tr>
+                        <tr><th><h6>Apexcharts</h6></th><td><a href="https://apexcharts.com/docs/react-charts/" target="_blank">https://apexcharts.com/docs/react-charts/</a></td></tr>
+                      </table>
+                </div>
+                    </div>
+                </div>
+					
+					<!-- Support -->
+					<div class="card" id="support">
+						<div class="card-body">
+							<h3>Free support</h3>
+							<p>If you have any type of query or support needed, feel free to contact us by mail or
+								message to <a href="mailto:niltonfelipe@gmail.com"> niltonfelipe@gmail.com </a></p>
+						</div>
+					</div>
+					<div class="card" id="faqs">
+						<div class="card-body">
+							<h3>FAQs</h3>
+							<div class="accordion" id="faqAccordion">
+								<div class="card">
+									<div class="card-header">
+										<h5>How do I change the API base URL?</h5>
+									</div>
+									<div class="card-body">
+										<p>Edit <code>frontend/.env</code> and set <code>VITE_API_BASE_URL</code> to your backend URL. Restart the dev server after changes.</p>
+									</div>
+								</div>
+								<div class="card">
+									<div class="card-header">
+										<h5>Database import fails in phpMyAdmin</h5>
+									</div>
+									<div class="card-body">
+										<p>Ensure XAMPP MySQL is running, select the correct database, and import <code>database.sql</code>. For large files, increase <code>upload_max_filesize</code> and <code>post_max_size</code> in <code>php.ini</code>.</p>
+									</div>
+								</div>
+								<div class="card">
+									<div class="card-header">
+										<h5>Frontend shows CORS error</h5>
+									</div>
+									<div class="card-body">
+										<p>Update <code>FRONTEND_URL</code> in backend <code>.env</code> to match your frontend origin (e.g., <code>http://localhost:5173</code>) and restart the backend.</p>
+									</div>
+								</div>
+								<div class="card">
+									<div class="card-header">
+										<h5>How do I change favicon/title?</h5>
+									</div>
+									<div class="card-body">
+										<p>Default favicon is in <code>frontend/public/images/fav.png</code>. Title and runtime favicon come from settings via the app; for local, ensure <code>VITE_API_BASE_URL</code> is correct.</p>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+		</div>
+		<!-- /.content-wrapper-->
+
+
+
+
+
+		<!-- Bootstrap core JavaScript-->
+		<script src="assets/js/jquery.min.js"></script>
+		<script src="assets/js/bootstrap.bundle.min.js"></script>
+
+		<!-- Core plugin JavaScript-->
+		<script src="assets/js/jquery.easing.min.js"></script>
+
+		<!-- Slick Slider Js -->
+		<script src="assets/js/slick.js"></script>
+
+		<!-- Slim Scroll -->
+		<script src="assets/js/jquery.slimscroll.min.js"></script>
+
+		<!-- Angular Tooltip -->
+		<script src="assets/js/angular.js"></script>
+		<script src="assets/js/angular-tooltips.js"></script>
+		<script src="assets/js/index.js"></script>
+
+		<script src="assets/js/prism.js"></script>
+
+		<!-- Custom scripts for all pages-->
+		<!-- Removed deprecated trashsync.js -->
+
+		<script>
+			$('.anchor a').click(function () {
+				$('html, body').animate({
+					scrollTop: $($(this).attr('href')).offset().top - 50
+				}, 800);
+				return false;
+			});
+		</script>
+
+	</div>
+	<!-- Wrapper -->
+
+</body>
+
+</html>

@@ -1,0 +1,56 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "node ./src/database/runMigration.js",
+    "db:seed": "node ./src/database/seed.js"
+  },
+  "keywords": [
+    "waste-management",
+    "express",
+    "nodejs",
+    "mysql",
+    "drizzle-orm",
+    "jwt",
+    "api",
+    "backend",
+    "wasteflow"
+  ],
+  "author": "Bottal",
+  "license": "MIT",
+  "description": "A comprehensive waste management system backend with Express.js, Drizzle ORM, and MySQL. Features include staff management, vehicle tracking, waste collection, route optimization, and detailed reporting.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/wasteflow-backend.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/wasteflow-backend/issues"
+  },
+  "homepage": "https://github.com/your-username/wasteflow-backend#readme",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.1",
+    "drizzle-orm": "^0.44.4",
+    "drizzle-seed": "^0.3.1",
+    "ejs": "^3.1.10",
+    "express": "^5.1.0",
+    "express-rate-limit": "^7.4.0",
+    "file-type": "16.5.4",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.2",
+    "mysql2": "^3.14.3",
+    "nodemailer": "^7.0.5",
+    "xss": "^1.0.14",
+    "zod": "^4.0.17"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.31.4"
+  }
+}
