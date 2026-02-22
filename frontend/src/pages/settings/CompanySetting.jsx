@@ -49,11 +49,11 @@ const CompanySetting = () => {
                     setExistingLogo(null);
 
                 } else {
-                    toast.error('Failed to load settings');
+                    toast.error('Falha ao carregar as configurações');
                 }
 
             } catch (error) {
-                toast.error('Error fetching settings');
+                toast.error('Erro ao buscar configurações');
                 console.error('Fetch error:', error);
             } finally {
                 setLoading(false);
@@ -96,7 +96,7 @@ const CompanySetting = () => {
         try {
             const response = await saveCompanySettings(dataToSend);
             if (response.success) {
-                toast.success(response.message || 'Saved successfully');
+                toast.success(response.message || 'Salvo com sucesso');
 
                 localStorage.removeItem('company_settings');
                 const { fav_icon, logo } = response.data[0] || {};
@@ -109,7 +109,7 @@ const CompanySetting = () => {
                 setFormData((prev) => ({ ...prev, fav_icon: null, logo: null }));
 
             } else {
-                toast.error(response.message || 'Failed to save settings');
+                toast.error(response.message || 'Falha ao salvar as configurações');
                 if (response.errors) {
                     setErrors(response.errors);
                 }
@@ -119,18 +119,18 @@ const CompanySetting = () => {
             if (err?.errors) {
                 setErrors(err.errors);
             } else {
-                toast.error(err?.message || 'Failed to update vehicle document');
+                toast.error(err?.message || 'Falha ao atualizar configurações da empresa');
             }
         }
     };
 
     return (
         <>
-            <HeadTags title="Company Settings" />
+            <HeadTags title="Configurações da empresa" />
             <TopProgressBar loading={loading} />
             <div className="page-header mb-30 px-2">
                 <div className="page-title mb-3">
-                    <h3 className="fs-30">Company Settings</h3>
+                    <h3 className="fs-30">Configurações da empresa</h3>
                 </div>
                 <div className="page-tool d-flex justify-content-between align-items-center">
                     <div className="breadcrumb-wrap">
@@ -138,7 +138,7 @@ const CompanySetting = () => {
                             <ol className="breadcrumb pb-0 mb-0">
                                 <li className="breadcrumb-item"><Link to="/" className="d-flex align-items-center gap-8" ><House />Dashboard</Link></li>
                                 <li className="breadcrumb-item"><ChevronRight /></li>
-                                <li className="breadcrumb-item active" aria-current="page">Settings</li>
+                                <li className="breadcrumb-item active" aria-current="page">Configurações</li>
                             </ol>
                         </nav>
                     </div>
@@ -147,11 +147,11 @@ const CompanySetting = () => {
             <div className="row justify-content-center">
                 <div className="col-lg-10 col-xl-8">
                     <div className="card p-25 mb-5">
-                        <h3 className="fw-600 fs-18 mb-4">Basic Company Settings Information</h3>
+                        <h3 className="fw-600 fs-18 mb-4">Informações básicas sobre a empresa</h3>
                         <form className="form" onSubmit={handleSubmit}>
                             <div className="mb-4">
                                 <label htmlFor="company_name" className="form-label">
-                                    Company Name 
+                                    Nome da empresa 
                                 </label>
                                 <input
                                     type="text"
@@ -168,7 +168,7 @@ const CompanySetting = () => {
                             <div className="mb-4">
                                 <DragDropUpload
                                     ref={favIconRef}
-                                    label="Upload New Fav Icon"
+                                    label="Carregar novo ícone favorito"
                                     accept={['image/jpeg', 'image/jpg', 'image/png']}
                                     required={false}
                                     onChange={(file) => handleFavIconChange(file)}
@@ -177,7 +177,7 @@ const CompanySetting = () => {
                                 {existingFavIcon && (
                                     <div className="mb-3">
                                        <label className="form-label">
-                                          Preview Fav Icon
+                                          Pré-visualizar ícone favorito
                                        </label>
                                         <img
                                             src={existingFavIcon}
@@ -192,7 +192,7 @@ const CompanySetting = () => {
                             <div className="mb-4">
                                 <DragDropUpload
                                     ref={logoRef}
-                                    label="Upload New Logo"
+                                    label="Carregar novo logotipo"
                                     accept={['image/jpeg', 'image/jpg', 'image/png']}
                                     required={false}
                                     onChange={(file) => handleLogoChange(file)}
@@ -201,11 +201,11 @@ const CompanySetting = () => {
                                 {existingLogo && (
                                     <div className="mb-3">
                                       <label className="form-label">
-                                          Preview Logo
+                                          Visualizar logotipo
                                        </label>
                                         <img
                                             src={existingLogo}
-                                            alt="Logo Preview"
+                                            alt="Visualização do logotipo"
                                             style={{ maxWidth: '200px', maxHeight: '100px', objectFit: 'contain' }}
                                             onError={() => setExistingLogo(null)}
                                         />
@@ -215,7 +215,7 @@ const CompanySetting = () => {
                             {/* Copyright Input */}
                             <div className="mb-4">
                                 <label htmlFor="copy_right" className="form-label">
-                                    Copy Right 
+                                    Direitos autorais 
                                 </label>
                                 <input
                                     type="text"
@@ -224,12 +224,12 @@ const CompanySetting = () => {
                                     name="copy_right"
                                     value={formData.copy_right}
                                     onChange={handleInputChange}
-                                    placeholder="© 2025 [Your Company Name]. All Rights Reserved"
+                                    placeholder="© 2025 [Nome da sua empresa]. Todos os direitos reservados"
                                 />
                                 {errors.copy_right && <div className="text-danger small mt-1">{errors.copy_right}</div>}
                             </div>
                             <div className="d-flex gap-20">
-                                <button className="btn-md primary-btn border-0">Submit</button>
+                                <button className="btn-md primary-btn border-0">Enviar</button>
                             </div>
                         </form>
                     </div>

@@ -98,7 +98,7 @@ const Sidebar = ({active, setting, setActive }) => {
                 <div className="search-bar d-flex justify-content-between" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
                     <div className="left-content">
                         <Search />
-                        <span>Search...</span>
+                        <span>Procurando...</span>
                     </div>
                     <div className="right-content">
                         <Command />
@@ -109,13 +109,13 @@ const Sidebar = ({active, setting, setActive }) => {
                     <li className="nav-item">
                         <NavLink to="/" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
                             <div className="icon-wrap"><House /></div>
-                            <span className="text">Dashboard</span>
+                            <span className="text">Painel Geral</span>
                         </NavLink>
                     </li>
                     <li className="nav-item">
                         <a href="#" className={`nav-link ${isWasteSectionActive ? 'active' : ''}`} data-bs-toggle="collapse" data-bs-target="#waste">
                             <div className="icon-wrap"><Recycle /></div>
-                            <span className="text">Waste Collection</span>
+                            <span className="text">Coleta de Resíduo</span>
                             <ChevronRight className="ms-auto arrow align-middle" />
                         </a>
                         <ul className="submenu collapse transition" id="waste">
@@ -124,7 +124,7 @@ const Sidebar = ({active, setting, setActive }) => {
                                     <span className="dot-wrap">
                                         <span className="dot"></span>
                                     </span>
-                                    <span className="submenu-text">Waste List</span>
+                                    <span className="submenu-text">Lista de Resíduos</span>
                                 </NavLink>
                             </li>
                             <li>
@@ -132,7 +132,7 @@ const Sidebar = ({active, setting, setActive }) => {
                                     <span className="dot-wrap">
                                         <span className="dot"></span>
                                     </span>
-                                    <span className="submenu-text">Create Waste</span>
+                                    <span className="submenu-text">Criar Resíduo</span>
                                 </NavLink>
                             </li>
                         </ul>
@@ -140,7 +140,7 @@ const Sidebar = ({active, setting, setActive }) => {
                     <li className="nav-item">
                         <a href="" className={`nav-link ${isBinSectionActive ? 'active' : ''}`} data-bs-toggle="collapse" data-bs-target="#bin">
                             <div className="icon-wrap"><Archive /></div>
-                            <span className="text">Bin Management</span>
+                            <span className="text">Gestão de Lixeiras</span>
                             <ChevronRight className="ms-auto arrow align-middle" />
                         </a>
                         <ul className="submenu collapse transition" id="bin">
@@ -149,7 +149,7 @@ const Sidebar = ({active, setting, setActive }) => {
                                     <span className="dot-wrap">
                                         <span className="dot"></span>
                                     </span>
-                                    <span className="submenu-text">Bin List</span>
+                                    <span className="submenu-text">Lista de Lixeiras</span>
                                 </NavLink>
                             </li>
                             <li>
@@ -157,7 +157,7 @@ const Sidebar = ({active, setting, setActive }) => {
                                     <span className="dot-wrap">
                                         <span className="dot"></span>
                                     </span>
-                                    <span className="submenu-text">Create Bin</span>
+                                    <span className="submenu-text">Criar Lixeira</span>
                                 </NavLink>
                             </li>
                         </ul>
@@ -165,7 +165,7 @@ const Sidebar = ({active, setting, setActive }) => {
                     <li className="nav-item">
                         <a href="" className={`nav-link ${isZoneSectionActive ? 'active' : ''}`} data-bs-toggle="collapse" data-bs-target="#zone">
                             <div className="icon-wrap"><MapPinned /></div>
-                            <span className="text">Zone & Area</span>
+                            <span className="text">Zona & Area</span>
                             <ChevronRight className="ms-auto arrow align-middle" />
                         </a>
                         <ul className="submenu collapse transition" id="zone">
@@ -174,7 +174,7 @@ const Sidebar = ({active, setting, setActive }) => {
                                     <span className="dot-wrap">
                                         <span className="dot"></span>
                                     </span>
-                                    <span className="submenu-text">Zone List</span>
+                                    <span className="submenu-text">Lista de zonas</span>
                                 </NavLink>
                             </li>
                             <li>
@@ -182,7 +182,7 @@ const Sidebar = ({active, setting, setActive }) => {
                                     <span className="dot-wrap">
                                         <span className="dot"></span>
                                     </span>
-                                    <span className="submenu-text">Create Zone</span>
+                                    <span className="submenu-text">Criar Zona</span>
                                 </NavLink>
                             </li>
                         </ul>
@@ -190,7 +190,7 @@ const Sidebar = ({active, setting, setActive }) => {
                     <li className="nav-item">
                         <a href="" className={`nav-link ${isVehicleSectionActive ? 'active' : ''}`} data-bs-toggle="collapse" data-bs-target="#vehicle">
                             <div className="icon-wrap"><Truck /></div>
-                            <span className="text">Vehicle Management</span>
+                            <span className="text">Gestão de Veiculos</span>
                             <ChevronRight className="ms-auto arrow align-middle" />
                         </a>
                         <ul className="submenu collapse transition" id="vehicle">
@@ -199,7 +199,7 @@ const Sidebar = ({active, setting, setActive }) => {
                                     <span className="dot-wrap">
                                         <span className="dot"></span>
                                     </span>
-                                    <span className="submenu-text">Vehicle List</span>
+                                    <span className="submenu-text">Lista de Veículos</span>
                                 </NavLink>
                             </li>
                             <li>
@@ -207,7 +207,7 @@ const Sidebar = ({active, setting, setActive }) => {
                                     <span className="dot-wrap">
                                         <span className="dot"></span>
                                     </span>
-                                    <span className="submenu-text">Create Vehicle</span>
+                                    <span className="submenu-text">Criar Veículo</span>
                                 </NavLink>
                             </li>
                             <li>
@@ -215,7 +215,7 @@ const Sidebar = ({active, setting, setActive }) => {
                                     <span className="dot-wrap">
                                         <span className="dot"></span>
                                     </span>
-                                    <span className="submenu-text">Vehicle Document</span>
+                                    <span className="submenu-text">Documentos do veículo</span>
                                 </NavLink>
                             </li>
                             <li>
@@ -223,7 +223,7 @@ const Sidebar = ({active, setting, setActive }) => {
                                     <span className="dot-wrap">
                                         <span className="dot"></span>
                                     </span>
-                                    <span className="submenu-text">Maintenance Log</span>
+                                    <span className="submenu-text">Log de manutenção</span>
                                 </NavLink>
                             </li>
                         </ul>
@@ -231,7 +231,7 @@ const Sidebar = ({active, setting, setActive }) => {
                     <li className="nav-item">
                         <a href="" className={`nav-link ${isRouteSectionActive ? 'active' : ''}`} data-bs-toggle="collapse" data-bs-target="#route">
                             <div className="icon-wrap"><Route /></div>
-                            <span className="text">Route Management</span>
+                            <span className="text">Gestão de Rotas</span>
                             <ChevronRight className="ms-auto arrow align-middle" />
                         </a>
                         <ul className="submenu collapse transition" id="route">
@@ -240,7 +240,7 @@ const Sidebar = ({active, setting, setActive }) => {
                                     <span className="dot-wrap">
                                         <span className="dot"></span>
                                     </span>
-                                    <span className="submenu-text">Route List</span>
+                                    <span className="submenu-text">Lista de rotas</span>
                                 </NavLink>
                             </li>
                             <li>
@@ -248,7 +248,7 @@ const Sidebar = ({active, setting, setActive }) => {
                                     <span className="dot-wrap">
                                         <span className="dot"></span>
                                     </span>
-                                    <span className="submenu-text">Create Route</span>
+                                    <span className="submenu-text">Criar Rota</span>
                                 </NavLink>
                             </li>
                         </ul>
@@ -256,7 +256,7 @@ const Sidebar = ({active, setting, setActive }) => {
                     <li className="nav-item">
                         <a href="" className={`nav-link ${isStaffSectionActive ? 'active' : ''}`} data-bs-toggle="collapse" data-bs-target="#driver">
                             <div className="icon-wrap"><Users /></div>
-                            <span className="text">Driver & Staff</span>
+                            <span className="text">Motorista e Equipe</span>
                             <ChevronRight className="ms-auto arrow align-middle" />
                         </a>
                         <ul className="submenu collapse transition" id="driver">
@@ -265,7 +265,7 @@ const Sidebar = ({active, setting, setActive }) => {
                                     <span className="dot-wrap">
                                         <span className="dot"></span>
                                     </span>
-                                    <span className="submenu-text">Staff List</span>
+                                    <span className="submenu-text">Lista de equipes</span>
                                 </NavLink>
                             </li>
                             <li>
@@ -273,7 +273,7 @@ const Sidebar = ({active, setting, setActive }) => {
                                     <span className="dot-wrap">
                                         <span className="dot"></span>
                                     </span>
-                                    <span className="submenu-text">Create Staff</span>
+                                    <span className="submenu-text">Criar equipe</span>
                                 </NavLink>
                             </li>
                             <li>
@@ -281,7 +281,7 @@ const Sidebar = ({active, setting, setActive }) => {
                                     <span className="dot-wrap">
                                         <span className="dot"></span>
                                     </span>
-                                    <span className="submenu-text">Assign to Route</span>
+                                    <span className="submenu-text">Atribuir à rota</span>
                                 </NavLink>
                             </li>
                             <li>
@@ -289,7 +289,7 @@ const Sidebar = ({active, setting, setActive }) => {
                                     <span className="dot-wrap">
                                         <span className="dot"></span>
                                     </span>
-                                    <span className="submenu-text">Staff Attendance</span>
+                                    <span className="submenu-text">Presença da equipe</span>
                                 </NavLink>
                             </li>
                             <li>
@@ -297,7 +297,7 @@ const Sidebar = ({active, setting, setActive }) => {
                                     <span className="dot-wrap">
                                         <span className="dot"></span>
                                     </span>
-                                    <span className="submenu-text">Staff Documents</span>
+                                    <span className="submenu-text">Documentos pessoal</span>
                                 </NavLink>
                             </li>
                         </ul>
@@ -306,7 +306,7 @@ const Sidebar = ({active, setting, setActive }) => {
                         <a href="" className={`nav-link ${isWasteTypeSectionActive ? 'active' : ''}`} data-bs-toggle="collapse" data-bs-target="#material">
                             <i className="bi bi-folder2-open icon"></i>
                             <div className="icon-wrap"> <Box /></div>
-                            <span className="text">Waste Types</span>
+                            <span className="text">Tipo de Resíduos</span>
                             <ChevronRight className="ms-auto arrow align-middle" />
                         </a>
                         <ul className="submenu collapse transition" id="material">
@@ -315,7 +315,7 @@ const Sidebar = ({active, setting, setActive }) => {
                                     <span className="dot-wrap">
                                         <span className="dot"></span>
                                     </span>
-                                    <span className="submenu-text">Waste Type List</span>
+                                    <span className="submenu-text">Lista de tipos de resíduos</span>
                                 </NavLink>
                             </li>
                             <li>
@@ -323,7 +323,7 @@ const Sidebar = ({active, setting, setActive }) => {
                                     <span className="dot-wrap">
                                         <span className="dot"></span>
                                     </span>
-                                    <span className="submenu-text">Create Waste Type</span>
+                                    <span className="submenu-text">Criar tipo de resíduo</span>
                                 </NavLink>
                             </li>
                         </ul>
@@ -331,7 +331,7 @@ const Sidebar = ({active, setting, setActive }) => {
                     <li className="nav-item">
                         <a href="" className={`nav-link ${isReportsectionActive ? 'active' : ''}`} data-bs-toggle="collapse" data-bs-target="#reports">
                             <div className="icon-wrap"><ChartLine /></div>
-                            <span className="text">Reports & Analytics</span>
+                            <span className="text">Relatórios e Análises</span>
                             <ChevronRight className="ms-auto arrow align-middle" />
                         </a>
                         <ul className="submenu collapse transition" id="reports">
@@ -340,7 +340,7 @@ const Sidebar = ({active, setting, setActive }) => {
                                     <span className="dot-wrap">
                                         <span className="dot"></span>
                                     </span>
-                                    <span className="submenu-text">Waste Collection Reports</span>
+                                    <span className="submenu-text">Relatórios de coleta de resíduos</span>
                                 </NavLink>
                             </li>
                             <li>
@@ -348,7 +348,7 @@ const Sidebar = ({active, setting, setActive }) => {
                                     <span className="dot-wrap">
                                         <span className="dot"></span>
                                     </span>
-                                    <span className="submenu-text">Waste Type Reports</span>
+                                    <span className="submenu-text">Relatórios de tipos de resíduos</span>
                                 </NavLink>
                             </li>
                             <li>
@@ -356,7 +356,7 @@ const Sidebar = ({active, setting, setActive }) => {
                                     <span className="dot-wrap">
                                         <span className="dot"></span>
                                     </span>
-                                    <span className="submenu-text">Staff Reports</span>
+                                    <span className="submenu-text">Relatórios de equipe</span>
                                 </NavLink>
                             </li>
                             <li>
@@ -364,7 +364,7 @@ const Sidebar = ({active, setting, setActive }) => {
                                     <span className="dot-wrap">
                                         <span className="dot"></span>
                                     </span>
-                                    <span className="submenu-text">Vehicle Reports</span>
+                                    <span className="submenu-text">Relatórios de veículos</span>
                                 </NavLink>
                             </li>
                         </ul>
@@ -373,7 +373,7 @@ const Sidebar = ({active, setting, setActive }) => {
                         <a href="" className={`nav-link ${isSettingSectionActive ? 'active' : ''}`} data-bs-toggle="collapse" data-bs-target="#system">
                             <i className="bi bi-folder2-open icon"></i>
                             <div className="icon-wrap"><Settings /></div>
-                            <span className="text">System Settings</span>
+                            <span className="text">Configurações do Sistema</span>
                             <ChevronRight className="ms-auto arrow align-middle" />
                         </a>
                         <ul className="submenu collapse transition" id="system">
@@ -382,7 +382,7 @@ const Sidebar = ({active, setting, setActive }) => {
                                     <span className="dot-wrap">
                                         <span className="dot"></span>
                                     </span>
-                                    <span className="submenu-text">Company Settings</span>
+                                    <span className="submenu-text">Configurações da empresa</span>
                                 </NavLink>
                             </li>
                             <li>
@@ -390,7 +390,7 @@ const Sidebar = ({active, setting, setActive }) => {
                                     <span className="dot-wrap">
                                         <span className="dot"></span>
                                     </span>
-                                    <span className="submenu-text">SMTP Config</span>
+                                    <span className="submenu-text">Configuração SMTP</span>
                                 </NavLink>
                             </li>
                             <li>
@@ -398,7 +398,7 @@ const Sidebar = ({active, setting, setActive }) => {
                                     <span className="dot-wrap">
                                         <span className="dot"></span>
                                     </span>
-                                    <span className="submenu-text">System Alerts</span>
+                                    <span className="submenu-text">Alertas do Sistema</span>
                                 </NavLink>
                             </li>
                         </ul>

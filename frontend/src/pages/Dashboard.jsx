@@ -44,7 +44,7 @@ const Dashboard = () => {
                     credentials: "include",
                 });
 
-                if (!statsResponse.ok) throw new Error("Failed to fetch dashboard stats");
+                if (!statsResponse.ok) throw new Error("Falha ao obter as estatísticas do painel de controle.");
                 const statsResult = await statsResponse.json();
                 setDashboardStats(statsResult);
 
@@ -59,7 +59,7 @@ const Dashboard = () => {
                     credentials: "include",
                 });
 
-                if (!alertsResponse.ok) throw new Error("Failed to fetch system alerts");
+                if (!alertsResponse.ok) throw new Error("Falha ao obter alertas do sistema");
                 const alertsResult = await alertsResponse.json();
                 setSystemAlerts(alertsResult);
 
@@ -73,7 +73,7 @@ const Dashboard = () => {
                     },
                     credentials: "include",
                 });
-                if (!wastesResponse.ok) throw new Error("Failed to fetch recent wastes");
+                if (!wastesResponse.ok) throw new Error("Não foi possível recolher os resíduos recentes.");
                 const wastesResult = await wastesResponse.json();
                 setRecentWastes(wastesResult);
 
@@ -101,10 +101,10 @@ const Dashboard = () => {
                         sn: index + 1,
                     }))
                 );
-                toast.success(response.message || 'Alert deleted successfully');
+                toast.success(response.message || 'Alerta excluído com sucesso');
                 setDeleteId(null);
             } else {
-                toast.error(response.message || 'Failed to delete alert');
+                toast.error(response.message || 'Falha ao excluir alerta');
             }
         } catch (error) {
             toast.error('Error deleting alert');
@@ -119,14 +119,14 @@ const Dashboard = () => {
 
     return (
         <>
-            <HeadTags title="Dashboard"/>
+            <HeadTags title="Painel Administrativo"/>
             <TopProgressBar loading={loading} />
             <DeleteModal handleDelete={handleDelete} />
             <div className="page-header mb-30 px-2">
                 <div className="page-title mb-3">
                     <div className="page-tool d-flex justify-content-between flex-wrap gap-20 align-items-center">
-                        <h3 className="fs-30">Dashboard</h3>
-                        <Link to="/create-waste" className="primary-btn btn-sm"><CirclePlus />Create Waste</Link>
+                        <h3 className="fs-30">Painel</h3>
+                        <Link to="/create-waste" className="primary-btn btn-sm"><CirclePlus />Gerar Resíduo</Link>
                     </div>
                 </div>
             </div>
@@ -140,11 +140,11 @@ const Dashboard = () => {
                                         <div className="d-flex justify-content-between">
                                             <div className="content">
                                                 <p className="title">
-                                                    Waste Collected
+                                                    Resíduos coletados
                                                 </p>
                                                 <h3>{dashboardStats.waste_collected} <span>KG</span></h3>
                                                 <div className="link">
-                                                    <Link to="/waste-list">view waste</Link>
+                                                    <Link to="/waste-list">ver resíduos</Link>
                                                     <div className="arrow-icon">
                                                         <MoveUpRight />
                                                     </div>
@@ -164,11 +164,11 @@ const Dashboard = () => {
                                         <div className="d-flex justify-content-between">
                                             <div className="content">
                                                 <p className="title">
-                                                    Vehicles Active
+                                                    Veículos ativos
                                                 </p>
-                                                <h3>{dashboardStats.vehicles.active} <span>out of {dashboardStats.vehicles.total}</span></h3>
+                                                <h3>{dashboardStats.vehicles.active} <span> de {dashboardStats.vehicles.total}</span></h3>
                                                 <div className="link">
-                                                    <Link to="/vehicle-list">view vehicles</Link>
+                                                    <Link to="/vehicle-list">ver veículos</Link>
                                                     <div className="arrow-icon">
                                                         <MoveUpRight />
                                                     </div>
@@ -188,11 +188,11 @@ const Dashboard = () => {
                                         <div className="d-flex justify-content-between">
                                             <div className="content">
                                                 <p className="title">
-                                                    Active Bins
+                                                    Caixas ativas
                                                 </p>
                                                 <h3>{dashboardStats.bins.active}</h3>
                                                 <div className="link">
-                                                    <Link to="/bin-list">view bins</Link>
+                                                    <Link to="/bin-list">ver caixas</Link>
                                                     <div className="arrow-icon">
                                                         <MoveUpRight />
                                                     </div>
@@ -221,11 +221,11 @@ const Dashboard = () => {
                                         <div className="d-flex justify-content-between">
                                             <div className="content">
                                                 <p className="title">
-                                                    Active Staff
+                                                    Equipe Ativa
                                                 </p>
-                                                <h3>{dashboardStats.staff.active} <span>out of {dashboardStats.staff.total}</span></h3>
+                                                <h3>{dashboardStats.staff.active} <span> de {dashboardStats.staff.total}</span></h3>
                                                 <div className="link">
-                                                    <Link to="/staff-list">view staffs</Link>
+                                                    <Link to="/staff-list">ver equipes</Link>
                                                     <div className="arrow-icon">
                                                         <MoveUpRight />
                                                     </div>
@@ -248,16 +248,16 @@ const Dashboard = () => {
                         <div className="col-xl-7">
                             <div className="card p-25 h-100">
                                 <div className="card-head d-flex justify-content-between">
-                                    <h3 className="fw-600">Waste Collected per Zone</h3>
+                                    <h3 className="fw-600"> Resíduos Coletados por Zona</h3>
                                     <div className="dropdown-center">
                                         <button className="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                            {timeRange === "year" ? "Last One Year" : timeRange === "6months" ? "Last 6 Months" : timeRange === "3months" ? "Last 3 Months" : "Last 1 Month"}
+                                            {timeRange === "year" ? "Último ano" : timeRange === "6months" ? "Últimos 6 meses" : timeRange === "3months" ? "Últimos 3 meses" : "Último mês"}
                                         </button>
                                         <ul className="dropdown-menu">
-                                            <li className="dropdown-item cursor-pointer" onClick={() => handleTimeRangeChange("year")}>Last One Year</li>
-                                            <li className="dropdown-item cursor-pointer" onClick={() => handleTimeRangeChange("6months")}>Last 6 Months</li>
-                                            <li className="dropdown-item cursor-pointer" onClick={() => handleTimeRangeChange("3months")}>Last 3 Months</li>
-                                            <li className="dropdown-item cursor-pointer" onClick={() => handleTimeRangeChange("1month")}>Last 1 Month</li>
+                                            <li className="dropdown-item cursor-pointer" onClick={() => handleTimeRangeChange("year")}>Último Ano</li>
+                                            <li className="dropdown-item cursor-pointer" onClick={() => handleTimeRangeChange("6months")}>Últimos 6 Meses</li>
+                                            <li className="dropdown-item cursor-pointer" onClick={() => handleTimeRangeChange("3months")}>Últimos 3 Meses</li>
+                                            <li className="dropdown-item cursor-pointer" onClick={() => handleTimeRangeChange("1month")}>Último Mês</li>
                                         </ul>
                                     </div>
                                 </div>
@@ -268,7 +268,7 @@ const Dashboard = () => {
                         </div>
                         <div className="col-xl-5">
                             <div className="card p-25 h-100">
-                                <h3 className="fw-600">Waste Distribution</h3>
+                                <h3 className="fw-600">Distribuição de Resíduos</h3>
                                 <div className="body">
                                     <WasteDistribution />
                                 </div>
@@ -280,16 +280,16 @@ const Dashboard = () => {
                     <div className="row g-4">
                         <div className="col-xl-7">
                             <div className="card p-25 h-100">
-                                <h3 className="fw-600 mb-4">Recent Collections</h3>
+                                <h3 className="fw-600 mb-4">Coletas Recentes</h3>
                                 <SimpleBar forceVisible="x" autoHide={true}>
                                     <div>
                                         <table className="table nowrap w-100">
                                             <thead>
                                                 <tr>
-                                                    <th>Location</th>
-                                                    <th>Waste Type</th>
-                                                    <th>Quantity (KG)</th>
-                                                    <th>Collection Date</th>
+                                                    <th>Localização</th>
+                                                    <th>Tipo de Resíduo</th>
+                                                    <th>Quantidade (KG)</th>
+                                                    <th>Data da Coleta</th>
                                                     <th>Status</th>
                                                 </tr>
                                             </thead>
@@ -301,7 +301,7 @@ const Dashboard = () => {
                                                         <td>{(Number(waste.quantity)).toFixed(2)}</td>
                                                         <td>{ moment(waste.collected_date).format('LL')}</td>
                                                         <td>
-                                                            <span className={`status status-${waste.status === "collected" ? "success" : waste.status === "pending" ? "warning" : "danger"}`}>
+                                                            <span className={`status status-${waste.status === "coletado" ? "successo" : waste.status === "pendente" ? "atenção" : "perigo"}`}>
                                                                 {waste.status.charAt(0).toUpperCase() + waste.status.slice(1)}
                                                             </span>
                                                         </td>
@@ -315,7 +315,7 @@ const Dashboard = () => {
                         </div>
                         <div className="col-xl-5">
                             <div className="card p-25 h-100">
-                                <h3 className="fw-600 mb-4">System Alerts </h3>
+                                <h3 className="fw-600 mb-4">Alerta do Sistema </h3>
                                 {systemAlerts.map((item, index) => (
                                     <div key={index} className={`alert-card ${item.type.toLowerCase()} mb-3`}>
                                         <div className="top-content d-flex align-items-center gap-20 mb-20">

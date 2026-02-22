@@ -84,7 +84,7 @@ const Header = ({ active, setActive }) => {
                 className="dropdown-item d-flex align-items-center gap-10"
               >
                 <UserRoundPen size={20} />
-                Profile Setup
+                Configuração de perfil
               </Link>
             </li>
             <li>
@@ -93,7 +93,7 @@ const Header = ({ active, setActive }) => {
                 className="dropdown-item d-flex align-items-center gap-10"
               >
                 <Settings size={20} />
-                Setting
+                Configuração
               </Link>
             </li>
             <li className="border-top pt-2 mt-2">
@@ -102,7 +102,7 @@ const Header = ({ active, setActive }) => {
                 onClick={handleLogout}
               >
                 <LogOut size={20} />
-                Log Out
+                Sair
               </button>
             </li>
           </ul>

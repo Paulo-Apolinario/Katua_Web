@@ -47,7 +47,7 @@ const ProfileSetup = () => {
             }
 
         } catch (err) {
-            toast.error(err || 'Error fetching data');
+            toast.error(err || 'Erro ao obter dados');
         } finally {
             setLoading(false);
         }
@@ -131,17 +131,17 @@ const ProfileSetup = () => {
                     toast.error('Unauthorized. Please log in again.');
                     navigate('/login');
                 } else {
-                    toast.error(data.message || 'An error occurred. Please try again.');
+                    toast.error(data.message || 'Ocorreu um erro. Tente novamente.');
                 }
                 return;
             }
 
             localStorage.setItem('user', JSON.stringify(data.user));
-            toast.success('Profile updated successfully!');
+            toast.success('Perfil atualizado com sucesso!');
 
         } catch (error) {
-            toast.error('Network error. Please check your connection.');
-            console.error('Profile update error:', error);
+            toast.error('Erro de rede. Verifique sua conexão.');
+            console.error('Erro de atualização do perfil:', error);
         }
     };
 
@@ -177,19 +177,19 @@ const ProfileSetup = () => {
                             : '',
                     });
                 } else if (response.status === 401) {
-                    toast.error('Unauthorized. Please log in again.');
+                    toast.error('Acesso não autorizado. Por favor, faça login novamente.');
                     navigate('/login');
                 } else {
-                    toast.error(data.message || 'An error occurred. Please try again.');
+                    toast.error(data.message || 'Ocorreu um erro. Tente novamente.');
                 }
                 return;
             }
 
-            toast.success('Password updated successfully!');
+            toast.success('Senha atualizada com sucesso!');
             setPasswordData({ current_password: '', password: '', password_confirmation: '' });
         } catch (error) {
-            toast.error('Network error. Please check your connection.');
-            console.error('Password update error:', error);
+            toast.error('Erro de rede. Verifique sua conexão.');
+            console.error('Erro ao atualizar senha:', error);
         } finally {
             setLoadingPassword(false);
         }
@@ -197,18 +197,18 @@ const ProfileSetup = () => {
 
     return (
         <>
-            <HeadTags title="Profile Setup" />
+            <HeadTags title="Configuração de perfil" />
             <TopProgressBar loading={loading} />
             <div className="page-header mb-30 px-2">
                 <div className="page-title mb-3">
-                    <h3 className="fs-30">Profile Setup</h3>
+                    <h3 className="fs-30">Configuração de perfil</h3>
                     <div className="page-tool d-flex justify-content-between flex-wrap gap-20 align-items-center">
                         <div className="breadcrumb-wrap">
                             <nav aria-label="breadcrumb">
                                 <ol className="breadcrumb pb-0 mb-0">
-                                    <li className="breadcrumb-item"><Link to="" className="d-flex align-items-center gap-8" ><House />Dashboard</Link></li>
+                                    <li className="breadcrumb-item"><Link to="" className="d-flex align-items-center gap-8" ><House />Painel</Link></li>
                                     <li className="breadcrumb-item"><ChevronRight /></li>
-                                    <li className="breadcrumb-item active">Profile Setup</li>
+                                    <li className="breadcrumb-item active">Configuração de perfil</li>
                                 </ol>
                             </nav>
                         </div>
@@ -218,7 +218,7 @@ const ProfileSetup = () => {
             <div className="row justify-content-center mb-5 gy-4">
                 <div className="col-lg-10 col-xl-8">
                     <div className="card p-25">
-                        <h3 className="fw-600 fs-18 mb-4">Personal information</h3>
+                        <h3 className="fw-600 fs-18 mb-4">Informações pessoais</h3>
                         <form className="form" onSubmit={handleProfileSubmit}>
                             <div className="profile d-flex align-items-center gap-20 mb-4">
                                 <div>
@@ -239,13 +239,13 @@ const ProfileSetup = () => {
                                         style={{ display: 'none' }}
                                     />
                                     <label htmlFor="imageUpload" className="btn-md outline-btn" >
-                                        <Plus /> Upload Image
+                                        <Plus /> Carregar imagem
                                     </label>
                                 </div>
                             </div>
                             <div className="mb-4">
                                 <label htmlFor="name" className="form-label">
-                                    Full Name <span className="text-danger">*</span>
+                                    Nome completo <span className="text-danger">*</span>
                                 </label>
                                 <input
                                     type="text"
@@ -278,18 +278,18 @@ const ProfileSetup = () => {
                                 )}
                             </div>
                             <div className="d-flex gap-20">
-                                <button className="btn-md primary-btn border-0">Submit</button>
+                                <button className="btn-md primary-btn border-0">Enviar</button>
                             </div>
                         </form>
                     </div>
                 </div>
                 <div className="col-lg-10 col-xl-8">
                     <div className="card p-25">
-                        <h3 className="fw-600 fs-18 mb-4">Change Password</h3>
+                        <h3 className="fw-600 fs-18 mb-4">Alterar a senha</h3>
                         <form className="form" onSubmit={handlePasswordSubmit}>
                             <div className="mb-4">
                                 <label htmlFor="current_password" className="form-label">
-                                    Current Password <span className="text-danger">*</span>
+                                    Senha atual <span className="text-danger">*</span>
                                 </label>
                                 <div className="password-input-container">
                                     <input
@@ -297,7 +297,7 @@ const ProfileSetup = () => {
                                         className="form-control"
                                         id="current_password"
                                         name="current_password"
-                                        placeholder="Enter Current password"
+                                        placeholder="Digite a senha atual"
                                         value={passwordData.current_password}
                                         onChange={handlePasswordChange}
                                         disabled={loadingPassword}
@@ -317,7 +317,7 @@ const ProfileSetup = () => {
                                         className={`password-input form-control ${passwordErrors.password ? 'border-red-500' : ''}`}
                                         id="password"
                                         name="password"
-                                        placeholder="Enter Password"
+                                        placeholder="Digite a senha"
                                         value={passwordData.password}
                                         onChange={handlePasswordChange}
                                         disabled={loadingPassword}
@@ -335,7 +335,7 @@ const ProfileSetup = () => {
                             </div>
                             <div className="form-group">
                                 <label className="form-label" htmlFor="password_confirmation">
-                                    Confirm Password<span className="text-danger">*</span>
+                                    Confirmar Senha<span className="text-danger">*</span>
                                 </label>
                                 <div className="password-input-container">
                                     <input
@@ -343,7 +343,7 @@ const ProfileSetup = () => {
                                         className={`password-input form-control ${passwordErrors.password_confirmation ? 'border-red-500' : ''}`}
                                         id="password_confirmation"
                                         name="password_confirmation"
-                                        placeholder="Enter Confirm Password"
+                                        placeholder="Digite a confirmação da senha"
                                         value={passwordData.password_confirmation}
                                         onChange={handlePasswordChange}
                                         disabled={loadingPassword}
@@ -360,7 +360,7 @@ const ProfileSetup = () => {
                                 )}
                             </div>
                             <div className="d-flex gap-20">
-                                <button className="btn-md primary-btn border-0">Submit</button>
+                                <button className="btn-md primary-btn border-0">Enviar</button>
                             </div>
                         </form>
                     </div>
