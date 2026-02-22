@@ -1,33 +1,33 @@
-# trashsync — Waste Collection Management System
+# Dashbard — Sistema de gerenciamento de coleta de resíduos
 
 Um sistema completo de gestão de resíduos para municípios e operadores privados. Inclui gestão de pessoal e veículos, rotas inteligentes, rastreamento da coleta de resíduos, relatórios e gestão de documentos.
 
-## Features
-- Authentication 
-- Staff management, attendance & documents
-- Vehicle management, maintenance logs & documents
-- Routes, zones, and bin assignments
-- Waste collection tracking and analytics (charts, exports: XLSX/PDF)
-- System settings (SMTP, branding), alerts, and dashboard KPIs
+## Características
+- Autenticação
+- Gestão de pessoal, controle de frequência e documentos
+- Gestão de veículos, registos de manutenção e documentos.
+- Rotas, zonas e atribuições de contêineres
+- Monitoramento e análise da coleta de resíduos (gráficos, exportações: XLSX/PDF)
+- Configurações do sistema (SMTP, personalização da marca), alertas e KPIs do painel de controle.
 
-## Tech Stack
+## Conjunto de tecnologias
 - Backend: Node.js (Express), MySQL, Drizzle ORM, JWT, Multer, Zod
 - Frontend: React (Vite), React Router, ApexCharts, Bootstrap
 
-## Requirements
+## Requirementos
 - Node.js 20+
 - MySQL 8+
 - npm 9+
 
-## Project Structure
+## Estrutura do Projeto
 - `backend/` — REST API (Express + Drizzle + MySQL)
 - `frontend/` — Admin dashboard (React + Vite)
 
-## Installation (Development)
+## Instalação (Desenvolvimento)
 1. Clone/extract the package
 2. Backend: `cd backend && npm install`
 3. Frontend: `cd frontend && npm install`
-4. Copy `backend/env.example` to `backend/.env` and fill values
+4. Copie `backend/env.example` to `backend/.env` preencher valores
 5. Database setup: choose one path
    - option 1: Import `database.sql`, 
    - option 2: Run `npm run db:migrate` & `npm run db:seed`
@@ -35,7 +35,7 @@ Um sistema completo de gestão de resíduos para municípios e operadores privad
    - Backend: `npm run dev` (in `backend/`)
    - Frontend: `npm run dev` (in `frontend/`)
 
-## Environment Variables (Backend)
+## Variáveis ​​de ambiente (backend)
 See `backend/env.example` for full list. Key items:
 - `DB_HOST, DB_USER, DB_PASSWORD, DB_NAME`
 - `JWT_SECRET, JWT_EXPIRES_IN`
@@ -61,26 +61,26 @@ Default admin (example):
 - `npm run build` — production build
 - `npm run preview` — preview production build
 
-## Production Build & Deploy
-1. Frontend: `cd frontend && npm run build` → serves `frontend/dist`
-2. Serve `dist` via any static host or behind Node/NGINX
-3. Backend: set `CORS`/`FRONTEND_URL` to production URL and start `node server.js`
-4. Configure environment, database backups, and SMTP
+## Construção e implantação de produção
+1. Frontend: cd frontend && npm run build→ servefrontend/dist
+2. Sirva distatravés de qualquer host estático ou por trás de Node/NGINX.
+3. Backend: defina CORS/ FRONTEND_URLpara a URL de produção e inicie.node server.js
+4. Configurar ambiente, backups de banco de dados e SMTP.
 
-## API Docs
+## Documentação da API
 - `/documentation/index.html#api-docs`
 
-## Documentation
+## Documentação
 - Extended docs, screenshots, and troubleshooting are available in `/documentation/index.html`.
 
-## Changelog & License
+## Registro de alterações e licença
 - See `CHANGELOG.md`
 - Licensed under MIT (`LICENSE`)
 
-## Support
-For support requests and bug reports, please include environment details (OS, Node, MySQL) and steps to reproduce.
+## Suporte
+Para solicitações de suporte e relatórios de erros, inclua detalhes do ambiente (SO, Node, MySQL) e os passos para reproduzir o problema.
 
-## Third‑party licenses and attributions
+## Licenças e atribuições de terceiros
 - React, React DOM — MIT
 - Vite — MIT
 - React Router — MIT
