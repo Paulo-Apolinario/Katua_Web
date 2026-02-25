@@ -38,6 +38,7 @@ import EditBin from "../pages/bin-management/EditBin";
 import RouteList from "../pages/route-management/RouteList";
 import AddRoute from "../pages/route-management/AddRoute";
 import EditRoute from "../pages/route-management/EditRoute";
+import MtrOnlineStatus from "../pages/route-management/MtrOnlineStatus";
 
 // Staff Management
 import StaffList from "../pages/staff-management/StaffList";
@@ -117,6 +118,7 @@ const Router = () => {
                         <Route path="route-list" element={<RouteList />} />
                         <Route path="create-route" element={<AddRoute />} />
                         <Route path="edit-route/:id" element={<EditRoute />} />
+                        <Route path="mtr-online" element={<MtrOnlineStatus />} />
 
                         {/* Staff Management */}
                         <Route path="staff-list" element={<StaffList />} />
