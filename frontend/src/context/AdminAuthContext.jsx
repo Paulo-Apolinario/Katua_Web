@@ -1,50 +1,98 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from "react";
+import {
+  clearAuthData,
+  getStoredToken,
+  getStoredUser,
+  saveAuthData,
+} from "../services/apiClient";
+import { getMe } from "../services/authService";
 
 const AdminAuthContext = createContext();
 
+const isCooperativeUser = (user) => {
+  return user?.role === "COOPERATIVE";
+};
+
 export const AdminAuthProvider = ({ children }) => {
-  const [admin, setAdmin] = useState(null);
+  const [admin, setAdmin] = useState(() => getStoredUser());
   const [loading, setLoading] = useState(true);
-  const [token, setToken] = useState(localStorage.getItem('auth_token'));
+  const [token, setToken] = useState(() => getStoredToken());
 
   useEffect(() => {
-    if (!token) {
-    setLoading(false);
-    return;
-   }
+    const bootstrapAuth = async () => {
+      if (!token) {
+        clearAuthData();
+        setAdmin(null);
+        setLoading(false);
+        return;
+      }
 
-    fetch(`${import.meta.env.VITE_API_BASE_URL}/api/me`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP error ${res.status}`);
-        return res.json();
-      })
-      .then(setAdmin)
-      .catch((error) => {
-        console.error('Auth error:', error);
-        localStorage.removeItem('auth_token');
+      try {
+        const response = await getMe();
+
+        const user = response?.user || response;
+
+        if (!isCooperativeUser(user)) {
+          clearAuthData();
+          setToken(null);
+          setAdmin(null);
+          return;
+        }
+
+        saveAuthData({
+          token,
+          user,
+        });
+
+        setAdmin(user);
+      } catch (error) {
+        console.error("Auth error:", error);
+        clearAuthData();
         setToken(null);
         setAdmin(null);
-      })
-      .finally(() => setLoading(false));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    bootstrapAuth();
   }, [token]);
 
-  const login = (newToken) => {
-    localStorage.setItem('auth_token', newToken);
+  const login = ({ token: newToken, user }) => {
+    if (!newToken || !user) {
+      throw new Error("Resposta de login inválida.");
+    }
+
+    if (!isCooperativeUser(user)) {
+      throw new Error("Acesso permitido apenas para cooperativas.");
+    }
+
+    saveAuthData({
+      token: newToken,
+      user,
+    });
+
     setToken(newToken);
+    setAdmin(user);
   };
 
   const logout = () => {
-    localStorage.removeItem('auth_token');
+    clearAuthData();
     setToken(null);
     setAdmin(null);
   };
 
   return (
-    <AdminAuthContext.Provider value={{ admin, loading, login, logout }}>
+    <AdminAuthContext.Provider
+      value={{
+        admin,
+        token,
+        loading,
+        login,
+        logout,
+        isAuthenticated: Boolean(admin && token),
+      }}
+    >
       {children}
     </AdminAuthContext.Provider>
   );
@@ -52,6 +100,10 @@ export const AdminAuthProvider = ({ children }) => {
 
 export const useAdminAuth = () => {
   const context = useContext(AdminAuthContext);
-  if (!context) throw new Error('useAdminAuth must be used within an AdminAuthProvider');
+
+  if (!context) {
+    throw new Error("useAdminAuth must be used within an AdminAuthProvider");
+  }
+
   return context;
 };

@@ -1,10 +1,13 @@
 // frontend/src/pages/route-management/MtrOnlineStatus.jsx
 import { useMemo, useState } from "react";
-import { Link } from "react-router";
-import { House, ChevronRight, MapPin, Calendar } from "lucide-react";
+import { Link, useNavigate } from "react-router";
+import { House, ChevronRight, MapPin, Calendar, Plus } from "lucide-react";
 import HeadTags from "../../components/HeadTags";
+import { toast } from "react-hot-toast";
 
 const MtrOnlineStatus = () => {
+  const navigate = useNavigate();
+
   // ✅ filtros (por enquanto tudo client-side)
   const [filters, setFilters] = useState({
     company_id: "",
@@ -20,6 +23,20 @@ const MtrOnlineStatus = () => {
   // ✅ paginação client-side
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  // ✅ abre/fecha formulário MTR Online (CRIAR)
+  const [showMtrForm, setShowMtrForm] = useState(false);
+
+  // ✅ estado do formulário (controlado)
+  const [mtrForm, setMtrForm] = useState({
+    responsavel: "",
+    cargo: "",
+    docType: "PF", // PF | PJ | Email
+    usuario: "",
+    senha: "",
+    codigoUnidade: "",
+    residuosMTR: "1", // 1 | 2 | 3
+  });
 
   // ✅ mock de dados (substituir por API depois)
   const mockData = useMemo(
@@ -52,7 +69,6 @@ const MtrOnlineStatus = () => {
         status: "emitted",
         finished: true,
       },
-      // você pode duplicar mais itens para ver a paginação funcionando
     ],
     []
   );
@@ -100,29 +116,20 @@ const MtrOnlineStatus = () => {
     const q = (filters.q || "").trim().toLowerCase();
 
     return mockData.filter((item) => {
-      // Empresa
       if (filters.company_id && item.company_name !== filters.company_id) return false;
-
-      // Veículo
       if (filters.vehicle_id && item.vehicle_name !== filters.vehicle_id) return false;
-
-      // Motorista
       if (filters.driver_id && item.driver_name !== filters.driver_id) return false;
 
-      // Finalizadas
       if (filters.finished !== "") {
         const wantFinished = filters.finished === "1";
         if (item.finished !== wantFinished) return false;
       }
 
-      // Status
       if (filters.status && item.status !== filters.status) return false;
 
-      // Datas (comparação simples por string ISO)
       if (filters.start_date && item.start_date < filters.start_date) return false;
       if (filters.end_date && item.end_date > filters.end_date) return false;
 
-      // Busca (id, nome, empresa, veículo, motorista)
       if (q) {
         const haystack = `${item.id} ${item.name} ${item.company_name} ${item.vehicle_name} ${item.driver_name}`.toLowerCase();
         if (!haystack.includes(q)) return false;
@@ -146,6 +153,43 @@ const MtrOnlineStatus = () => {
   const goToPage = (page) => {
     if (page < 1 || page > totalPages) return;
     setCurrentPage(page);
+  };
+
+  // ✅ Form handlers
+  const handleMtrFormChange = (e) => {
+    const { name, value } = e.target;
+    setMtrForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const saveMTR = () => {
+    // 🔥 aqui você vai ligar na API depois
+    // Ex: await mtrService.save(mtrForm)
+    console.log("Salvar MTR Online:", mtrForm);
+
+    toast.success("Dados MTR Online salvos (mock).");
+    setShowMtrForm(false);
+  };
+
+  const cancelForm = () => {
+    setShowMtrForm(false);
+    setMtrForm({
+      responsavel: "",
+      cargo: "",
+      docType: "PF",
+      usuario: "",
+      senha: "",
+      codigoUnidade: "",
+      residuosMTR: "1",
+    });
+  };
+
+  const openCreateMtr = () => {
+    setShowMtrForm(true);
+    // opcional: rolar até o form
+    setTimeout(() => {
+      const el = document.getElementById("MTROnlinE");
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
   };
 
   return (
@@ -182,9 +226,11 @@ const MtrOnlineStatus = () => {
             </nav>
           </div>
 
-          <Link to="/route-list" className="btn-sm outline-btn">
-            Voltar para rotas
-          </Link>
+          {/* ✅ BOTÃO TROCAD0: no lugar de "Voltar para rotas" */}
+          <button type="button" className="btn-sm primary-btn border-0" onClick={openCreateMtr}>
+            <Plus size={16} />
+            MTR Online
+          </button>
         </div>
       </div>
 
@@ -196,12 +242,7 @@ const MtrOnlineStatus = () => {
             <div className="row g-3 align-items-end">
               <div className="col-md-3">
                 <label className="form-label">Empresa</label>
-                <select
-                  className="form-select"
-                  name="company_id"
-                  value={filters.company_id}
-                  onChange={handleFilterChange}
-                >
+                <select className="form-select" name="company_id" value={filters.company_id} onChange={handleFilterChange}>
                   <option value="">Todas</option>
                   {companies.map((c) => (
                     <option key={c} value={c}>
@@ -213,12 +254,7 @@ const MtrOnlineStatus = () => {
 
               <div className="col-md-3">
                 <label className="form-label">Veículo</label>
-                <select
-                  className="form-select"
-                  name="vehicle_id"
-                  value={filters.vehicle_id}
-                  onChange={handleFilterChange}
-                >
+                <select className="form-select" name="vehicle_id" value={filters.vehicle_id} onChange={handleFilterChange}>
                   <option value="">Todos</option>
                   {vehicles.map((v) => (
                     <option key={v} value={v}>
@@ -230,12 +266,7 @@ const MtrOnlineStatus = () => {
 
               <div className="col-md-3">
                 <label className="form-label">Motorista</label>
-                <select
-                  className="form-select"
-                  name="driver_id"
-                  value={filters.driver_id}
-                  onChange={handleFilterChange}
-                >
+                <select className="form-select" name="driver_id" value={filters.driver_id} onChange={handleFilterChange}>
                   <option value="">Todos</option>
                   {drivers.map((d) => (
                     <option key={d} value={d}>
@@ -258,12 +289,7 @@ const MtrOnlineStatus = () => {
 
               <div className="col-md-3">
                 <label className="form-label">Rotas finalizadas</label>
-                <select
-                  className="form-select"
-                  name="finished"
-                  value={filters.finished}
-                  onChange={handleFilterChange}
-                >
+                <select className="form-select" name="finished" value={filters.finished} onChange={handleFilterChange}>
                   <option value="">Todas</option>
                   <option value="1">Sim</option>
                   <option value="0">Não</option>
@@ -272,12 +298,7 @@ const MtrOnlineStatus = () => {
 
               <div className="col-md-3">
                 <label className="form-label">Status atual</label>
-                <select
-                  className="form-select"
-                  name="status"
-                  value={filters.status}
-                  onChange={handleFilterChange}
-                >
+                <select className="form-select" name="status" value={filters.status} onChange={handleFilterChange}>
                   <option value="">Todos</option>
                   <option value="pending">Pendente</option>
                   <option value="emitted">Emitido</option>
@@ -288,28 +309,15 @@ const MtrOnlineStatus = () => {
 
               <div className="col-md-3">
                 <label className="form-label">Data de Início</label>
-                <input
-                  type="date"
-                  className="form-control"
-                  name="start_date"
-                  value={filters.start_date}
-                  onChange={handleFilterChange}
-                />
+                <input type="date" className="form-control" name="start_date" value={filters.start_date} onChange={handleFilterChange} />
               </div>
 
               <div className="col-md-3">
                 <label className="form-label">Data de Término</label>
-                <input
-                  type="date"
-                  className="form-control"
-                  name="end_date"
-                  value={filters.end_date}
-                  onChange={handleFilterChange}
-                />
+                <input type="date" className="form-control" name="end_date" value={filters.end_date} onChange={handleFilterChange} />
               </div>
 
               <div className="col-12 d-flex gap-10 mt-2">
-                {/* Aqui o botão FILTRAR é “visual”, porque o filtro já aplica automaticamente */}
                 <button className="btn-md primary-btn border-0" type="button">
                   FILTRAR
                 </button>
@@ -391,7 +399,6 @@ const MtrOnlineStatus = () => {
                         <div className="text-center text-muted small mt-1">{percent}% emitido</div>
                       </div>
 
-                      {/* Botão roxo (calendário/detalhes). Por enquanto aponta pra mesma página */}
                       <Link
                         to="/mtr-online"
                         className="d-flex justify-content-center align-items-center"
@@ -445,6 +452,160 @@ const MtrOnlineStatus = () => {
               </nav>
             </div>
 
+            {/* ✅ FORM MTR ONLINE (aparece ao clicar no botão "MTRonline") */}
+            {showMtrForm && (
+              <>
+                <hr className="my-4" />
+
+                <div className="tab-content" id="MTROnlinE">
+                  <h3 className="fw-700 mb-3">MTR Online</h3>
+
+                  <div className="form-group mb-3">
+                    <label className="form-label" htmlFor="responsavel">
+                      Responsável MTR Online:
+                    </label>
+                    <input
+                      type="text"
+                      id="responsavel"
+                      name="responsavel"
+                      className="form-control"
+                      placeholder="Nome do responsável"
+                      value={mtrForm.responsavel}
+                      onChange={handleMtrFormChange}
+                    />
+                  </div>
+
+                  <div className="form-group mb-3">
+                    <label className="form-label" htmlFor="cargo">
+                      Cargo:
+                    </label>
+                    <input
+                      type="text"
+                      id="cargo"
+                      name="cargo"
+                      className="form-control"
+                      placeholder="Cargo do responsável"
+                      value={mtrForm.cargo}
+                      onChange={handleMtrFormChange}
+                    />
+                  </div>
+
+                  <div className="form-group mb-3">
+                    <label className="form-label">Tipo de Documento:</label>
+                    <div className="d-flex gap-20 flex-wrap">
+                      <label className="d-flex align-items-center gap-8">
+                        <input
+                          type="radio"
+                          name="docType"
+                          value="PF"
+                          checked={mtrForm.docType === "PF"}
+                          onChange={handleMtrFormChange}
+                        />
+                        Pessoa Física
+                      </label>
+
+                      <label className="d-flex align-items-center gap-8">
+                        <input
+                          type="radio"
+                          name="docType"
+                          value="PJ"
+                          checked={mtrForm.docType === "PJ"}
+                          onChange={handleMtrFormChange}
+                        />
+                        Pessoa Jurídica
+                      </label>
+
+                      <label className="d-flex align-items-center gap-8">
+                        <input
+                          type="radio"
+                          name="docType"
+                          value="Email"
+                          checked={mtrForm.docType === "Email"}
+                          onChange={handleMtrFormChange}
+                        />
+                        Email
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="form-group mb-3">
+                    <label className="form-label" htmlFor="usuario">
+                      Usuário:
+                    </label>
+                    <input
+                      type="text"
+                      id="usuario"
+                      name="usuario"
+                      className="form-control"
+                      placeholder="Usuário para acesso"
+                      value={mtrForm.usuario}
+                      onChange={handleMtrFormChange}
+                    />
+                  </div>
+
+                  <div className="form-group mb-3">
+                    <label className="form-label" htmlFor="senha">
+                      Senha MTR Online:
+                    </label>
+                    <input
+                      type="password"
+                      id="senha"
+                      name="senha"
+                      className="form-control"
+                      placeholder="Senha"
+                      value={mtrForm.senha}
+                      onChange={handleMtrFormChange}
+                    />
+                  </div>
+
+                  <div className="form-group mb-3">
+                    <label className="form-label" htmlFor="codigoUnidade">
+                      Código da Unidade:
+                    </label>
+                    <input
+                      type="text"
+                      id="codigoUnidade"
+                      name="codigoUnidade"
+                      className="form-control"
+                      placeholder="Digite o código da unidade"
+                      value={mtrForm.codigoUnidade}
+                      onChange={handleMtrFormChange}
+                    />
+                  </div>
+
+                  <div className="form-group mb-4">
+                    <label className="form-label" htmlFor="residuosMTR">
+                      Resíduos Impressos no MTR:
+                    </label>
+                    <select
+                      id="residuosMTR"
+                      name="residuosMTR"
+                      className="form-control"
+                      value={mtrForm.residuosMTR}
+                      onChange={handleMtrFormChange}
+                    >
+                      <option value="1">1 - Resíduo do Contrato e da Coleta</option>
+                      <option value="2">2 - Resíduos do Contrato</option>
+                      <option value="3">3 - Última Coleta</option>
+                    </select>
+                  </div>
+
+                  <div className="d-flex gap-10 flex-wrap">
+                    <button className="btn-md primary-btn border-0" type="button" onClick={saveMTR}>
+                      Salvar Dados MTR
+                    </button>
+
+                    <button className="btn-md outline-btn" type="button" onClick={cancelForm}>
+                      Cancelar
+                    </button>
+
+                    <button className="btn-md outline-btn" type="button" onClick={() => navigate(-1)}>
+                      Voltar
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>

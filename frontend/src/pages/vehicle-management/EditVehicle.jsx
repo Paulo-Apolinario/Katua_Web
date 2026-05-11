@@ -1,370 +1,385 @@
-import { useState, useEffect } from 'react';
-import { Link, useParams } from 'react-router';
-import { House, ChevronRight, User, Truck, MapPin } from 'lucide-react';
-import toast from 'react-hot-toast';
-import { getVehicleById, updateVehicle } from '../../services/vehicleService';
-import { getAllStaff } from '../../services/staffService';
-import { getAllZones } from '../../services/zoneService';
-import HeadTags from '../../components/HeadTags';
-import TopProgressBar from '../../components/TopProgressBar';
+import { useState, useEffect } from "react";
+import { Link, useParams, useNavigate } from "react-router";
+import { House, ChevronRight, User, Truck } from "lucide-react";
+import toast from "react-hot-toast";
+import { getVehicleById, updateVehicle } from "../../services/vehicleService";
+import HeadTags from "../../components/HeadTags";
+import TopProgressBar from "../../components/TopProgressBar";
+import { apiRequest } from "../../services/apiClient";
+
+const initialFormState = {
+  plate: "",
+  brand: "",
+  model: "",
+  year: "",
+  capacityKg: "",
+  driverId: "",
+  status: "ACTIVE",
+};
+
+const getArray = (response) => {
+  if (Array.isArray(response)) return response;
+  if (Array.isArray(response?.data)) return response.data;
+  if (Array.isArray(response?.drivers)) return response.drivers;
+  if (Array.isArray(response?.items)) return response.items;
+  return [];
+};
+
+const getObject = (response) => {
+  return response?.data || response?.vehicle || response;
+};
 
 const EditVehicle = () => {
   const { id } = useParams();
-  // Initial form state
-  const initialFormState = {
-    vehicle_number: '',
-    vehicle_type: '',
-    model_brand: '',
-    zone_id: '',
-    staff_id: '',
-    capacity_kg: '',
-    fuel_type: 'diesel',
-    fuel_efficiency: '',
-    status: 'active',
-  };
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState(initialFormState);
   const [errors, setErrors] = useState({});
-  const [zones, setZones] = useState([]);
-  const [staff, setStaff] = useState([]);
+  const [drivers, setDrivers] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  // Vehicle type options
-  const vehicleTypes = [
-    'Truck',
-    'Van',
-    'Garbage Collector',
-    'Compactor',
-    'Dumper',
-    'Loader',
-    'Trolley',
-    'Other',
-  ];
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch zones
-        const zoneResponse = await getAllZones();
-        if (zoneResponse.success) {
-          setZones(zoneResponse.data);
-        } else {
-          toast.error('Failed to load zones');
-        }
+        setLoading(true);
 
-        // Fetch staff
-        const staffResponse = await getAllStaff();
-        if (staffResponse.success) {
-          setStaff(staffResponse.data);
-        } else {
-          toast.error('Failed to load staff');
-        }
+        const [driversResponse, vehicleResponse] = await Promise.all([
+          apiRequest("/drivers", { method: "GET" }),
+          getVehicleById(id),
+        ]);
 
-        // Fetch vehicle data
-        const vehicleResponse = await getVehicleById(id);
-        if (vehicleResponse.success) {
-          setFormData({
-            vehicle_number: vehicleResponse.data.vehicle_number || '',
-            vehicle_type: vehicleResponse.data.vehicle_type || '',
-            model_brand: vehicleResponse.data.model_brand || '',
-            zone_id: vehicleResponse.data.zone_id || '',
-            staff_id: vehicleResponse.data.staff_id || '',
-            capacity_kg: vehicleResponse.data.capacity_kg || '',
-            fuel_type: vehicleResponse.data.fuel_type || 'diesel',
-            fuel_efficiency: vehicleResponse.data.fuel_efficiency || '',
-            status: vehicleResponse.data.status || 'active',
-          });
-        } else {
-          toast.error('Failed to load vehicle');
-        }
+        const vehicle = getObject(vehicleResponse);
+
+        setDrivers(getArray(driversResponse));
+
+        setFormData({
+          plate: vehicle?.plate || "",
+          brand: vehicle?.brand || "",
+          model: vehicle?.model || "",
+          year: vehicle?.year || "",
+          capacityKg: vehicle?.capacityKg ?? "",
+          driverId: vehicle?.driverId || "",
+          status: vehicle?.status || "ACTIVE",
+        });
       } catch (error) {
-        toast.error('Error fetching data');
-        console.error('Fetch error:', error);
+        toast.error(error?.message || "Erro ao carregar veículo.");
+        console.error("Fetch vehicle error:", error);
       } finally {
         setLoading(false);
       }
     };
+
     fetchData();
   }, [id]);
 
-  // Handle input changes for controlled inputs
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    setErrors((prev) => ({ ...prev, [name]: '' }));
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+
+    setErrors((prev) => ({
+      ...prev,
+      [name]: "",
+    }));
   };
 
-  // Handle form submission
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!formData.plate.trim()) {
+      newErrors.plate = ["Informe a placa do veículo."];
+    }
+
+    if (!formData.model.trim()) {
+      newErrors.model = ["Informe o modelo do veículo."];
+    }
+
+    if (formData.year && Number(formData.year) < 1900) {
+      newErrors.year = ["Informe um ano válido."];
+    }
+
+    if (formData.capacityKg && Number(formData.capacityKg) < 0) {
+      newErrors.capacityKg = ["A capacidade não pode ser negativa."];
+    }
+
+    setErrors(newErrors);
+
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrors({});
-    
-    // Prepare data for API request
+
+    if (!validateForm()) return;
+
     const dataToSend = {
-      vehicle_number: formData.vehicle_number,
-      vehicle_type: formData.vehicle_type,
-      model_brand: formData.model_brand || null,
-      zone_id: formData.zone_id || null,
-      staff_id: formData.staff_id || null,
-      capacity_kg: formData.capacity_kg || null,
-      fuel_type: formData.fuel_type,
-      fuel_efficiency: formData.fuel_efficiency || null,
+      plate: formData.plate.trim().toUpperCase(),
+      brand: formData.brand.trim() || null,
+      model: formData.model.trim(),
+      year: formData.year ? Number(formData.year) : null,
+      capacityKg: formData.capacityKg ? Number(formData.capacityKg) : 0,
+      driverId: formData.driverId || null,
       status: formData.status,
     };
 
     try {
-      const response = await updateVehicle(id, dataToSend);
-      if (response.success) {
-        toast.success(response.message || 'Vehicle updated successfully');
-        setErrors({});
-      } else {
-        toast.error(response.message || 'Failed to update vehicle');
-        if (response.errors) {
-          setErrors(response.errors);
-        }
-      }
+      setSubmitting(true);
+
+      await updateVehicle(id, dataToSend);
+
+      toast.success("Veículo atualizado com sucesso.");
+      navigate("/vehicle-list");
     } catch (err) {
       if (err?.errors) {
         setErrors(err.errors);
       } else {
-        toast.error(err?.message || 'Failed to create staff');
-        console.log(err.message);
+        toast.error(err?.message || "Erro ao atualizar veículo.");
       }
+
+      console.error("Update vehicle error:", err);
+    } finally {
+      setSubmitting(false);
     }
   };
 
   return (
     <>
-      <HeadTags title="Edit Vehicle" />
+      <HeadTags title="Editar Veículo" />
       <TopProgressBar loading={loading} />
+
       <div className="page-header mb-30 px-2">
         <div className="page-title mb-3">
-          <h3 className="fs-30">Edit Vehicle</h3>
+          <h3 className="fs-30">Editar Veículo</h3>
         </div>
+
         <div className="page-tool d-flex justify-content-between align-items-center">
           <div className="breadcrumb-wrap">
             <nav aria-label="breadcrumb">
               <ol className="breadcrumb pb-0 mb-0">
                 <li className="breadcrumb-item">
                   <Link to="/" className="d-flex align-items-center gap-8">
-                    <House /> Dashboard
+                    <House /> Painel
                   </Link>
                 </li>
+
                 <li className="breadcrumb-item">
                   <ChevronRight />
                 </li>
+
                 <li className="breadcrumb-item">
-                  <Link to="/vehicle-list">Vehicle List</Link>
+                  <Link to="/vehicle-list">Lista de Veículos</Link>
                 </li>
+
                 <li className="breadcrumb-item">
                   <ChevronRight />
                 </li>
+
                 <li className="breadcrumb-item active" aria-current="page">
-                  Edit Vehicle
+                  Editar Veículo
                 </li>
               </ol>
             </nav>
           </div>
         </div>
       </div>
+
       <div className="row justify-content-center mb-4">
         <div className="col-lg-10 col-xl-8">
           <div className="card p-25">
-            <h3 className="fw-600 fs-18 mb-4">Edit Vehicle Information</h3>
+            <h3 className="fw-600 fs-18 mb-4">Informações do Veículo</h3>
+
             <form className="form" onSubmit={handleSubmit}>
               <div className="mb-4">
-                <label htmlFor="vehicle_number" className="form-label">
-                  Vehicle Number <span className="text-danger">*</span>
+                <label htmlFor="plate" className="form-label">
+                  Placa <span className="text-danger">*</span>
                 </label>
+
                 <input
                   type="text"
                   className="form-control"
-                  id="vehicle_number"
-                  name="vehicle_number"
-                  value={formData.vehicle_number}
+                  id="plate"
+                  name="plate"
+                  value={formData.plate}
                   onChange={handleInputChange}
-                  placeholder="(e.g., T-202)"
+                  placeholder="Ex: ABC1D23"
                 />
-                {errors.vehicle_number && <div className="text-danger small mt-1">{errors.vehicle_number[0]}</div>}
+
+                {errors.plate && (
+                  <div className="text-danger small mt-1">{errors.plate[0]}</div>
+                )}
               </div>
+
               <div className="mb-4">
-                <label htmlFor="vehicle_type" className="form-label">
-                  Vehicle Type <span className="text-danger">*</span>
+                <label htmlFor="brand" className="form-label">
+                  Marca
                 </label>
+
+                <input
+                  type="text"
+                  className="form-control"
+                  id="brand"
+                  name="brand"
+                  value={formData.brand}
+                  onChange={handleInputChange}
+                  placeholder="Ex: Mercedes-Benz, Volkswagen, Ford"
+                />
+
+                {errors.brand && (
+                  <div className="text-danger small mt-1">{errors.brand[0]}</div>
+                )}
+              </div>
+
+              <div className="mb-4">
+                <label htmlFor="model" className="form-label">
+                  Modelo <span className="text-danger">*</span>
+                </label>
+
                 <div className="left-inner-addon">
                   <span className="icon">
                     <Truck />
                   </span>
-                  <select
-                    className="form-select"
-                    id="vehicle_type"
-                    name="vehicle_type"
-                    value={formData.vehicle_type}
+
+                  <input
+                    type="text"
+                    className="form-control"
+                    id="model"
+                    name="model"
+                    value={formData.model}
                     onChange={handleInputChange}
-                  >
-                    <option value="" disabled>
-                      Select vehicle type
-                    </option>
-                    {vehicleTypes.map((type) => (
-                      <option key={type} value={type}>
-                        {type}
-                      </option>
-                    ))}
-                  </select>
+                    placeholder="Ex: Sprinter, Delivery, Cargo"
+                  />
                 </div>
-                {errors.vehicle_type && <div className="text-danger small mt-1">{errors.vehicle_type[0]}</div>}
+
+                {errors.model && (
+                  <div className="text-danger small mt-1">{errors.model[0]}</div>
+                )}
               </div>
+
               <div className="mb-4">
-                <label htmlFor="model_brand" className="form-label">
-                  Model & Brand
+                <label htmlFor="year" className="form-label">
+                  Ano
                 </label>
+
                 <input
-                  type="text"
+                  type="number"
                   className="form-control"
-                  id="model_brand"
-                  name="model_brand"
-                  value={formData.model_brand}
+                  id="year"
+                  name="year"
+                  value={formData.year}
                   onChange={handleInputChange}
-                  placeholder="(e.g., Tata Ace, Hino)"
+                  placeholder="Ex: 2024"
                 />
-                {errors.model_brand && <div className="text-danger small mt-1">{errors.model_brand[0]}</div>}
+
+                {errors.year && (
+                  <div className="text-danger small mt-1">{errors.year[0]}</div>
+                )}
               </div>
+
               <div className="mb-4">
-                <label htmlFor="zone_id" className="form-label">
-                  Assigned Zone
+                <label htmlFor="capacityKg" className="form-label">
+                  Capacidade (KG)
                 </label>
-                <div className="left-inner-addon">
-                  <span className="icon">
-                    <MapPin />
-                  </span>
-                  <select
-                    className="form-select"
-                    id="zone_id"
-                    name="zone_id"
-                    value={formData.zone_id}
-                    onChange={handleInputChange}
-                  >
-                    <option value="" disabled>
-                      Select Zone
-                    </option>
-                    {zones.map((zone) => (
-                      <option key={zone.id} value={zone.id}>
-                        {zone.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                {errors.zone_id && <div className="text-danger small mt-1">{errors.zone_id[0]}</div>}
+
+                <input
+                  type="number"
+                  step="0.01"
+                  className="form-control"
+                  id="capacityKg"
+                  name="capacityKg"
+                  value={formData.capacityKg}
+                  onChange={handleInputChange}
+                  placeholder="Ex: 1200"
+                />
+
+                {errors.capacityKg && (
+                  <div className="text-danger small mt-1">
+                    {errors.capacityKg[0]}
+                  </div>
+                )}
               </div>
+
               <div className="mb-4">
-                <label htmlFor="staff_id" className="form-label">
-                  Assigned Driver
+                <label htmlFor="driverId" className="form-label">
+                  Motorista vinculado
                 </label>
+
                 <div className="left-inner-addon">
                   <span className="icon">
                     <User />
                   </span>
+
                   <select
                     className="form-select"
-                    id="staff_id"
-                    name="staff_id"
-                    value={formData.staff_id}
+                    id="driverId"
+                    name="driverId"
+                    value={formData.driverId}
                     onChange={handleInputChange}
                   >
-                    <option value="" disabled>
-                      Select Staff
-                    </option>
-                    {staff.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.name}
+                    <option value="">Nenhum motorista vinculado</option>
+
+                    {drivers.map((driver) => (
+                      <option key={driver.id} value={driver.id}>
+                        {driver.name}
                       </option>
                     ))}
                   </select>
                 </div>
-                {errors.staff_id && <div className="text-danger small mt-1">{errors.staff_id[0]}</div>}
+
+                {errors.driverId && (
+                  <div className="text-danger small mt-1">
+                    {errors.driverId[0]}
+                  </div>
+                )}
               </div>
+
               <div className="mb-4">
-                <label htmlFor="capacity_kg" className="form-label">
-                  Capacity (kg)
-                </label>
-                <input
-                  type="text"
-                  className="form-control"
-                  id="capacity_kg"
-                  name="capacity_kg"
-                  value={formData.capacity_kg}
-                  onChange={handleInputChange}
-                  placeholder="Enter maximum load capacity"
-                />
-                {errors.capacity_kg && <div className="text-danger small mt-1">{errors.capacity_kg[0]}</div>}
-              </div>
-              <div className="mb-4">
-                <label className="form-label">
-                  Fuel Type
-                </label>
-                <div className="d-flex gap-4 align-items-center flex-wrap custom-radio">
-                  {['diesel', 'cng', 'electric'].map((type) => (
-                    <div className="form-check" key={type}>
-                      <input
-                        className="form-check-input"
-                        type="radio"
-                        name="fuel_type"
-                        id={type}
-                        value={type}
-                        checked={formData.fuel_type === type}
-                        onChange={handleInputChange}
-                      />
-                      <label className="form-check-label" htmlFor={type}>
-                        {type.charAt(0).toUpperCase() + type.slice(1)}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-                {errors.fuel_type && <div className="text-danger small mt-1">{errors.fuel_type[0]}</div>}
-              </div>
-              <div className="mb-4">
-                <label htmlFor="fuel_efficiency" className="form-label">
-                  Fuel Efficiency
-                </label>
-                <input
-                  type="text"
-                  className="form-control"
-                  id="fuel_efficiency"
-                  name="fuel_efficiency"
-                  value={formData.fuel_efficiency}
-                  onChange={handleInputChange}
-                  placeholder="e.g., 12.75"
-                />
-                {errors.fuel_efficiency && <div className="text-danger small mt-1">{errors.fuel_efficiency[0]}</div>}
-              </div>
-             <div className="mb-4">
                 <label className="form-label">Status</label>
+
                 <div className="d-flex gap-4 align-items-center flex-wrap custom-radio">
-                  {['active', 'inactive', 'maintenance'].map((status) => (
-                    <div className="form-check" key={status}>
+                  {[
+                    { value: "ACTIVE", label: "Ativo" },
+                    { value: "MAINTENANCE", label: "Manutenção" },
+                    { value: "INACTIVE", label: "Inativo" },
+                  ].map((status) => (
+                    <div className="form-check" key={status.value}>
                       <input
                         className="form-check-input"
                         type="radio"
                         name="status"
-                        id={status}
-                        value={status}
-                        checked={formData.status === status}
+                        id={status.value}
+                        value={status.value}
+                        checked={formData.status === status.value}
                         onChange={handleInputChange}
                       />
-                      <label className="form-check-label" htmlFor={status}>
-                        {status.charAt(0).toUpperCase() + status.slice(1)}
+
+                      <label className="form-check-label" htmlFor={status.value}>
+                        {status.label}
                       </label>
                     </div>
                   ))}
                 </div>
-                {errors.status && <div className="text-danger">{errors.status[0]}</div>}
+
+                {errors.status && (
+                  <div className="text-danger small mt-1">{errors.status[0]}</div>
+                )}
               </div>
+
               <div className="d-flex gap-20">
                 <Link to="/vehicle-list" className="btn-md outline-btn">
-                  Back
+                  Voltar
                 </Link>
-                <button type="submit" className="btn-md primary-btn border-0">
-                  Update
+
+                <button
+                  type="submit"
+                  className="btn-md primary-btn border-0"
+                  disabled={submitting || loading}
+                >
+                  {submitting ? "Atualizando..." : "Atualizar Veículo"}
                 </button>
               </div>
             </form>

@@ -1,103 +1,69 @@
-const ROUTE_API =`${import.meta.env.VITE_API_BASE_URL}/api/routes`;
+import { apiRequest } from "./apiClient";
 
-/**
- * Get all routes
- * GET /api/routes
- */
+const normalizeRoutePayload = (payload = {}) => {
+  const data = {
+    name: payload.name?.trim(),
+    stops: Array.isArray(payload.stops)
+      ? payload.stops.map((item) => item.trim()).filter(Boolean)
+      : [],
+  };
+
+  if (payload.driverId) data.driverId = payload.driverId;
+  if (payload.vehicleId) data.vehicleId = payload.vehicleId;
+  if (payload.description?.trim()) data.description = payload.description.trim();
+  if (payload.scheduledDate?.trim()) data.scheduledDate = payload.scheduledDate.trim();
+  if (payload.status) data.status = payload.status;
+
+  return data;
+};
+
 export const getAllRoutes = async () => {
-  const token = localStorage.getItem('auth_token');
-  const res = await fetch(ROUTE_API, {
-    headers: { 
-      'Authorization': `Bearer ${token}`,
-      'Accept': 'application/json'
-    },
-    credentials: 'include' 
-    });
-  const data = await res.json();
-  if (!res.ok) throw data;
-  return data;
-};
-
-/**
- * Create a new route
- * POST /api/routes
- * @param {object} payload
- */
-export const createRoute = async (payload) => {
-  const token = localStorage.getItem('auth_token');
-  const res = await fetch(ROUTE_API, {
-    method: 'POST',
-    headers: {
-       'Authorization': `Bearer ${token}`,
-       'Content-Type': 'application/json',
-       'Accept': 'application/json'
-     },
-    credentials: 'include',
-    body: JSON.stringify(payload),
+  return apiRequest("/routes", {
+    method: "GET",
   });
-  const data = await res.json();
-  if (!res.ok) throw data;
-  return data;
 };
 
-/**
- * Update an existing route
- * PUT /api/routes/:id
- * @param {number|string} id
- * @param {object} payload
- */
-export const updateRoute = async (id, payload) => {
-  const token = localStorage.getItem('auth_token');
-  const res = await fetch(`${ROUTE_API}/${id}`, {
-    method: 'PUT',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-      'Accept': 'application/json'
-     },
-    credentials: 'include',
-    body: JSON.stringify(payload),
-  });
-  const data = await res.json();
-  if (!res.ok) throw data;
-  return data;
-};
-
-/**
- * Delete a route
- * DELETE /api/routes/:id
- * @param {number|string} id
- */
-export const deleteRoute = async (id) => {
-  const token = localStorage.getItem('auth_token');
-  const res = await fetch(`${ROUTE_API}/${id}`, {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Accept': 'application/json'
-    },
-    method: 'DELETE',
-    credentials: 'include',
-  });
-  const data = await res.json();
-  if (!res.ok) throw data;
-  return data;
-};
-
-/**
- * Get a specific route by ID
- * GET /api/routes/:id
- * @param {number|string} id
- */
 export const getRouteById = async (id) => {
-  const token = localStorage.getItem('auth_token');
-  const res = await fetch(`${ROUTE_API}/${id}`, {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Accept': 'application/json'
-    },
-    credentials: 'include',
+  return apiRequest(`/routes/${id}`, {
+    method: "GET",
   });
-  const data = await res.json();
-  if (!res.ok) throw data;
-  return data;
+};
+
+export const createRoute = async (payload) => {
+  return apiRequest("/routes", {
+    method: "POST",
+    body: JSON.stringify(normalizeRoutePayload(payload)),
+  });
+};
+
+export const updateRoute = async (id, payload) => {
+  return apiRequest(`/routes/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(normalizeRoutePayload(payload)),
+  });
+};
+
+export const updateRouteStatus = async (id, status) => {
+  return apiRequest(`/routes/${id}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  });
+};
+
+export const getAvailableCollections = async () => {
+  return apiRequest("/routes/available-collections", {
+    method: "GET",
+  });
+};
+
+export const addCollectionToRoute = async (routeId, collectionId) => {
+  return apiRequest(`/routes/${routeId}/collections/${collectionId}`, {
+    method: "POST",
+  });
+};
+
+export const removeCollectionFromRoute = async (routeId, collectionId) => {
+  return apiRequest(`/routes/${routeId}/collections/${collectionId}`, {
+    method: "DELETE",
+  });
 };

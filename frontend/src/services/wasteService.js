@@ -1,103 +1,80 @@
-const WASTE_API =`${import.meta.env.VITE_API_BASE_URL}/api/wastes`;
+import { apiRequest } from "./apiClient";
 
-/**
- * Get all waste records
- * GET /api/wastes
- */
+const normalizeMaterials = (materials = []) => {
+  if (!Array.isArray(materials)) return [];
+
+  return materials
+    .map((item) => ({
+      type: String(item.type || "").trim(),
+      quantityKg: Number(item.quantityKg || 0),
+    }))
+    .filter((item) => item.type && item.quantityKg >= 0);
+};
+
 export const getAllWastes = async () => {
-  const token = localStorage.getItem('auth_token');
-  const res = await fetch(WASTE_API, {
-     headers: {
-      'Authorization': `Bearer ${token}`,
-      'Accept': 'application/json'
-    },
-     credentials: 'include' 
-    });
-  const data = await res.json();
-  if (!res.ok) throw data;
-  return data;
-};
-
-/**
- *  Create new waste entry
- * POST /api/wastes
- * @param {object} payload
- */
-export const createWaste = async (payload) => {
-  const token = localStorage.getItem('auth_token');
-  const res = await fetch(WASTE_API, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`, 
-      'Content-Type': 'application/json' ,
-      'Accept': 'application/json'
-    },
-    credentials: 'include',
-    body: JSON.stringify(payload),
+  return apiRequest("/collections", {
+    method: "GET",
   });
-  const data = await res.json();
-  if (!res.ok) throw data;
-  return data;
 };
 
-/**
- * Update waste
- * PUT /api/wastes/:id
- * @param {number|string} id
- * @param {object} payload
- */
-export const updateWaste = async (id, payload) => {
-  const token = localStorage.getItem('auth_token');
-  const res = await fetch(`${WASTE_API}/${id}`, {
-    method: 'PUT',
-    headers: {
-       'Authorization': `Bearer ${token}`,
-       'Content-Type': 'application/json',
-       'Accept': 'application/json'
-       },
-    credentials: 'include',
-    body: JSON.stringify(payload),
-  });
-  const data = await res.json();
-  if (!res.ok) throw data;
-  return data;
-};
-
-/**
- * Delete waste record
- * DELETE /api/wastes/:id
- * @param {number|string} id
- */
-export const deleteWaste = async (id) => {
-  const token = localStorage.getItem('auth_token');
-  const res = await fetch(`${WASTE_API}/${id}`, {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Accept': 'application/json'
-    },
-    method: 'DELETE',
-    credentials: 'include',
-  });
-  const data = await res.json();
-  if (!res.ok) throw data;
-  return data;
-};
-
-/**
- * Get a specific waste by ID
- * GET /api/wastes/:id
- * @param {number|string} id
- */
 export const getWasteById = async (id) => {
-  const token = localStorage.getItem('auth_token');
-  const res = await fetch(`${WASTE_API}/${id}`, {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Accept': 'application/json'
-    },
-    credentials: 'include',
+  return apiRequest(`/collections/${id}`, {
+    method: "GET",
   });
-  const data = await res.json();
-  if (!res.ok) throw data;
-  return data;
+};
+
+export const createWaste = async (payload = {}) => {
+  const data = {
+    scheduleId: payload.scheduleId,
+    collectorId: payload.collectorId,
+  };
+
+  if (payload.driverId) data.driverId = payload.driverId;
+  if (payload.vehicleId) data.vehicleId = payload.vehicleId;
+  if (payload.routeId) data.routeId = payload.routeId;
+  if (payload.collectedAt) data.collectedAt = payload.collectedAt;
+  if (payload.notes?.trim()) data.notes = payload.notes.trim();
+
+  const materials = normalizeMaterials(payload.materials);
+
+  if (materials.length > 0) {
+    data.materials = materials;
+    data.totalWeightKg = materials.reduce(
+      (sum, item) => sum + Number(item.quantityKg || 0),
+      0
+    );
+  }
+
+  return apiRequest("/collections", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+};
+
+export const updateWaste = async (id, payload = {}) => {
+  const data = {
+    status: payload.status,
+  };
+
+  if (payload.collectedAt) data.collectedAt = payload.collectedAt;
+  if (payload.notes?.trim()) data.notes = payload.notes.trim();
+
+  const materials = normalizeMaterials(payload.materials);
+
+  if (materials.length > 0) {
+    data.materials = materials;
+    data.totalWeightKg = materials.reduce(
+      (sum, item) => sum + Number(item.quantityKg || 0),
+      0
+    );
+  }
+
+  return apiRequest(`/collections/${id}/status`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  });
+};
+
+export const deleteWaste = async () => {
+  throw new Error("O backend KATUÁ não possui exclusão de coletas. Use status CANCELLED.");
 };

@@ -1,59 +1,69 @@
+import { apiRequest } from "./apiClient";
+
 /**
- * Login
- * @param {object} credentials { email, password }
+ * Login no backend oficial KATUÁ
+ * POST /auth/login
  */
 export const login = async (credentials) => {
-  const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/login`, {
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-    },
-    credentials: 'include', 
-    body: JSON.stringify(credentials),
+  return apiRequest("/auth/login", {
+    method: "POST",
+    body: JSON.stringify({
+      email: credentials.email?.trim().toLowerCase(),
+      password: credentials.password,
+    }),
   });
-
-  const data = await res.json();
-  if (!res.ok) throw data;
-  return data;
 };
 
 /**
- * Forgot Password (send reset link)
- * @param {object} payload { email }
+ * Buscar usuário autenticado
+ * GET /auth/me
+ */
+export const getMe = async () => {
+  return apiRequest("/auth/me", {
+    method: "GET",
+  });
+};
+
+/**
+ * Solicitar recuperação de senha
+ * POST /auth/forgot-password
  */
 export const forgotPassword = async (payload) => {
-  const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/forgot-password`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json'
-    },
-    credentials: 'include',
-    body: JSON.stringify(payload),
+  return apiRequest("/auth/forgot-password", {
+    method: "POST",
+    body: JSON.stringify({
+      email: payload.email?.trim().toLowerCase(),
+    }),
   });
-
-  const data = await res.json();
-  if (!res.ok) throw data;
-  return data;
 };
 
 /**
- * Reset Password
- * @param {object} payload { email, token, password, password_confirmation }
+ * Redefinir senha
+ * POST /auth/reset-password
  */
 export const resetPassword = async (payload) => {
-  const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/reset-password`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json'
-    },
-    credentials: 'include',
-    body: JSON.stringify(payload),
-  });
+  const temporaryPassword =
+    payload.temporaryPassword || payload.temporary_password || "";
 
-  const data = await res.json();
-  if (!res.ok) throw data;
-  return data;
+  const newPassword = payload.newPassword || payload.password || "";
+
+  const confirmPassword =
+    payload.confirmPassword || payload.password_confirmation || "";
+
+  return apiRequest("/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify({
+      email: payload.email?.trim().toLowerCase(),
+      token: payload.token?.trim(),
+
+      temporaryPassword,
+      temporary_password: temporaryPassword,
+
+      newPassword,
+      password: newPassword,
+
+      confirmPassword,
+      password_confirmation: confirmPassword,
+    }),
+  });
 };

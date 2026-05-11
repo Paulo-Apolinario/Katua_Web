@@ -1,404 +1,544 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router';
-import { House, ChevronRight, Truck, User, Archive, MapPin } from 'lucide-react';
-import toast from 'react-hot-toast';
-import { createWaste } from '../../services/wasteService';
-import { getAllWasteTypes } from '../../services/wasteTypeService';
-import { getAllZones } from '../../services/zoneService';
-import { getAllVehicles } from '../../services/vehicleService';
-import { getAllStaff } from '../../services/staffService';
-import { getAllBins } from '../../services/binService';
-import HeadTags from '../../components/HeadTags';
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router";
+import { House, ChevronRight, Truck, User, Route } from "lucide-react";
+import toast from "react-hot-toast";
+import { createWaste } from "../../services/wasteService";
+import { getAllVehicles } from "../../services/vehicleService";
+import { getAllDrivers } from "../../services/driverService";
+import { getAllRoutes } from "../../services/routeService";
+import { apiRequest } from "../../services/apiClient";
+import HeadTags from "../../components/HeadTags";
+
+const initialFormState = {
+  scheduleId: "",
+  collectorId: "",
+  driverId: "",
+  vehicleId: "",
+  routeId: "",
+  materialType: "",
+  quantityKg: "",
+  notes: "",
+};
+
+const getArray = (response) => {
+  if (Array.isArray(response)) return response;
+  if (Array.isArray(response?.data)) return response.data;
+  if (Array.isArray(response?.items)) return response.items;
+  if (Array.isArray(response?.schedules)) return response.schedules;
+  if (Array.isArray(response?.collectors)) return response.collectors;
+  if (Array.isArray(response?.drivers)) return response.drivers;
+  if (Array.isArray(response?.vehicles)) return response.vehicles;
+  if (Array.isArray(response?.routes)) return response.routes;
+  return [];
+};
+
+const getScheduleLabel = (schedule) => {
+  const generator =
+    schedule.generator?.companyName ||
+    schedule.generator?.name ||
+    schedule.requestedBy?.displayName ||
+    "Solicitante não identificado";
+
+  const date =
+    schedule.scheduledDate ||
+    schedule.preferredDate ||
+    schedule.createdAt;
+
+  const formattedDate = date
+    ? new Date(date).toLocaleDateString("pt-BR")
+    : "sem data";
+
+  return `${generator} • ${formattedDate} • ${schedule.status}`;
+};
 
 const AddWaste = () => {
-    // Initial form state
-    const initialFormState = {
-        collected_date: '',
-        time_slot: '',
-        quantity: '',
-        waste_type_id: '',
-        zone_id: '',
-        vehicle_id: '',
-        staff_id: '',
-        bin_id: '',
-        special_instructions: '',
-        status: 'pending',
+  const navigate = useNavigate();
+
+  const [formData, setFormData] = useState(initialFormState);
+  const [errors, setErrors] = useState({});
+  const [schedules, setSchedules] = useState([]);
+  const [collectors, setCollectors] = useState([]);
+  const [vehicles, setVehicles] = useState([]);
+  const [drivers, setDrivers] = useState([]);
+  const [routes, setRoutes] = useState([]);
+  const [loadingOptions, setLoadingOptions] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    const fetchOptions = async () => {
+      try {
+        setLoadingOptions(true);
+
+        const [
+          scheduleResponse,
+          collectorResponse,
+          vehicleResponse,
+          driverResponse,
+          routeResponse,
+        ] = await Promise.all([
+          apiRequest("/schedules", { method: "GET" }),
+          apiRequest("/collectors", { method: "GET" }),
+          getAllVehicles(),
+          getAllDrivers(),
+          getAllRoutes(),
+        ]);
+
+        const scheduleList = getArray(scheduleResponse).filter((schedule) => {
+          const hasActiveCollection = Array.isArray(schedule.collections)
+            ? schedule.collections.some((collection) =>
+                ["PENDING", "IN_PROGRESS", "COMPLETED"].includes(
+                  collection.status
+                )
+              )
+            : false;
+
+          return (
+            !hasActiveCollection &&
+            !["COMPLETED", "CANCELLED"].includes(schedule.status)
+          );
+        });
+
+        const collectorList = getArray(collectorResponse).filter(
+          (collector) => collector.status === "AVAILABLE"
+        );
+
+        setSchedules(scheduleList);
+        setCollectors(collectorList);
+        setVehicles(getArray(vehicleResponse));
+        setDrivers(getArray(driverResponse));
+        setRoutes(
+          getArray(routeResponse).filter((route) =>
+            ["SCHEDULED", "IN_PROGRESS"].includes(route.status)
+          )
+        );
+      } catch (error) {
+        toast.error(
+          error?.error ||
+            error?.message ||
+            "Erro ao carregar dados para criar coleta."
+        );
+        console.error("Fetch collection options error:", error);
+      } finally {
+        setLoadingOptions(false);
+      }
     };
 
-    // State management
-    const [formData, setFormData] = useState(initialFormState);
-    const [errors, setErrors] = useState({});
-    const [wasteTypes, setWasteTypes] = useState([]);
-    const [zones, setZones] = useState([]);
-    const [vehicles, setVehicles] = useState([]);
-    const [staff, setStaff] = useState([]);
-    const [bins, setBins] = useState([]);
+    fetchOptions();
+  }, []);
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                // Fetch waste types
-                const wasteTypeResponse = await getAllWasteTypes();
-                if (wasteTypeResponse.success) {
-                    setWasteTypes(wasteTypeResponse.data);
-                } else {
-                    toast.error('Failed to load waste types');
-                }
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
 
-                // Fetch zones
-                const zoneResponse = await getAllZones();
-                if (zoneResponse.success) {
-                    setZones(zoneResponse.data);
-                } else {
-                    toast.error('Failed to load zones');
-                }
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
 
-                // Fetch vehicles
-                const vehicleResponse = await getAllVehicles();
-                if (vehicleResponse.success) {
-                    setVehicles(vehicleResponse.data);
-                } else {
-                    toast.error('Failed to load vehicles');
-                }
+    setErrors((prev) => ({
+      ...prev,
+      [name]: "",
+    }));
+  };
 
-                // Fetch staff
-                const staffResponse = await getAllStaff();
-                if (staffResponse.success) {
-                    setStaff(staffResponse.data);
-                } else {
-                    toast.error('Failed to load staff');
-                }
+  const validateForm = () => {
+    const newErrors = {};
 
-                // Fetch bins
-                const binResponse = await getAllBins();
-                if (binResponse.success) {
-                    setBins(binResponse.data);
-                } else {
-                    toast.error('Failed to load bins');
-                }
-            } catch (error) {
-                toast.error('Error fetching data');
-                console.error('Fetch error:', error);
-            }
-        };
-        fetchData();
-    }, []);
+    if (!formData.scheduleId) {
+      newErrors.scheduleId = ["Selecione um agendamento."];
+    }
 
-    // Handle input changes
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setFormData((prev) => ({ ...prev, [name]: value }));
-        setErrors((prev) => ({ ...prev, [name]: '' }));
+    if (!formData.collectorId) {
+      newErrors.collectorId = ["Selecione um catador."];
+    }
+
+    if (
+      formData.quantityKg &&
+      Number(formData.quantityKg) < 0
+    ) {
+      newErrors.quantityKg = ["A quantidade não pode ser negativa."];
+    }
+
+    if (
+      formData.materialType.trim() &&
+      !formData.quantityKg
+    ) {
+      newErrors.quantityKg = ["Informe a quantidade do material."];
+    }
+
+    if (
+      formData.quantityKg &&
+      !formData.materialType.trim()
+    ) {
+      newErrors.materialType = ["Informe o tipo de material."];
+    }
+
+    setErrors(newErrors);
+
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setErrors({});
+
+    if (!validateForm()) return;
+
+    const dataToSend = {
+      scheduleId: formData.scheduleId,
+      collectorId: formData.collectorId,
     };
 
-    // Handle form submission
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setErrors({});
+    if (formData.driverId) dataToSend.driverId = formData.driverId;
+    if (formData.vehicleId) dataToSend.vehicleId = formData.vehicleId;
+    if (formData.routeId) dataToSend.routeId = formData.routeId;
+    if (formData.notes.trim()) dataToSend.notes = formData.notes.trim();
 
-        // Prepare data for API request
-        const dataToSend = {
-            collected_date: formData.collected_date || null,
-            time_slot: formData.time_slot || null,
-            quantity: formData.quantity || null,
-            waste_type_id: formData.waste_type_id || null,
-            zone_id: formData.zone_id || null,
-            vehicle_id: formData.vehicle_id || null,
-            staff_id: formData.staff_id || null,
-            bin_id: formData.bin_id || null,
-            special_instructions: formData.special_instructions || null,
-            status: formData.status,
-        };
+    if (formData.materialType.trim() && formData.quantityKg) {
+      dataToSend.materials = [
+        {
+          type: formData.materialType.trim(),
+          quantityKg: Number(formData.quantityKg),
+        },
+      ];
+    }
 
-        try {
-            const response = await createWaste(dataToSend);
-            if (response.success) {
-                toast.success(response.message || 'Waste record created successfully');
-                setFormData(initialFormState);
-                setErrors({});
-            } else {
-                toast.error(response.message || 'Failed to create waste record');
-                if (response.errors) {
-                    setErrors(response.errors);
-                }
-            }
-        } catch (err) {
-            if (err?.errors) {
-                setErrors(err.errors);
-            } else {
-                toast.error(err?.message || 'Failed to create waste record');
-                console.error('Error:', err.message);
-            }
-        }
-    };
+    try {
+      setSubmitting(true);
 
-    return (
-        <>
-          <HeadTags title="Create Waste" />
-            <div className="page-header mb-30 px-2">
-                <div className="page-title mb-3">
-                    <h3 className="fs-30">Create Waste</h3>
+      await createWaste(dataToSend);
+
+      toast.success("Coleta criada com sucesso.");
+      setFormData(initialFormState);
+      navigate("/waste-list");
+    } catch (err) {
+      console.error("Create collection error:", err);
+
+      if (err?.errors) {
+        setErrors(err.errors);
+      }
+
+      toast.error(
+        err?.error ||
+          err?.message ||
+          "Erro ao criar coleta. Verifique os dados e tente novamente."
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <>
+      <HeadTags title="Criar Coleta" />
+
+      <div className="page-header mb-30 px-2">
+        <div className="page-title mb-3">
+          <h3 className="fs-30">Criar Coleta</h3>
+        </div>
+
+        <div className="page-tool d-flex justify-content-between align-items-center">
+          <div className="breadcrumb-wrap">
+            <nav aria-label="breadcrumb">
+              <ol className="breadcrumb pb-0 mb-0">
+                <li className="breadcrumb-item">
+                  <Link to="/" className="d-flex align-items-center gap-8">
+                    <House /> Painel
+                  </Link>
+                </li>
+
+                <li className="breadcrumb-item">
+                  <ChevronRight />
+                </li>
+
+                <li className="breadcrumb-item">
+                  <Link to="/waste-list">Lista de Coletas</Link>
+                </li>
+
+                <li className="breadcrumb-item">
+                  <ChevronRight />
+                </li>
+
+                <li className="breadcrumb-item active" aria-current="page">
+                  Nova Coleta
+                </li>
+              </ol>
+            </nav>
+          </div>
+        </div>
+      </div>
+
+      <div className="row justify-content-center mb-4">
+        <div className="col-lg-10 col-xl-8">
+          <div className="card p-25">
+            <h3 className="fw-600 fs-18 mb-4">
+              Delegar coleta operacional
+            </h3>
+
+            <form className="form" onSubmit={handleSubmit}>
+              <div className="mb-4">
+                <label htmlFor="scheduleId" className="form-label">
+                  Agendamento <span className="text-danger">*</span>
+                </label>
+
+                <select
+                  className="form-select"
+                  id="scheduleId"
+                  name="scheduleId"
+                  value={formData.scheduleId}
+                  onChange={handleInputChange}
+                  disabled={loadingOptions}
+                >
+                  <option value="">
+                    {loadingOptions
+                      ? "Carregando agendamentos..."
+                      : "Selecione um agendamento disponível"}
+                  </option>
+
+                  {schedules.map((schedule) => (
+                    <option key={schedule.id} value={schedule.id}>
+                      {getScheduleLabel(schedule)}
+                    </option>
+                  ))}
+                </select>
+
+                {errors.scheduleId && (
+                  <div className="text-danger small mt-1">
+                    {errors.scheduleId[0]}
+                  </div>
+                )}
+              </div>
+
+              <div className="mb-4">
+                <label htmlFor="collectorId" className="form-label">
+                  Catador <span className="text-danger">*</span>
+                </label>
+
+                <div className="left-inner-addon">
+                  <span className="icon">
+                    <User />
+                  </span>
+
+                  <select
+                    className="form-select"
+                    id="collectorId"
+                    name="collectorId"
+                    value={formData.collectorId}
+                    onChange={handleInputChange}
+                    disabled={loadingOptions}
+                  >
+                    <option value="">
+                      {loadingOptions
+                        ? "Carregando catadores..."
+                        : "Selecione um catador disponível"}
+                    </option>
+
+                    {collectors.map((collector) => (
+                      <option key={collector.id} value={collector.id}>
+                        {collector.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-                <div className="page-tool d-flex justify-content-between align-items-center">
-                    <div className="breadcrumb-wrap">
-                        <nav aria-label="breadcrumb">
-                            <ol className="breadcrumb pb-0 mb-0">
-                                <li className="breadcrumb-item">
-                                    <Link to="/" className="d-flex align-items-center gap-8">
-                                        <House /> Dashboard
-                                    </Link>
-                                </li>
-                                <li className="breadcrumb-item">
-                                    <ChevronRight />
-                                </li>
-                                <li className="breadcrumb-item">
-                                    <Link to="/waste-list">Waste List</Link>
-                                </li>
-                                <li className="breadcrumb-item">
-                                    <ChevronRight />
-                                </li>
-                                <li className="breadcrumb-item active" aria-current="page">
-                                    Create New
-                                </li>
-                            </ol>
-                        </nav>
-                    </div>
+
+                {errors.collectorId && (
+                  <div className="text-danger small mt-1">
+                    {errors.collectorId[0]}
+                  </div>
+                )}
+              </div>
+
+              <div className="mb-4">
+                <label htmlFor="driverId" className="form-label">
+                  Motorista
+                </label>
+
+                <div className="left-inner-addon">
+                  <span className="icon">
+                    <User />
+                  </span>
+
+                  <select
+                    className="form-select"
+                    id="driverId"
+                    name="driverId"
+                    value={formData.driverId}
+                    onChange={handleInputChange}
+                    disabled={loadingOptions}
+                  >
+                    <option value="">Nenhum motorista vinculado</option>
+
+                    {drivers.map((driver) => (
+                      <option key={driver.id} value={driver.id}>
+                        {driver.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-            </div>
-            <div className="row justify-content-center mb-4">
-                <div className="col-lg-10 col-xl-8">
-                    <div className="card p-25">
-                        <h3 className="fw-600 fs-18 mb-4">Basic Waste Information</h3>
-                        <form className="form" onSubmit={handleSubmit}>
-                            <div className="mb-4">
-                                <label htmlFor="collected_date" className="form-label">
-                                    Collection Date <span className="text-danger">*</span>
-                                </label>
-                                <input
-                                    type="date"
-                                    className="form-control"
-                                    id="collected_date"
-                                    name="collected_date"
-                                    value={formData.collected_date}
-                                    onChange={handleInputChange}
-                                />
-                                {errors.collected_date && (
-                                    <div className="text-danger small mt-1">{errors.collected_date[0]}</div>
-                                )}
-                            </div>
-                            <div className="mb-4">
-                                <label htmlFor="time_slot" className="form-label">
-                                    Time Slot
-                                </label>
-                                <input
-                                    type="text"
-                                    className="form-control"
-                                    id="time_slot"
-                                    name="time_slot"
-                                    value={formData.time_slot}
-                                    onChange={handleInputChange}
-                                    placeholder="e.g., 10:00 AM - 12:00 PM"
-                                />
-                                {errors.time_slot && (
-                                    <div className="text-danger small mt-1">{errors.time_slot[0]}</div>
-                                )}
-                            </div>
-                            <div className="mb-4">
-                                <label htmlFor="quantity" className="form-label">
-                                    Quantity (KG) <span className="text-danger">*</span>
-                                </label>
-                                <input
-                                    type="number"
-                                    className="form-control"
-                                    id="quantity"
-                                    name="quantity"
-                                    value={formData.quantity}
-                                    onChange={handleInputChange}
-                                    placeholder="Enter quantity in kilograms"
-                                    step="0.01"
-                                />
-                                {errors.quantity && (
-                                    <div className="text-danger small mt-1">{errors.quantity[0]}</div>
-                                )}
-                            </div>
-                            <div className="mb-4">
-                                <label htmlFor="waste_type_id" className="form-label">
-                                    Waste Type <span className="text-danger">*</span>
-                                </label>
-                                    <select
-                                        className="form-select"
-                                        id="waste_type_id"
-                                        name="waste_type_id"
-                                        value={formData.waste_type_id}
-                                        onChange={handleInputChange}
-                                    >
-                                        <option value="" disabled>Select waste type</option>
-                                        {wasteTypes.map((type) => (
-                                            <option key={type.id} value={type.id}>
-                                                {type.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                {errors.waste_type_id && (
-                                    <div className="text-danger small mt-1">{errors.waste_type_id[0]}</div>
-                                )}
-                            </div>
-                            <div className="mb-4">
-                                <label htmlFor="zone_id" className="form-label">
-                                    Zone
-                                </label>
-                                <div className="left-inner-addon">
-                                    <span className="icon"><MapPin /></span>
-                                    <select
-                                        className="form-select"
-                                        id="zone_id"
-                                        name="zone_id"
-                                        value={formData.zone_id}
-                                        onChange={handleInputChange}
-                                    >
-                                        <option value="" disabled>Select zone</option>
-                                        {zones.map((zone) => (
-                                            <option key={zone.id} value={zone.id}>
-                                                {zone.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                                {errors.zone_id && (
-                                    <div className="text-danger small mt-1">{errors.zone_id[0]}</div>
-                                )}
-                            </div>
-                            <div className="mb-4">
-                                <label htmlFor="vehicle_id" className="form-label">
-                                    Vehicle
-                                </label>
-                                <div className="left-inner-addon">
-                                    <span className="icon"><Truck /></span>
-                                    <select
-                                        className="form-select"
-                                        id="vehicle_id"
-                                        name="vehicle_id"
-                                        value={formData.vehicle_id}
-                                        onChange={handleInputChange}
-                                    >
-                                        <option value="" disabled>Select vehicle</option>
-                                        {vehicles.map((vehicle) => (
-                                            <option key={vehicle.id} value={vehicle.id}>
-                                                {vehicle.vehicle_number}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                                {errors.vehicle_id && (
-                                    <div className="text-danger small mt-1">{errors.vehicle_id[0]}</div>
-                                )}
-                            </div>
-                            <div className="mb-4">
-                                <label htmlFor="staff_id" className="form-label">
-                                    Staff
-                                </label>
-                                <div className="left-inner-addon">
-                                    <span className="icon"><User /></span>
-                                    <select
-                                        className="form-select"
-                                        id="staff_id"
-                                        name="staff_id"
-                                        value={formData.staff_id}
-                                        onChange={handleInputChange}
-                                    >
-                                        <option value="" disabled>Select staff</option>
-                                        {staff.map((s) => (
-                                            <option key={s.id} value={s.id}>
-                                                {s.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                                {errors.staff_id && (
-                                    <div className="text-danger small mt-1">{errors.staff_id[0]}</div>
-                                )}
-                            </div>
-                            <div className="mb-4">
-                                <label htmlFor="bin_id" className="form-label">
-                                    Bin
-                                </label>
-                                <div className="left-inner-addon">
-                                    <span className="icon"> <Archive /></span>
-                                    <select
-                                        className="form-select"
-                                        id="bin_id"
-                                        name="bin_id"
-                                        value={formData.bin_id}
-                                        onChange={handleInputChange}
-                                    >
-                                        <option value="" disabled>Select bin</option>
-                                        {bins.map((bin) => (
-                                            <option key={bin.id} value={bin.id}>
-                                                {bin.bin_id}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                                {errors.bin_id && (
-                                    <div className="text-danger small mt-1">{errors.bin_id[0]}</div>
-                                )}
-                            </div>
-                            <div className="mb-4">
-                                <label htmlFor="special_instructions" className="form-label">
-                                    Special Instructions
-                                </label>
-                                <textarea
-                                    className={`form-control textarea ${errors.special_instructions ? 'is-invalid' : ''}`}
-                                    id="special_instructions"
-                                    name="special_instructions"
-                                    value={formData.special_instructions}
-                                    onChange={handleInputChange}
-                                    placeholder="Enter any special instructions or requirements"
-                                ></textarea>
-                                {errors.special_instructions && (
-                                    <div className="invalid-feedback">{errors.special_instructions[0]}</div>
-                                )}
-                            </div>
-                            <div className="mb-4">
-                                <label className="form-label">
-                                    Status <span className="text-danger">*</span>
-                                </label>
-                                <div className="d-flex gap-4 align-items-center flex-wrap custom-radio">
-                                    {['pending', 'collected', 'cancelled'].map((status) => (
-                                        <div className="form-check" key={status}>
-                                            <input
-                                                className="form-check-input"
-                                                type="radio"
-                                                name="status"
-                                                id={`status_${status}`}
-                                                value={status}
-                                                checked={formData.status === status}
-                                                onChange={handleInputChange}
-                                            />
-                                            <label className="form-check-label" htmlFor={`status_${status}`}>
-                                                {status.charAt(0).toUpperCase() + status.slice(1)}
-                                            </label>
-                                        </div>
-                                    ))}
-                                </div>
-                                {errors.status && (
-                                    <div className="text-danger">{errors.status[0]}</div>
-                                )}
-                            </div>
-                            <div className="d-flex gap-20">
-                                <Link to="/waste-list" className="btn-md outline-btn">
-                                    Back
-                                </Link>
-                                <button type="submit" className="btn-md primary-btn border-0">
-                                    Submit
-                                </button>
-                            </div>
-                        </form>
-                    </div>
+
+                {errors.driverId && (
+                  <div className="text-danger small mt-1">
+                    {errors.driverId[0]}
+                  </div>
+                )}
+              </div>
+
+              <div className="mb-4">
+                <label htmlFor="vehicleId" className="form-label">
+                  Veículo
+                </label>
+
+                <div className="left-inner-addon">
+                  <span className="icon">
+                    <Truck />
+                  </span>
+
+                  <select
+                    className="form-select"
+                    id="vehicleId"
+                    name="vehicleId"
+                    value={formData.vehicleId}
+                    onChange={handleInputChange}
+                    disabled={loadingOptions}
+                  >
+                    <option value="">Nenhum veículo vinculado</option>
+
+                    {vehicles.map((vehicle) => (
+                      <option key={vehicle.id} value={vehicle.id}>
+                        {vehicle.plate} -{" "}
+                        {vehicle.brand ? `${vehicle.brand} ` : ""}
+                        {vehicle.model}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-            </div>
-        </>
-    );
+
+                {errors.vehicleId && (
+                  <div className="text-danger small mt-1">
+                    {errors.vehicleId[0]}
+                  </div>
+                )}
+              </div>
+
+              <div className="mb-4">
+                <label htmlFor="routeId" className="form-label">
+                  Rota
+                </label>
+
+                <div className="left-inner-addon">
+                  <span className="icon">
+                    <Route />
+                  </span>
+
+                  <select
+                    className="form-select"
+                    id="routeId"
+                    name="routeId"
+                    value={formData.routeId}
+                    onChange={handleInputChange}
+                    disabled={loadingOptions}
+                  >
+                    <option value="">Nenhuma rota vinculada</option>
+
+                    {routes.map((route) => (
+                      <option key={route.id} value={route.id}>
+                        {route.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {errors.routeId && (
+                  <div className="text-danger small mt-1">
+                    {errors.routeId[0]}
+                  </div>
+                )}
+              </div>
+
+              <div className="mb-4">
+                <label htmlFor="materialType" className="form-label">
+                  Tipo de material
+                </label>
+
+                <input
+                  type="text"
+                  className="form-control"
+                  id="materialType"
+                  name="materialType"
+                  value={formData.materialType}
+                  onChange={handleInputChange}
+                  placeholder="Ex: Plástico, Papelão, Vidro"
+                />
+
+                {errors.materialType && (
+                  <div className="text-danger small mt-1">
+                    {errors.materialType[0]}
+                  </div>
+                )}
+              </div>
+
+              <div className="mb-4">
+                <label htmlFor="quantityKg" className="form-label">
+                  Quantidade estimada (KG)
+                </label>
+
+                <input
+                  type="number"
+                  className="form-control"
+                  id="quantityKg"
+                  name="quantityKg"
+                  value={formData.quantityKg}
+                  onChange={handleInputChange}
+                  placeholder="Ex: 25"
+                  step="0.01"
+                />
+
+                {errors.quantityKg && (
+                  <div className="text-danger small mt-1">
+                    {errors.quantityKg[0]}
+                  </div>
+                )}
+              </div>
+
+              <div className="mb-4">
+                <label htmlFor="notes" className="form-label">
+                  Observações
+                </label>
+
+                <textarea
+                  className="form-control textarea"
+                  id="notes"
+                  name="notes"
+                  value={formData.notes}
+                  onChange={handleInputChange}
+                  placeholder="Observações para a execução da coleta"
+                />
+
+                {errors.notes && (
+                  <div className="text-danger small mt-1">
+                    {errors.notes[0]}
+                  </div>
+                )}
+              </div>
+
+              <div className="d-flex gap-20">
+                <Link to="/waste-list" className="btn-md outline-btn">
+                  Voltar
+                </Link>
+
+                <button
+                  type="submit"
+                  className="btn-md primary-btn border-0"
+                  disabled={submitting || loadingOptions}
+                >
+                  {submitting ? "Salvando..." : "Salvar Coleta"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </>
+  );
 };
 
 export default AddWaste;
