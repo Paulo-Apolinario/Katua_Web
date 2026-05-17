@@ -27,11 +27,13 @@ import {
   YAxis,
 } from "recharts";
 import toast from "react-hot-toast";
+
 import HeadTags from "../../components/HeadTags";
 import TopProgressBar from "../../components/TopProgressBar";
 import DataTable from "../../components/DataTable";
 import { exportToExcel } from "../../utils/exportExcel";
 import { exportToPdf } from "../../utils/exportPdf";
+import { getAllWasteTypes } from "../../services/wasteTypeService";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -40,6 +42,11 @@ const LOT_STATUS_LABELS = {
   RESERVED: "Reservado",
   SOLD: "Vendido",
   DISCARDED: "Descartado",
+};
+
+const ITEM_STATUS_LABELS = {
+  ACTIVE: "Ativo",
+  INACTIVE: "Inativo",
 };
 
 const STAGE_LABELS = {
@@ -51,28 +58,24 @@ const STAGE_LABELS = {
   DESTINADO: "Destinado",
 };
 
-const STATUS_COLORS = {
-  AVAILABLE: "#1A7E00",
-  RESERVED: "#2563EB",
-  SOLD: "#64B000",
-  DISCARDED: "#DC2626",
+const SOURCE_LABELS = {
+  STOCK: "Estoque",
+  COLLECTION: "Coletas",
+  BOTH: "Estoque + Coletas",
 };
+
+const CHART_COLORS = [
+  "#1A7E00",
+  "#64B000",
+  "#2563EB",
+  "#F59E0B",
+  "#DC2626",
+  "#0F766E",
+  "#16A34A",
+  "#84CC16",
+];
 
 const getToken = () => localStorage.getItem("auth_token");
-
-const normalizeArrayResponse = (payload, possibleKeys = []) => {
-  if (Array.isArray(payload)) return payload;
-
-  for (const key of possibleKeys) {
-    if (Array.isArray(payload?.[key])) return payload[key];
-  }
-
-  if (Array.isArray(payload?.data)) return payload.data;
-  if (Array.isArray(payload?.items)) return payload.items;
-  if (Array.isArray(payload?.results)) return payload.results;
-
-  return [];
-};
 
 const fetchJson = async (endpoint) => {
   const token = getToken();
@@ -90,10 +93,23 @@ const fetchJson = async (endpoint) => {
   const payload = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    throw new Error(payload?.message || payload?.error || "Erro ao buscar dados.");
+    throw new Error(
+      payload?.message || payload?.error || "Erro ao buscar dados."
+    );
   }
 
   return payload;
+};
+
+const getArray = (response) => {
+  if (Array.isArray(response)) return response;
+  if (Array.isArray(response?.stock)) return response.stock;
+  if (Array.isArray(response?.collections)) return response.collections;
+  if (Array.isArray(response?.items)) return response.items;
+  if (Array.isArray(response?.data)) return response.data;
+  if (Array.isArray(response?.results)) return response.results;
+
+  return [];
 };
 
 const formatKg = (value) => {
@@ -115,7 +131,14 @@ const safeDate = (value) => {
   return date.toLocaleDateString("pt-BR");
 };
 
-const getMaterialEntries = (materials) => {
+const getLotsTotalKg = (lots = []) => {
+  return lots.reduce((sum, lot) => {
+    if (lot?.status === "DISCARDED") return sum;
+    return sum + Number(lot?.quantityKg || 0);
+  }, 0);
+};
+
+const normalizeMaterials = (materials) => {
   if (!materials) return [];
 
   if (Array.isArray(materials)) return materials;
@@ -132,33 +155,98 @@ const getMaterialEntries = (materials) => {
   return [];
 };
 
-const getMaterialName = (material) =>
-  material.type ||
-  material.name ||
-  material.materialName ||
-  material.category ||
-  "Material";
+const getMaterialName = (material) => {
+  return (
+    material?.type ||
+    material?.name ||
+    material?.materialName ||
+    material?.category ||
+    "Material"
+  );
+};
 
-const getMaterialQuantity = (material) =>
-  Number(material.quantityKg || material.quantity || material.kg || 0);
+const getMaterialCategory = (material) => {
+  return material?.category || material?.type || "Coletas";
+};
 
-const lotStatusBadgeClass = (status) => {
-  if (status === "AVAILABLE") return "status status-success";
+const getMaterialQuantity = (material) => {
+  return Number(
+    material?.quantityKg ||
+      material?.quantity ||
+      material?.kg ||
+      material?.weightKg ||
+      0
+  );
+};
+
+const getUniqueText = (items = []) => {
+  const values = items
+    .map((item) => String(item || "").trim())
+    .filter(Boolean);
+
+  const unique = Array.from(new Set(values));
+
+  return unique.length ? unique.join(", ") : "-";
+};
+
+const getStatusClass = (status) => {
+  if (status === "ACTIVE" || status === "AVAILABLE" || status === "SOLD") {
+    return "status status-success";
+  }
+
   if (status === "RESERVED") return "status status-info";
-  if (status === "SOLD") return "status status-success";
-  if (status === "DISCARDED") return "status status-danger";
+
+  if (status === "DISCARDED" || status === "INACTIVE") {
+    return "status status-danger";
+  }
+
   return "status";
 };
 
+const getDominantStage = (lots = []) => {
+  if (!lots.length) return "-";
+
+  const map = new Map();
+
+  lots.forEach((lot) => {
+    const stage = lot?.processingStage || "-";
+    const current = map.get(stage) || 0;
+
+    map.set(stage, current + Number(lot?.quantityKg || 0));
+  });
+
+  return (
+    Array.from(map.entries()).sort((a, b) => b[1] - a[1])?.[0]?.[0] || "-"
+  );
+};
+
+const getLastDate = (item, lots = []) => {
+  const dates = [
+    item?.updatedAt,
+    item?.createdAt,
+    ...lots.map((lot) => lot?.updatedAt || lot?.createdAt),
+  ]
+    .filter(Boolean)
+    .map((date) => new Date(date))
+    .filter((date) => !Number.isNaN(date.getTime()));
+
+  if (!dates.length) return null;
+
+  return new Date(
+    Math.max(...dates.map((date) => date.getTime()))
+  ).toISOString();
+};
+
 const WasteTypeReports = () => {
+  const [wasteTypes, setWasteTypes] = useState([]);
   const [collections, setCollections] = useState([]);
-  const [stockItems, setStockItems] = useState([]);
-  const [stockLots, setStockLots] = useState([]);
 
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [stageFilter, setStageFilter] = useState("");
   const [lotStatusFilter, setLotStatusFilter] = useState("");
+  const [itemStatusFilter, setItemStatusFilter] = useState("");
+  const [sourceFilter, setSourceFilter] = useState("");
 
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -166,47 +254,78 @@ const WasteTypeReports = () => {
   const [loading, setLoading] = useState(true);
 
   const loadReports = async () => {
-    setLoading(true);
-
     try {
-      const [collectionsPayload, stockPayload] = await Promise.all([
+      setLoading(true);
+
+      const [stockResponse, collectionsResponse] = await Promise.all([
+        getAllWasteTypes(),
         fetchJson("/collections"),
-        fetchJson("/waste-stock"),
       ]);
 
-      const collectionRows = normalizeArrayResponse(collectionsPayload, ["collections"]);
+      const stock = getArray(stockResponse);
+      const collectionRows = getArray(collectionsResponse);
 
-      const items =
-        normalizeArrayResponse(stockPayload, ["items", "stockItems", "wasteStockItems"]) ||
-        [];
+      const normalizedStock = stock.map((item, index) => {
+        const lots = Array.isArray(item?.lots) ? item.lots : [];
 
-      const lots =
-        normalizeArrayResponse(stockPayload, ["lots", "stockLots", "wasteStockLots"]) ||
-        [];
+        const totalQuantityKg =
+          item?.totalQuantityKg !== undefined
+            ? Number(item.totalQuantityKg || 0)
+            : getLotsTotalKg(lots);
 
-      const stockPayloadData = stockPayload?.data || {};
+        const availableLots = lots.filter(
+          (lot) => lot.status === "AVAILABLE"
+        ).length;
 
+        const reservedLots = lots.filter(
+          (lot) => lot.status === "RESERVED"
+        ).length;
+
+        const soldLots = lots.filter((lot) => lot.status === "SOLD").length;
+
+        const discardedLots = lots.filter(
+          (lot) => lot.status === "DISCARDED"
+        ).length;
+
+        const dominantStage = getDominantStage(lots);
+
+        return {
+          ...item,
+          sn: index + 1,
+          lots,
+          source: "STOCK",
+          sourceLabel: SOURCE_LABELS.STOCK,
+          totalStockKg: totalQuantityKg,
+          totalCollectedKg: 0,
+          totalKg: totalQuantityKg,
+          totalQuantityKg,
+          collectionsCount: 0,
+          lotsCount:
+            item?.lotsCount !== undefined ? item.lotsCount : lots.length,
+          availableLots,
+          reservedLots,
+          soldLots,
+          discardedLots,
+          dominantStage,
+          dominantStageLabel:
+            STAGE_LABELS[dominantStage] || dominantStage || "-",
+          storageLocation: getUniqueText(
+            lots.map((lot) => lot?.storageLocation)
+          ),
+          origin: getUniqueText(lots.map((lot) => lot?.origin)),
+          lotCodes: getUniqueText(lots.map((lot) => lot?.lotCode)),
+          lastDate: getLastDate(item, lots),
+          status: item?.status || "ACTIVE",
+        };
+      });
+
+      setWasteTypes(normalizedStock);
       setCollections(collectionRows);
-      setStockItems(
-        items.length
-          ? items
-          : normalizeArrayResponse(stockPayloadData, [
-              "items",
-              "stockItems",
-              "wasteStockItems",
-            ])
-      );
-      setStockLots(
-        lots.length
-          ? lots
-          : normalizeArrayResponse(stockPayloadData, [
-              "lots",
-              "stockLots",
-              "wasteStockLots",
-            ])
-      );
     } catch (error) {
-      toast.error(error.message || "Erro ao carregar relatórios de tipos de resíduos.");
+      console.error("Erro ao carregar relatório de tipos de resíduos:", error);
+      toast.error(
+        error?.message || "Erro ao carregar relatório de tipos de resíduos."
+      );
     } finally {
       setLoading(false);
     }
@@ -215,167 +334,265 @@ const WasteTypeReports = () => {
   useEffect(() => {
     loadReports();
   }, []);
-
-  const collectionMaterialRows = useMemo(() => {
+    const collectionMaterialRows = useMemo(() => {
     const map = new Map();
 
     collections.forEach((collection) => {
-      const materials = getMaterialEntries(collection.materials);
+      const materials = normalizeMaterials(collection.materials);
 
       materials.forEach((material) => {
         const name = getMaterialName(material);
+        const normalizedName = String(name || "Material").toLowerCase();
         const quantity = getMaterialQuantity(material);
 
+        if (!quantity || quantity <= 0) return;
+
+        const category = getMaterialCategory(material);
+        const collectionDate =
+          collection.collectedAt || collection.updatedAt || collection.createdAt;
+
+        const generatorName =
+          collection?.generator?.companyName ||
+          collection?.generator?.name ||
+          collection?.schedule?.generator?.companyName ||
+          collection?.schedule?.generator?.name ||
+          "Gerador não informado";
+
+        const collectorName =
+          collection?.collector?.name || "Catador não informado";
+
         const current =
-          map.get(name) || {
-            id: `collection-${name}`,
+          map.get(normalizedName) || {
+            id: `collection-${normalizedName}`,
             name,
-            category: material.category || "Coletas",
+            category,
+            description: "Material registrado em coletas realizadas.",
+            lots: [],
+            source: "COLLECTION",
+            sourceLabel: SOURCE_LABELS.COLLECTION,
+            totalStockKg: 0,
+            totalCollectedKg: 0,
             totalKg: 0,
-            lotsCount: 0,
+            totalQuantityKg: 0,
             collectionsCount: 0,
-            stage: "-",
-            lotStatus: "-",
-            origin: "Coletas realizadas",
+            lotsCount: 0,
+            availableLots: 0,
+            reservedLots: 0,
+            soldLots: 0,
+            discardedLots: 0,
+            dominantStage: "-",
+            dominantStageLabel: "-",
             storageLocation: "-",
-            lastDate: collection.collectedAt || collection.updatedAt || collection.createdAt,
+            origin: "Coletas realizadas",
+            lotCodes: "-",
+            status: "ACTIVE",
+            generators: new Set(),
+            collectors: new Set(),
+            lastDate: collectionDate,
           };
 
+        current.totalCollectedKg += quantity;
         current.totalKg += quantity;
+        current.totalQuantityKg += quantity;
         current.collectionsCount += 1;
 
-        const currentDate = current.lastDate ? new Date(current.lastDate) : null;
-        const newDate = collection.collectedAt
-          ? new Date(collection.collectedAt)
-          : new Date(collection.updatedAt || collection.createdAt);
+        current.generators.add(generatorName);
+        current.collectors.add(collectorName);
 
-        if (!currentDate || newDate > currentDate) {
-          current.lastDate = collection.collectedAt || collection.updatedAt || collection.createdAt;
+        const currentDate = current.lastDate ? new Date(current.lastDate) : null;
+        const newDate = collectionDate ? new Date(collectionDate) : null;
+
+        if (
+          newDate &&
+          !Number.isNaN(newDate.getTime()) &&
+          (!currentDate || newDate > currentDate)
+        ) {
+          current.lastDate = collectionDate;
         }
 
-        map.set(name, current);
+        map.set(normalizedName, current);
       });
     });
 
-    return Array.from(map.values());
+    return Array.from(map.values()).map((item) => ({
+      ...item,
+      generatorsText: getUniqueText(Array.from(item.generators || [])),
+      collectorsText: getUniqueText(Array.from(item.collectors || [])),
+    }));
   }, [collections]);
 
-  const stockRows = useMemo(() => {
-    if (stockLots.length) {
-      return stockLots.map((lot) => {
-        const item =
-          lot.stockItem ||
-          stockItems.find((stockItem) => stockItem.id === lot.stockItemId) ||
-          {};
+  const mergedRows = useMemo(() => {
+    const map = new Map();
 
-        return {
-          id: lot.id,
-          name: item.name || lot.materialName || "Material",
-          category: item.category || lot.category || "-",
-          totalKg: Number(lot.quantityKg || 0),
-          lotsCount: 1,
-          collectionsCount: 0,
-          stage: lot.processingStage || "-",
-          lotStatus: lot.status || "-",
-          origin: lot.origin || "-",
-          storageLocation: lot.storageLocation || "-",
-          lotCode: lot.lotCode || "-",
-          lastDate: lot.updatedAt || lot.createdAt,
-        };
+    wasteTypes.forEach((item) => {
+      const key = String(item.name || "Material").toLowerCase();
+
+      map.set(key, {
+        ...item,
+        source: "STOCK",
+        sourceLabel: SOURCE_LABELS.STOCK,
+        generatorsText: "-",
+        collectorsText: "-",
       });
-    }
-
-    return stockItems.map((item) => ({
-      id: item.id,
-      name: item.name || "Material",
-      category: item.category || "-",
-      totalKg: 0,
-      lotsCount: Array.isArray(item.lots) ? item.lots.length : 0,
-      collectionsCount: 0,
-      stage: "-",
-      lotStatus: item.status || "-",
-      origin: "-",
-      storageLocation: "-",
-      lotCode: "-",
-      lastDate: item.updatedAt || item.createdAt,
-    }));
-  }, [stockItems, stockLots]);
-
-  const rows = useMemo(() => {
-    const merged = [...stockRows];
-
-    collectionMaterialRows.forEach((collectionMaterial) => {
-      const existingIndex = merged.findIndex(
-        (item) => item.name?.toLowerCase() === collectionMaterial.name?.toLowerCase()
-      );
-
-      if (existingIndex >= 0) {
-        merged[existingIndex] = {
-          ...merged[existingIndex],
-          totalKg:
-            Number(merged[existingIndex].totalKg || 0) +
-            Number(collectionMaterial.totalKg || 0),
-          collectionsCount:
-            Number(merged[existingIndex].collectionsCount || 0) +
-            Number(collectionMaterial.collectionsCount || 0),
-        };
-      } else {
-        merged.push(collectionMaterial);
-      }
     });
 
-    return merged.map((item, index) => ({
+    collectionMaterialRows.forEach((collectionItem) => {
+      const key = String(collectionItem.name || "Material").toLowerCase();
+      const existing = map.get(key);
+
+      if (!existing) {
+        map.set(key, collectionItem);
+        return;
+      }
+
+      const mergedSource =
+        Number(existing.totalStockKg || 0) > 0 &&
+        Number(collectionItem.totalCollectedKg || 0) > 0
+          ? "BOTH"
+          : existing.source || collectionItem.source;
+
+      map.set(key, {
+        ...existing,
+        source: mergedSource,
+        sourceLabel: SOURCE_LABELS[mergedSource],
+        totalStockKg: Number(existing.totalStockKg || 0),
+        totalCollectedKg: Number(collectionItem.totalCollectedKg || 0),
+        totalKg:
+          Number(existing.totalStockKg || 0) +
+          Number(collectionItem.totalCollectedKg || 0),
+        totalQuantityKg:
+          Number(existing.totalStockKg || 0) +
+          Number(collectionItem.totalCollectedKg || 0),
+        collectionsCount:
+          Number(existing.collectionsCount || 0) +
+          Number(collectionItem.collectionsCount || 0),
+        generatorsText: collectionItem.generatorsText || "-",
+        collectorsText: collectionItem.collectorsText || "-",
+        lastDate:
+          new Date(collectionItem.lastDate || 0) >
+          new Date(existing.lastDate || 0)
+            ? collectionItem.lastDate
+            : existing.lastDate,
+      });
+    });
+
+    return Array.from(map.values()).map((item, index) => ({
       ...item,
       sn: index + 1,
-      stageLabel: STAGE_LABELS[item.stage] || item.stage || "-",
-      lotStatusLabel: LOT_STATUS_LABELS[item.lotStatus] || item.lotStatus || "-",
     }));
-  }, [stockRows, collectionMaterialRows]);
+  }, [wasteTypes, collectionMaterialRows]);
 
   const categories = useMemo(() => {
-    return Array.from(new Set(rows.map((item) => item.category).filter(Boolean)));
-  }, [rows]);
+    return Array.from(
+      new Set(mergedRows.map((item) => item.category).filter(Boolean))
+    ).sort();
+  }, [mergedRows]);
 
   const filteredData = useMemo(() => {
     const term = search.trim().toLowerCase();
 
-    return rows.filter((item) => {
+    return mergedRows.filter((item) => {
+      const lotsText = (item?.lots || [])
+        .map((lot) =>
+          [
+            lot?.lotCode,
+            lot?.storageLocation,
+            lot?.origin,
+            lot?.processingStage,
+            lot?.status,
+          ]
+            .filter(Boolean)
+            .join(" ")
+        )
+        .join(" ")
+        .toLowerCase();
+
       const matchesSearch =
         !term ||
-        String(item.name || "").toLowerCase().includes(term) ||
-        String(item.category || "").toLowerCase().includes(term) ||
-        String(item.origin || "").toLowerCase().includes(term) ||
-        String(item.storageLocation || "").toLowerCase().includes(term) ||
-        String(item.lotCode || "").toLowerCase().includes(term);
+        String(item?.name || "").toLowerCase().includes(term) ||
+        String(item?.category || "").toLowerCase().includes(term) ||
+        String(item?.description || "").toLowerCase().includes(term) ||
+        String(item?.storageLocation || "").toLowerCase().includes(term) ||
+        String(item?.origin || "").toLowerCase().includes(term) ||
+        String(item?.lotCodes || "").toLowerCase().includes(term) ||
+        String(item?.generatorsText || "").toLowerCase().includes(term) ||
+        String(item?.collectorsText || "").toLowerCase().includes(term) ||
+        lotsText.includes(term);
 
-      const matchesCategory = !categoryFilter || item.category === categoryFilter;
-      const matchesStage = !stageFilter || item.stage === stageFilter;
-      const matchesLotStatus = !lotStatusFilter || item.lotStatus === lotStatusFilter;
+      const matchesCategory =
+        !categoryFilter || item.category === categoryFilter;
 
-      return matchesSearch && matchesCategory && matchesStage && matchesLotStatus;
+      const matchesStage =
+        !stageFilter ||
+        item.dominantStage === stageFilter ||
+        (item?.lots || []).some((lot) => lot.processingStage === stageFilter);
+
+      const matchesLotStatus =
+        !lotStatusFilter ||
+        (item?.lots || []).some((lot) => lot.status === lotStatusFilter);
+
+      const matchesItemStatus =
+        !itemStatusFilter || item.status === itemStatusFilter;
+
+      const matchesSource =
+        !sourceFilter || item.source === sourceFilter;
+
+      return (
+        matchesSearch &&
+        matchesCategory &&
+        matchesStage &&
+        matchesLotStatus &&
+        matchesItemStatus &&
+        matchesSource
+      );
     });
-  }, [rows, search, categoryFilter, stageFilter, lotStatusFilter]);
+  }, [
+    mergedRows,
+    search,
+    categoryFilter,
+    stageFilter,
+    lotStatusFilter,
+    itemStatusFilter,
+    sourceFilter,
+  ]);
 
   const stats = useMemo(() => {
     const totalMaterials = filteredData.length;
 
-    const totalKg = filteredData.reduce(
-      (sum, item) => sum + Number(item.totalKg || 0),
+    const totalStockKg = filteredData.reduce(
+      (sum, item) => sum + Number(item.totalStockKg || 0),
       0
     );
+
+    const totalCollectedKg = filteredData.reduce(
+      (sum, item) => sum + Number(item.totalCollectedKg || 0),
+      0
+    );
+
+    const totalKg = totalStockKg + totalCollectedKg;
 
     const totalLots = filteredData.reduce(
       (sum, item) => sum + Number(item.lotsCount || 0),
       0
     );
 
-    const totalCategories = new Set(filteredData.map((item) => item.category).filter(Boolean)).size;
+    const totalCategories = new Set(
+      filteredData.map((item) => item.category).filter(Boolean)
+    ).size;
+
+    const totalCollections = filteredData.reduce(
+      (sum, item) => sum + Number(item.collectionsCount || 0),
+      0
+    );
 
     return {
       totalMaterials,
+      totalStockKg,
+      totalCollectedKg,
       totalKg,
       totalLots,
       totalCategories,
+      totalCollections,
     };
   }, [filteredData]);
 
@@ -395,38 +612,109 @@ const WasteTypeReports = () => {
 
     filteredData.forEach((item) => {
       const key = item.category || "Sem categoria";
-      const current = map.get(key) || { name: key, kg: 0, materiais: 0 };
 
-      current.kg += Number(item.totalKg || 0);
+      const current = map.get(key) || {
+        name: key,
+        estoque: 0,
+        coletado: 0,
+        total: 0,
+        materiais: 0,
+      };
+
+      current.estoque += Number(item.totalStockKg || 0);
+      current.coletado += Number(item.totalCollectedKg || 0);
+      current.total += Number(item.totalKg || 0);
       current.materiais += 1;
 
       map.set(key, current);
     });
 
-    return Array.from(map.values()).sort((a, b) => b.kg - a.kg);
+    return Array.from(map.values()).sort((a, b) => b.total - a.total);
   }, [filteredData]);
 
   const stageChartData = useMemo(() => {
     const map = new Map();
 
     filteredData.forEach((item) => {
-      const key = item.stageLabel || "Sem etapa";
-      const current = map.get(key) || { name: key, kg: 0 };
+      const lots = Array.isArray(item.lots) ? item.lots : [];
 
-      current.kg += Number(item.totalKg || 0);
+      if (!lots.length) {
+        const key = item.dominantStageLabel || "Sem etapa";
 
-      map.set(key, current);
+        const current = map.get(key) || {
+          name: key,
+          kg: 0,
+        };
+
+        current.kg += Number(item.totalStockKg || 0);
+
+        map.set(key, current);
+        return;
+      }
+
+      lots.forEach((lot) => {
+        const stage = lot.processingStage || "-";
+        const key = STAGE_LABELS[stage] || stage || "Sem etapa";
+
+        const current = map.get(key) || {
+          name: key,
+          kg: 0,
+        };
+
+        current.kg += Number(lot.quantityKg || 0);
+
+        map.set(key, current);
+      });
     });
 
     return Array.from(map.values()).sort((a, b) => b.kg - a.kg);
   }, [filteredData]);
 
   const lotStatusChartData = useMemo(() => {
-    return Object.keys(LOT_STATUS_LABELS).map((status) => ({
-      name: LOT_STATUS_LABELS[status],
-      value: filteredData.filter((item) => item.lotStatus === status).length,
-      status,
-    }));
+    const map = new Map();
+
+    Object.keys(LOT_STATUS_LABELS).forEach((status) => {
+      map.set(status, {
+        name: LOT_STATUS_LABELS[status],
+        value: 0,
+        status,
+      });
+    });
+
+    filteredData.forEach((item) => {
+      (item.lots || []).forEach((lot) => {
+        const status = lot.status || "AVAILABLE";
+
+        const current =
+          map.get(status) || {
+            name: LOT_STATUS_LABELS[status] || status,
+            value: 0,
+            status,
+          };
+
+        current.value += 1;
+
+        map.set(status, current);
+      });
+    });
+
+    return Array.from(map.values());
+  }, [filteredData]);
+    const sourceChartData = useMemo(() => {
+    return [
+      {
+        name: "Estoque",
+        value: filteredData.filter((item) => item.source === "STOCK").length,
+      },
+      {
+        name: "Coletas",
+        value: filteredData.filter((item) => item.source === "COLLECTION").length,
+      },
+      {
+        name: "Estoque + Coletas",
+        value: filteredData.filter((item) => item.source === "BOTH").length,
+      },
+    ];
   }, [filteredData]);
 
   const clearFilters = () => {
@@ -434,29 +722,91 @@ const WasteTypeReports = () => {
     setCategoryFilter("");
     setStageFilter("");
     setLotStatusFilter("");
+    setItemStatusFilter("");
+    setSourceFilter("");
     setCurrentPage(1);
   };
 
   const columns = [
     { key: "sn", label: "Nº" },
-    { key: "name", label: "Material" },
+    {
+      key: "name",
+      label: "Material",
+      render: (value, row) => (
+        <div>
+          <strong>{value || "N/A"}</strong>
+
+          {row?.description ? (
+            <p className="text-muted small mb-0">{row.description}</p>
+          ) : null}
+
+          <p className="text-muted small mb-0">
+            Origem: <strong>{row.sourceLabel || "-"}</strong>
+          </p>
+        </div>
+      ),
+    },
     { key: "category", label: "Categoria" },
     {
+      key: "totalStockKg",
+      label: "Estoque",
+      render: (value) => <strong>{formatKg(value)}</strong>,
+    },
+    {
+      key: "totalCollectedKg",
+      label: "Coletado",
+      render: (value) => <strong>{formatKg(value)}</strong>,
+    },
+    {
       key: "totalKg",
-      label: "Quantidade",
-      render: (value) => formatKg(value),
+      label: "Total geral",
+      render: (value) => <strong>{formatKg(value)}</strong>,
     },
     { key: "lotsCount", label: "Lotes" },
-    { key: "collectionsCount", label: "Coletas" },
-    { key: "stageLabel", label: "Etapa" },
+    {
+      key: "collectionsCount",
+      label: "Coletas",
+      render: (value) => Number(value || 0),
+    },
+    {
+      key: "lotSituation",
+      label: "Situação dos lotes",
+      render: (_, row) => (
+        <div>
+          <p className="mb-0 small">
+            Disponíveis: <strong>{row.availableLots || 0}</strong>
+          </p>
+          <p className="mb-0 small">
+            Reservados: <strong>{row.reservedLots || 0}</strong>
+          </p>
+          <p className="mb-0 small">
+            Vendidos: <strong>{row.soldLots || 0}</strong>
+          </p>
+          <p className="mb-0 small">
+            Descartados: <strong>{row.discardedLots || 0}</strong>
+          </p>
+        </div>
+      ),
+    },
+    { key: "dominantStageLabel", label: "Etapa principal" },
     { key: "storageLocation", label: "Armazenamento" },
     { key: "origin", label: "Origem" },
     {
-      key: "lotStatus",
+      key: "generatorsText",
+      label: "Geradores",
+      render: (value) => value || "-",
+    },
+    {
+      key: "collectorsText",
+      label: "Catadores",
+      render: (value) => value || "-",
+    },
+    {
+      key: "status",
       label: "Status",
       render: (value) => (
-        <span className={lotStatusBadgeClass(value)}>
-          {LOT_STATUS_LABELS[value] || value || "-"}
+        <span className={getStatusClass(value)}>
+          {ITEM_STATUS_LABELS[value] || value || "-"}
         </span>
       ),
     },
@@ -470,14 +820,24 @@ const WasteTypeReports = () => {
   const exportRows = filteredData.map((item) => ({
     Material: item.name,
     Categoria: item.category,
-    QuantidadeKg: item.totalKg,
+    Descricao: item.description || "",
+    OrigemDoDado: item.sourceLabel,
+    EstoqueKg: item.totalStockKg,
+    ColetadoKg: item.totalCollectedKg,
+    TotalKg: item.totalKg,
     Lotes: item.lotsCount,
     Coletas: item.collectionsCount,
-    Etapa: item.stageLabel,
+    Disponiveis: item.availableLots,
+    Reservados: item.reservedLots,
+    Vendidos: item.soldLots,
+    Descartados: item.discardedLots,
+    EtapaPrincipal: item.dominantStageLabel,
     Armazenamento: item.storageLocation,
     Origem: item.origin,
-    CodigoLote: item.lotCode,
-    Status: item.lotStatusLabel,
+    CodigosLote: item.lotCodes,
+    Geradores: item.generatorsText,
+    Catadores: item.collectorsText,
+    Status: ITEM_STATUS_LABELS[item.status] || item.status,
     Atualizacao: safeDate(item.lastDate),
   }));
 
@@ -500,9 +860,11 @@ const WasteTypeReports = () => {
                       Dashboard
                     </Link>
                   </li>
+
                   <li className="breadcrumb-item">
                     <ChevronRight size={18} />
                   </li>
+
                   <li className="breadcrumb-item active">
                     Relatórios de Tipos de Resíduos
                   </li>
@@ -513,9 +875,10 @@ const WasteTypeReports = () => {
             <button
               className="btn btn-success d-flex align-items-center gap-8"
               onClick={loadReports}
+              disabled={loading}
             >
               <RefreshCcw size={17} />
-              Atualizar
+              {loading ? "Atualizando..." : "Atualizar"}
             </button>
           </div>
         </div>
@@ -524,11 +887,12 @@ const WasteTypeReports = () => {
       <div className="widget mb-4">
         <div className="row g-4">
           <div className="col-md-6 col-xl-3">
-            <div className="card p-25">
+            <div className="card p-25 h-100">
               <div className="d-flex align-items-center gap-15">
                 <div className="icon">
                   <Trash2 color="#1A7E00" size={30} />
                 </div>
+
                 <div className="content">
                   <p className="title text-muted mb-1">Materiais</p>
                   <h3>{stats.totalMaterials}</h3>
@@ -538,25 +902,58 @@ const WasteTypeReports = () => {
           </div>
 
           <div className="col-md-6 col-xl-3">
-            <div className="card p-25">
+            <div className="card p-25 h-100">
               <div className="d-flex align-items-center gap-15">
                 <div className="icon">
                   <Package color="#1A7E00" size={30} />
                 </div>
+
                 <div className="content">
-                  <p className="title text-muted mb-1">Volume total</p>
-                  <h3>{formatKg(stats.totalKg)}</h3>
+                  <p className="title text-muted mb-1">Estoque</p>
+                  <h3>{formatKg(stats.totalStockKg)}</h3>
+                </div>
+              </div>
+            </div>
+          </div>
+                    <div className="col-md-6 col-xl-3">
+            <div className="card p-25 h-100">
+              <div className="d-flex align-items-center gap-15">
+                <div className="icon">
+                  <Boxes color="#1A7E00" size={30} />
+                </div>
+
+                <div className="content">
+                  <p className="title text-muted mb-1">Coletado</p>
+                  <h3>{formatKg(stats.totalCollectedKg)}</h3>
                 </div>
               </div>
             </div>
           </div>
 
           <div className="col-md-6 col-xl-3">
-            <div className="card p-25">
+            <div className="card p-25 h-100">
               <div className="d-flex align-items-center gap-15">
                 <div className="icon">
-                  <Boxes color="#1A7E00" size={30} />
+                  <PieChartIcon color="#1A7E00" size={30} />
                 </div>
+
+                <div className="content">
+                  <p className="title text-muted mb-1">Total geral</p>
+                  <h3>{formatKg(stats.totalKg)}</h3>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="row g-4 mt-1">
+          <div className="col-md-6 col-xl-3">
+            <div className="card p-25 h-100">
+              <div className="d-flex align-items-center gap-15">
+                <div className="icon">
+                  <Package color="#1A7E00" size={30} />
+                </div>
+
                 <div className="content">
                   <p className="title text-muted mb-1">Lotes</p>
                   <h3>{stats.totalLots}</h3>
@@ -566,11 +963,27 @@ const WasteTypeReports = () => {
           </div>
 
           <div className="col-md-6 col-xl-3">
-            <div className="card p-25">
+            <div className="card p-25 h-100">
+              <div className="d-flex align-items-center gap-15">
+                <div className="icon">
+                  <Trash2 color="#1A7E00" size={30} />
+                </div>
+
+                <div className="content">
+                  <p className="title text-muted mb-1">Coletas vinculadas</p>
+                  <h3>{stats.totalCollections}</h3>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="col-md-6 col-xl-3">
+            <div className="card p-25 h-100">
               <div className="d-flex align-items-center gap-15">
                 <div className="icon">
                   <PieChartIcon color="#1A7E00" size={30} />
                 </div>
+
                 <div className="content">
                   <p className="title text-muted mb-1">Categorias</p>
                   <h3>{stats.totalCategories}</h3>
@@ -578,15 +991,31 @@ const WasteTypeReports = () => {
               </div>
             </div>
           </div>
+
+          <div className="col-md-6 col-xl-3">
+            <div className="card p-25 h-100">
+              <div className="d-flex align-items-center gap-15">
+                <div className="icon">
+                  <BarChart3 color="#1A7E00" size={30} />
+                </div>
+
+                <div className="content">
+                  <p className="title text-muted mb-1">Fontes de dados</p>
+                  <h3>{sourceChartData.filter((item) => item.value > 0).length}</h3>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
+      {/* FILTROS */}
       <div className="card p-25 mb-4">
         <div className="d-flex align-items-center justify-content-between flex-wrap gap-15 mb-3">
           <div>
             <h4 className="fw-600 fs-20 mb-1">Filtros de materiais</h4>
             <p className="text-muted mb-0">
-              Analise resíduos por categoria, etapa, status de lote e origem.
+              Analise resíduos por categoria, etapa, status de lote, status do material e origem dos dados.
             </p>
           </div>
 
@@ -601,6 +1030,7 @@ const WasteTypeReports = () => {
               <div className="icon">
                 <Search size={18} />
               </div>
+
               <input
                 className="form-control"
                 type="text"
@@ -609,12 +1039,12 @@ const WasteTypeReports = () => {
                   setSearch(event.target.value);
                   setCurrentPage(1);
                 }}
-                placeholder="Buscar material, categoria, origem..."
+                placeholder="Buscar material, lote, origem, gerador..."
               />
             </div>
           </div>
 
-          <div className="col-md-6 col-xl-3">
+          <div className="col-md-6 col-xl-2">
             <select
               className="form-control"
               value={categoryFilter}
@@ -624,6 +1054,7 @@ const WasteTypeReports = () => {
               }}
             >
               <option value="">Todas as categorias</option>
+
               {categories.map((category) => (
                 <option key={category} value={category}>
                   {category}
@@ -632,7 +1063,7 @@ const WasteTypeReports = () => {
             </select>
           </div>
 
-          <div className="col-md-6 col-xl-3">
+          <div className="col-md-6 col-xl-2">
             <select
               className="form-control"
               value={stageFilter}
@@ -651,7 +1082,7 @@ const WasteTypeReports = () => {
             </select>
           </div>
 
-          <div className="col-md-6 col-xl-3">
+          <div className="col-md-6 col-xl-2">
             <select
               className="form-control"
               value={lotStatusFilter}
@@ -660,16 +1091,48 @@ const WasteTypeReports = () => {
                 setCurrentPage(1);
               }}
             >
-              <option value="">Todos os status</option>
+              <option value="">Status dos lotes</option>
               <option value="AVAILABLE">Disponível</option>
               <option value="RESERVED">Reservado</option>
               <option value="SOLD">Vendido</option>
               <option value="DISCARDED">Descartado</option>
             </select>
           </div>
+
+          <div className="col-md-6 col-xl-2">
+            <select
+              className="form-control"
+              value={itemStatusFilter}
+              onChange={(event) => {
+                setItemStatusFilter(event.target.value);
+                setCurrentPage(1);
+              }}
+            >
+              <option value="">Status material</option>
+              <option value="ACTIVE">Ativo</option>
+              <option value="INACTIVE">Inativo</option>
+            </select>
+          </div>
+
+          <div className="col-md-6 col-xl-1">
+            <select
+              className="form-control"
+              value={sourceFilter}
+              onChange={(event) => {
+                setSourceFilter(event.target.value);
+                setCurrentPage(1);
+              }}
+            >
+              <option value="">Fonte</option>
+              <option value="STOCK">Estoque</option>
+              <option value="COLLECTION">Coletas</option>
+              <option value="BOTH">Ambos</option>
+            </select>
+          </div>
         </div>
       </div>
 
+      {/* GRÁFICOS */}
       <div className="row g-4 mb-4">
         <div className="col-xl-5">
           <div className="card p-25 h-100">
@@ -678,25 +1141,21 @@ const WasteTypeReports = () => {
             <div style={{ width: "100%", height: 330 }}>
               <ResponsiveContainer>
                 <PieChart>
-                  <Pie data={materialPieData} dataKey="value" nameKey="name" outerRadius={110} label>
+                  <Pie
+                    data={materialPieData}
+                    dataKey="value"
+                    nameKey="name"
+                    outerRadius={110}
+                    label
+                  >
                     {materialPieData.map((entry, index) => (
                       <Cell
                         key={entry.name}
-                        fill={
-                          [
-                            "#1A7E00",
-                            "#64B000",
-                            "#2563EB",
-                            "#F59E0B",
-                            "#0F766E",
-                            "#16A34A",
-                            "#84CC16",
-                            "#22C55E",
-                          ][index % 8]
-                        }
+                        fill={CHART_COLORS[index % CHART_COLORS.length]}
                       />
                     ))}
                   </Pie>
+
                   <Tooltip formatter={(value) => formatKg(value)} />
                   <Legend />
                 </PieChart>
@@ -708,7 +1167,7 @@ const WasteTypeReports = () => {
         <div className="col-xl-7">
           <div className="card p-25 h-100">
             <div className="d-flex align-items-center justify-content-between mb-3">
-              <h4 className="fw-600 fs-20 mb-0">Volume por categoria</h4>
+              <h4 className="fw-600 fs-20 mb-0">Estoque x Coletado por categoria</h4>
               <BarChart3 size={22} color="#1A7E00" />
             </div>
 
@@ -720,22 +1179,54 @@ const WasteTypeReports = () => {
                   <YAxis />
                   <Tooltip
                     formatter={(value, name) => [
-                      name === "kg" ? formatKg(value) : value,
-                      name === "kg" ? "Kg" : "Materiais",
+                      name === "estoque" ||
+                      name === "coletado" ||
+                      name === "total"
+                        ? formatKg(value)
+                        : value,
+                      name === "estoque"
+                        ? "Estoque"
+                        : name === "coletado"
+                        ? "Coletado"
+                        : name === "total"
+                        ? "Total"
+                        : "Materiais",
                     ]}
                   />
                   <Legend />
-                  <Bar dataKey="kg" name="Kg" fill="#1A7E00" radius={[8, 8, 0, 0]} />
-                  <Bar dataKey="materiais" name="Materiais" fill="#64B000" radius={[8, 8, 0, 0]} />
+
+                  <Bar
+                    dataKey="estoque"
+                    name="Estoque"
+                    fill="#1A7E00"
+                    radius={[8, 8, 0, 0]}
+                  />
+
+                  <Bar
+                    dataKey="coletado"
+                    name="Coletado"
+                    fill="#2563EB"
+                    radius={[8, 8, 0, 0]}
+                  />
+
+                  <Bar
+                    dataKey="materiais"
+                    name="Materiais"
+                    fill="#64B000"
+                    radius={[8, 8, 0, 0]}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </div>
         </div>
-
+      </div>
+            <div className="row g-4 mb-4">
         <div className="col-xl-7">
           <div className="card p-25 h-100">
-            <h4 className="fw-600 fs-20 mb-3">Volume por etapa de processamento</h4>
+            <h4 className="fw-600 fs-20 mb-3">
+              Volume por etapa de processamento
+            </h4>
 
             <div style={{ width: "100%", height: 330 }}>
               <ResponsiveContainer>
@@ -745,7 +1236,12 @@ const WasteTypeReports = () => {
                   <YAxis />
                   <Tooltip formatter={(value) => formatKg(value)} />
                   <Legend />
-                  <Bar dataKey="kg" name="Kg por etapa" fill="#1A7E00" radius={[8, 8, 0, 0]} />
+                  <Bar
+                    dataKey="kg"
+                    name="Kg por etapa"
+                    fill="#1A7E00"
+                    radius={[8, 8, 0, 0]}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -759,11 +1255,21 @@ const WasteTypeReports = () => {
             <div style={{ width: "100%", height: 330 }}>
               <ResponsiveContainer>
                 <PieChart>
-                  <Pie data={lotStatusChartData} dataKey="value" nameKey="name" outerRadius={110} label>
-                    {lotStatusChartData.map((entry) => (
-                      <Cell key={entry.status} fill={STATUS_COLORS[entry.status] || "#1A7E00"} />
+                  <Pie
+                    data={lotStatusChartData}
+                    dataKey="value"
+                    nameKey="name"
+                    outerRadius={110}
+                    label
+                  >
+                    {lotStatusChartData.map((entry, index) => (
+                      <Cell
+                        key={entry.status}
+                        fill={CHART_COLORS[index % CHART_COLORS.length]}
+                      />
                     ))}
                   </Pie>
+
                   <Tooltip />
                   <Legend />
                 </PieChart>
@@ -771,14 +1277,96 @@ const WasteTypeReports = () => {
             </div>
           </div>
         </div>
+
+        <div className="col-xl-5">
+          <div className="card p-25 h-100">
+            <h4 className="fw-600 fs-20 mb-3">Origem das informações</h4>
+
+            <div style={{ width: "100%", height: 330 }}>
+              <ResponsiveContainer>
+                <PieChart>
+                  <Pie
+                    data={sourceChartData}
+                    dataKey="value"
+                    nameKey="name"
+                    outerRadius={110}
+                    label
+                  >
+                    {sourceChartData.map((entry, index) => (
+                      <Cell
+                        key={entry.name}
+                        fill={CHART_COLORS[index % CHART_COLORS.length]}
+                      />
+                    ))}
+                  </Pie>
+
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+
+        <div className="col-xl-7">
+          <div className="card p-25 h-100">
+            <div className="d-flex align-items-center justify-content-between mb-3">
+              <div>
+                <h4 className="fw-600 fs-20 mb-1">
+                  Visão consolidada por categoria
+                </h4>
+                <p className="text-muted mb-0">
+                  Comparativo total considerando estoque e resíduos coletados.
+                </p>
+              </div>
+
+              <BarChart3 size={22} color="#1A7E00" />
+            </div>
+
+            <div style={{ width: "100%", height: 330 }}>
+              <ResponsiveContainer>
+                <BarChart data={categoryChartData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip
+                    formatter={(value, name) => [
+                      name === "total" ? formatKg(value) : value,
+                      name === "total" ? "Total geral" : "Materiais",
+                    ]}
+                  />
+                  <Legend />
+
+                  <Bar
+                    dataKey="total"
+                    name="Total geral"
+                    fill="#1A7E00"
+                    radius={[8, 8, 0, 0]}
+                  />
+
+                  <Bar
+                    dataKey="materiais"
+                    name="Materiais"
+                    fill="#64B000"
+                    radius={[8, 8, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
       </div>
 
+      {/* TABELA */}
       <div className="card p-25 mb-4">
         <div className="d-flex align-items-center justify-content-between flex-wrap gap-15 mb-3">
           <div>
-            <h4 className="fw-600 fs-20 mb-1">Tabela analítica de tipos de resíduos</h4>
+            <h4 className="fw-600 fs-20 mb-1">
+              Tabela analítica de tipos de resíduos
+            </h4>
             <p className="text-muted mb-0">
-              Material, categoria, quantidade, lotes, etapa, origem e status.
+              Material, estoque, coletado, total geral, lotes, coletas,
+              geradores, catadores e origem dos dados.
             </p>
           </div>
 
@@ -803,7 +1391,8 @@ const WasteTypeReports = () => {
                 exportToPdf({
                   fileName: "relatorio-tipos-residuos-katua",
                   title: "Relatório de Tipos de Resíduos",
-                  subtitle: "Materiais, lotes e processamento",
+                  subtitle:
+                    "Estoque, lotes, resíduos coletados e consolidação operacional",
                   rows: exportRows,
                 })
               }
