@@ -1,103 +1,83 @@
-const BIN_API = `${import.meta.env.VITE_API_BASE_URL}/api/bins`;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const BIN_API = `${API_BASE_URL}/bins`;
 
-/**
- * Get all bins
- * GET /api/bins
- */
-export const getAllBins = async () => {
+const getAuthHeaders = (isFormData = false) => {
   const token = localStorage.getItem('auth_token');
-  const res = await fetch(BIN_API, {
-     headers: { 
-      'Authorization': `Bearer ${token}`,
-      'Accept': 'application/json'
-    },
-     credentials: 'include' 
-  });
-  const data = await res.json();
-  if (!res.ok) throw data;
+
+  const headers = {
+    Authorization: `Bearer ${token}`,
+    Accept: 'application/json',
+  };
+
+  if (!isFormData) {
+    headers['Content-Type'] = 'application/json';
+  }
+
+  return headers;
+};
+
+const parseResponse = async (res) => {
+  const data = await res.json().catch(() => ({}));
+
+  if (!res.ok) {
+    throw data;
+  }
+
   return data;
 };
 
-/**
- * Create a new bin
- * POST /api/bins
- * @param {object} payload
- */
+export const getAllBins = async () => {
+  const res = await fetch(BIN_API, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+    credentials: 'include',
+  });
+
+  return parseResponse(res);
+};
+
+export const getBinById = async (id) => {
+  const res = await fetch(`${BIN_API}/${id}`, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+    credentials: 'include',
+  });
+
+  return parseResponse(res);
+};
+
 export const createBin = async (payload) => {
-  const token = localStorage.getItem('auth_token');
+  const isFormData = payload instanceof FormData;
+
   const res = await fetch(BIN_API, {
     method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-       'Content-Type': 'application/json',
-       'Accept': 'application/json'
-       },
+    headers: getAuthHeaders(isFormData),
     credentials: 'include',
-    body: JSON.stringify(payload),
+    body: isFormData ? payload : JSON.stringify(payload),
   });
-  const data = await res.json();
-  if (!res.ok) throw data;
-  return data;
+
+  return parseResponse(res);
 };
 
-/**
- * Update an existing bin
- * PUT /api/bins/:id
- * @param {number|string} id
- * @param {object} payload
- */
 export const updateBin = async (id, payload) => {
-  const token = localStorage.getItem('auth_token');
+  const isFormData = payload instanceof FormData;
+
   const res = await fetch(`${BIN_API}/${id}`, {
     method: 'PUT',
-    headers: {
-    'Authorization': `Bearer ${token}`, 
-    'Content-Type': 'application/json',
-    'Accept': 'application/json'
-   },
+    headers: getAuthHeaders(isFormData),
     credentials: 'include',
-    body: JSON.stringify(payload),
+    body: isFormData ? payload : JSON.stringify(payload),
   });
-  const data = await res.json();
-  if (!res.ok) throw data;
-  return data;
+
+  return parseResponse(res);
 };
 
-/**
- * Delete a bin
- * DELETE /api/bins/:id
- * @param {number|string} id
- */
 export const deleteBin = async (id) => {
-  const token = localStorage.getItem('auth_token');
   const res = await fetch(`${BIN_API}/${id}`, {
-    headers: { 
-      'Authorization': `Bearer ${token}`,
-      'Accept': 'application/json'
-    },
     method: 'DELETE',
+    headers: getAuthHeaders(),
     credentials: 'include',
   });
-  const data = await res.json();
-  if (!res.ok) throw data;
-  return data;
-};
 
-/**
- * Get a bin by ID
- * GET /api/bins/:id
- * @param {number|string} id
- */
-export const getBinById = async (id) => {
-  const token = localStorage.getItem('auth_token');
-  const res = await fetch(`${BIN_API}/${id}`, {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Accept': 'application/json'
-    },
-    credentials: 'include',
-  });
-  const data = await res.json();
-  if (!res.ok) throw data;
-  return data;
+  return parseResponse(res);
 };
