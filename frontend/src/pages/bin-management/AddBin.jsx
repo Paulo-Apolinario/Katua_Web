@@ -30,9 +30,9 @@ const BIN_TYPES = [
 ];
 
 const BIN_STATUS = [
-  { value: 'active', label: 'Ativa' },
-  { value: 'inactive', label: 'Inativa' },
-  { value: 'full', label: 'Cheia' },
+  { value: 'active', label: 'Ativo' },
+  { value: 'inactive', label: 'Inativo' },
+  { value: 'full', label: 'Cheio' },
   { value: 'maintenance', label: 'Manutenção' },
 ];
 
@@ -86,7 +86,7 @@ const AddBin = () => {
           toast.error(vehicleResponse?.message || 'Não foi possível carregar os veículos.');
         }
       } catch (error) {
-        console.error('Erro ao carregar dependências da lixeira:', error);
+        console.error('Erro ao carregar dependências do PEV:', error);
         toast.error('Erro ao carregar zonas e veículos.');
       } finally {
         setLoading(false);
@@ -149,15 +149,15 @@ const AddBin = () => {
     const validationErrors = {};
 
     if (!formData.bin_id.trim()) {
-      validationErrors.bin_id = ['Informe o código da lixeira.'];
+      validationErrors.bin_id = ['Informe o código do PEV.'];
     }
 
     if (!formData.bin_type) {
-      validationErrors.bin_type = ['Selecione o tipo da lixeira.'];
+      validationErrors.bin_type = ['Selecione o tipo do PEV.'];
     }
 
     if (!formData.location.trim()) {
-      validationErrors.location = ['Informe a localização da lixeira.'];
+      validationErrors.location = ['Informe a localização do PEV.'];
     }
 
     if (!formData.zone_id) {
@@ -214,26 +214,26 @@ const AddBin = () => {
       const response = await createBin(buildPayload());
 
       if (response?.success) {
-        toast.success(response.message || 'Lixeira criada com sucesso.');
+        toast.success(response.message || 'PEV cadastrado com sucesso.');
         setFormData(initialFormState);
         setErrors({});
         navigate('/bin-list');
         return;
       }
 
-      toast.error(response?.message || 'Não foi possível criar a lixeira.');
+      toast.error(response?.message || 'Não foi possível cadastrar o PEV.');
 
       if (response?.errors) {
         setErrors(response.errors);
       }
     } catch (error) {
-      console.error('Erro ao criar lixeira:', error);
+      console.error('Erro ao cadastrar PEV:', error);
 
       if (error?.errors) {
         setErrors(error.errors);
       }
 
-      toast.error(error?.message || 'Erro ao criar lixeira.');
+      toast.error(error?.message || 'Erro ao cadastrar PEV.');
     } finally {
       setSaving(false);
     }
@@ -241,14 +241,14 @@ const AddBin = () => {
 
   return (
     <>
-      <HeadTags title="Criar Lixeira | KATUÁ" />
+      <HeadTags title="Cadastrar PEV | KATUÁ" />
       <TopProgressBar loading={loading || saving} />
 
       <div className="page-header mb-30 px-2">
         <div className="page-title mb-3">
-          <h3 className="fs-30">Criar Lixeira</h3>
+          <h3 className="fs-30">Cadastrar PEV</h3>
           <p className="mb-0 text-muted">
-            Cadastre uma nova lixeira/ponto de coleta no painel KATUÁ.
+            Cadastre um novo PEV (Eco Ponto) no painel KATUÁ.
           </p>
         </div>
 
@@ -265,13 +265,13 @@ const AddBin = () => {
                   <ChevronRight />
                 </li>
                 <li className="breadcrumb-item">
-                  <Link to="/bin-list">Lixeiras</Link>
+                  <Link to="/bin-list">PEVs</Link>
                 </li>
                 <li className="breadcrumb-item">
                   <ChevronRight />
                 </li>
                 <li className="breadcrumb-item active" aria-current="page">
-                  Nova Lixeira
+                  Novo PEV
                 </li>
               </ol>
             </nav>
@@ -286,12 +286,12 @@ const AddBin = () => {
       <div className="row justify-content-center">
         <div className="col-lg-10 col-xl-8">
           <div className="card p-25 mb-5">
-            <h3 className="fw-600 fs-18 mb-4">Informações da Lixeira</h3>
+            <h3 className="fw-600 fs-18 mb-4">Informações do PEV</h3>
 
             <form className="form" onSubmit={handleSubmit}>
               <div className="mb-4">
                 <label htmlFor="bin_id" className="form-label">
-                  Código da Lixeira <span className="text-danger">*</span>
+                  Código do PEV <span className="text-danger">*</span>
                 </label>
                 <div className="left-inner-addon">
                   <span className="icon">
@@ -304,7 +304,7 @@ const AddBin = () => {
                     name="bin_id"
                     value={formData.bin_id}
                     onChange={handleInputChange}
-                    placeholder="Ex: KATUA-BIN-001"
+                    placeholder="Ex: KATUA-PEV-001"
                     disabled={saving}
                   />
                 </div>
@@ -315,7 +315,7 @@ const AddBin = () => {
 
               <div className="mb-4">
                 <label htmlFor="bin_type" className="form-label">
-                  Tipo da Lixeira <span className="text-danger">*</span>
+                  Tipo do PEV <span className="text-danger">*</span>
                 </label>
                 <div className="left-inner-addon">
                   <span className="icon">
@@ -363,7 +363,7 @@ const AddBin = () => {
 
               <div className="mb-4">
                 <label htmlFor="zone_id" className="form-label">
-                  Zona Vinculada <span className="text-danger">*</span>
+                  Zona vinculada <span className="text-danger">*</span>
                 </label>
                 <div className="left-inner-addon">
                   <span className="icon">
@@ -392,7 +392,7 @@ const AddBin = () => {
 
               <div className="mb-4">
                 <label htmlFor="vehicle_id" className="form-label">
-                  Veículo Vinculado
+                  Veículo vinculado
                 </label>
                 <div className="left-inner-addon">
                   <span className="icon">
@@ -409,7 +409,10 @@ const AddBin = () => {
                     <option value="">Nenhum veículo vinculado</option>
                     {vehicles.map((vehicle) => (
                       <option key={vehicle.id} value={vehicle.id}>
-                        {vehicle.vehicle_number || vehicle.plate || vehicle.name || `Veículo ${vehicle.id}`}
+                        {vehicle.vehicle_number ||
+                          vehicle.plate ||
+                          vehicle.name ||
+                          `Veículo ${vehicle.id}`}
                       </option>
                     ))}
                   </select>
@@ -421,7 +424,7 @@ const AddBin = () => {
 
               <div className="mb-4">
                 <label htmlFor="collection_date" className="form-label">
-                  Última Coleta
+                  Última coleta
                 </label>
                 <div className="left-inner-addon">
                   <span className="icon">
@@ -446,7 +449,7 @@ const AddBin = () => {
 
               <div className="mb-4">
                 <label htmlFor="capacity_kg" className="form-label">
-                  Capacidade Estimada em KG
+                  Capacidade estimada em KG
                 </label>
                 <input
                   type="number"
@@ -467,7 +470,7 @@ const AddBin = () => {
 
               <div className="mb-4">
                 <label htmlFor="photo" className="form-label">
-                  Foto da Lixeira
+                  Foto do PEV
                 </label>
                 <div className="left-inner-addon">
                   <span className="icon">
@@ -494,7 +497,7 @@ const AddBin = () => {
                   <div className="mt-3">
                     <img
                       src={photoPreview}
-                      alt="Pré-visualização da lixeira"
+                      alt="Pré-visualização do PEV"
                       style={{
                         width: '160px',
                         height: '120px',
@@ -557,9 +560,13 @@ const AddBin = () => {
                   Cancelar
                 </Link>
 
-                <button type="submit" className="btn-md primary-btn border-0" disabled={saving}>
+                <button
+                  type="submit"
+                  className="btn-md primary-btn border-0"
+                  disabled={saving}
+                >
                   <Save />
-                  {saving ? 'Salvando...' : 'Salvar Lixeira'}
+                  {saving ? 'Salvando...' : 'Salvar PEV'}
                 </button>
               </div>
             </form>

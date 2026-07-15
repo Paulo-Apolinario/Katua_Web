@@ -30,9 +30,9 @@ const BIN_TYPES = [
 ];
 
 const BIN_STATUS = [
-  { value: 'active', label: 'Ativa', className: 'status-success' },
-  { value: 'inactive', label: 'Inativa', className: 'status-danger' },
-  { value: 'full', label: 'Cheia', className: 'status-warning' },
+  { value: 'active', label: 'Ativo', className: 'status-success' },
+  { value: 'inactive', label: 'Inativo', className: 'status-danger' },
+  { value: 'full', label: 'Cheio', className: 'status-warning' },
   { value: 'maintenance', label: 'Manutenção', className: 'status-warning' },
 ];
 
@@ -51,18 +51,23 @@ const getStatusConfig = (value) => {
 
 const formatDate = (value) => {
   if (!value) return 'N/A';
+
   const date = new Date(value);
+
   if (Number.isNaN(date.getTime())) return 'N/A';
+
   return date.toLocaleDateString('pt-BR');
 };
 
 const getZoneLabel = (zone) => {
   if (!zone) return 'N/A';
+
   return zone.name || zone.title || `Zona ${zone.id || ''}`.trim();
 };
 
 const getVehicleLabel = (vehicle) => {
   if (!vehicle) return 'N/A';
+
   return vehicle.vehicle_number || vehicle.plate || vehicle.name || vehicle.model || 'N/A';
 };
 
@@ -115,10 +120,10 @@ const BinList = () => {
         return;
       }
 
-      toast.error(response?.message || 'Não foi possível carregar as lixeiras.');
+      toast.error(response?.message || 'Não foi possível carregar os PEVs.');
     } catch (error) {
-      console.error('Erro ao buscar lixeiras:', error);
-      toast.error(error?.message || 'Erro ao carregar lixeiras.');
+      console.error('Erro ao buscar PEVs:', error);
+      toast.error(error?.message || 'Erro ao carregar PEVs.');
     } finally {
       setLoading(false);
     }
@@ -187,15 +192,15 @@ const BinList = () => {
             .map((item, index) => ({ ...item, sn: index + 1 }))
         );
 
-        toast.success(response.message || 'Lixeira excluída com sucesso.');
+        toast.success(response.message || 'PEV excluído com sucesso.');
         setDeleteId(null);
         return;
       }
 
-      toast.error(response?.message || 'Não foi possível excluir a lixeira.');
+      toast.error(response?.message || 'Não foi possível excluir o PEV.');
     } catch (error) {
-      console.error('Erro ao excluir lixeira:', error);
-      toast.error(error?.message || 'Erro ao excluir lixeira.');
+      console.error('Erro ao excluir PEV:', error);
+      toast.error(error?.message || 'Erro ao excluir PEV.');
     } finally {
       setDeleting(false);
     }
@@ -203,14 +208,14 @@ const BinList = () => {
 
   return (
     <>
-      <HeadTags title="Lixeiras | KATUÁ" />
+      <HeadTags title="PEVs | KATUÁ" />
       <TopProgressBar loading={loading || deleting} />
 
       <div className="page-header mb-30 px-2">
         <div className="page-title mb-3">
-          <h3 className="fs-30">Lixeiras</h3>
+          <h3 className="fs-30">PEVs (Eco Pontos)</h3>
           <p className="mb-0 text-muted">
-            Gerencie lixeiras, pontos de coleta, vínculo com zonas e veículos.
+            Gerencie PEVs, pontos de coleta voluntária, vínculo com zonas e veículos.
           </p>
         </div>
 
@@ -226,7 +231,7 @@ const BinList = () => {
                 <li className="breadcrumb-item">
                   <ChevronRight />
                 </li>
-                <li className="breadcrumb-item active">Lixeiras</li>
+                <li className="breadcrumb-item active">PEVs</li>
               </ol>
             </nav>
           </div>
@@ -242,7 +247,7 @@ const BinList = () => {
             </button>
 
             <Link to="/create-bin" className="primary-btn btn-sm">
-              <CirclePlus /> Criar Lixeira
+              <CirclePlus /> Cadastrar PEV
             </Link>
           </div>
         </div>
@@ -250,21 +255,21 @@ const BinList = () => {
 
       <div className="row g-4 mb-4">
         <div className="col-md-6 col-xl-3">
-          <SummaryCard icon={<Archive size={24} />} label="Total" value={summary.total} />
+          <SummaryCard icon={<Archive size={24} />} label="Total de PEVs" value={summary.total} />
         </div>
 
         <div className="col-md-6 col-xl-3">
-          <SummaryCard icon={<MapPin size={24} />} label="Ativas" value={summary.active} />
+          <SummaryCard icon={<MapPin size={24} />} label="Ativos" value={summary.active} />
         </div>
 
         <div className="col-md-6 col-xl-3">
-          <SummaryCard icon={<Archive size={24} />} label="Cheias" value={summary.full} />
+          <SummaryCard icon={<Archive size={24} />} label="Cheios" value={summary.full} />
         </div>
 
         <div className="col-md-6 col-xl-3">
           <SummaryCard
             icon={<Truck size={24} />}
-            label="Manutenção/Inativas"
+            label="Manutenção/Inativos"
             value={summary.unavailable}
           />
         </div>
@@ -357,7 +362,7 @@ const BinList = () => {
               {paginatedData.length === 0 ? (
                 <tr>
                   <td colSpan="11" className="text-center py-4 text-muted">
-                    Nenhuma lixeira encontrada.
+                    Nenhum PEV encontrado.
                   </td>
                 </tr>
               ) : (
@@ -372,7 +377,7 @@ const BinList = () => {
                         {photoUrl ? (
                           <img
                             src={photoUrl}
-                            alt={`Lixeira ${row.bin_id || ''}`}
+                            alt={`PEV ${row.bin_id || ''}`}
                             style={{
                               width: 44,
                               height: 44,

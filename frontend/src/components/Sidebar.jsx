@@ -77,11 +77,11 @@ const Sidebar = ({ active, setActive }) => {
     location.pathname.startsWith("/edit-waste-type");
 
   const isReportsectionActive =
-  location.pathname.startsWith("/analytics-dashboard") ||
-  location.pathname.startsWith("/waste-collection-reports") ||
-  location.pathname.startsWith("/waste-type-reports") ||
-  location.pathname.startsWith("/vehicle-reports") ||
-  location.pathname.startsWith("/staff-reports");
+    location.pathname.startsWith("/analytics-dashboard") ||
+    location.pathname.startsWith("/waste-collection-reports") ||
+    location.pathname.startsWith("/waste-type-reports") ||
+    location.pathname.startsWith("/vehicle-reports") ||
+    location.pathname.startsWith("/staff-reports");
 
   const isSettingSectionActive =
     location.pathname.startsWith("/system-alerts") ||
@@ -171,18 +171,21 @@ const Sidebar = ({ active, setActive }) => {
                   to="/waste-list"
                   className={({ isActive }) => (isActive ? "active" : "")}
                 >
-                  <span className="dot-wrap"><span className="dot"></span></span>
+                  <span className="dot-wrap">
+                    <span className="dot"></span>
+                  </span>
                   <span className="submenu-text">Lista de Resíduos</span>
                 </NavLink>
               </li>
 
-              
               <li>
                 <NavLink
                   to="/collection-requests"
                   className={({ isActive }) => (isActive ? "active" : "")}
                 >
-                  <span className="dot-wrap"><span className="dot"></span></span>
+                  <span className="dot-wrap">
+                    <span className="dot"></span>
+                  </span>
                   <span className="submenu-text">Coletas Solicitadas</span>
                 </NavLink>
               </li>
@@ -199,7 +202,7 @@ const Sidebar = ({ active, setActive }) => {
               <div className="icon-wrap">
                 <Archive />
               </div>
-              <span className="text">Gestão de Lixeiras</span>
+              <span className="text">Gestão de PEVs</span>
               <ChevronRight className="ms-auto arrow align-middle" />
             </a>
 
@@ -209,8 +212,10 @@ const Sidebar = ({ active, setActive }) => {
                   to="/bin-list"
                   className={({ isActive }) => (isActive ? "active" : "")}
                 >
-                  <span className="dot-wrap"><span className="dot"></span></span>
-                  <span className="submenu-text">Lista de Lixeiras</span>
+                  <span className="dot-wrap">
+                    <span className="dot"></span>
+                  </span>
+                  <span className="submenu-text">Lista de PEVs</span>
                 </NavLink>
               </li>
 
@@ -219,8 +224,10 @@ const Sidebar = ({ active, setActive }) => {
                   to="/create-bin"
                   className={({ isActive }) => (isActive ? "active" : "")}
                 >
-                  <span className="dot-wrap"><span className="dot"></span></span>
-                  <span className="submenu-text">Criar Lixeira</span>
+                  <span className="dot-wrap">
+                    <span className="dot"></span>
+                  </span>
+                  <span className="submenu-text">Cadastrar PEV</span>
                 </NavLink>
               </li>
             </ul>
@@ -246,7 +253,9 @@ const Sidebar = ({ active, setActive }) => {
                   to="/zone-list"
                   className={({ isActive }) => (isActive ? "active" : "")}
                 >
-                  <span className="dot-wrap"><span className="dot"></span></span>
+                  <span className="dot-wrap">
+                    <span className="dot"></span>
+                  </span>
                   <span className="submenu-text">Lista de Zonas</span>
                 </NavLink>
               </li>
@@ -256,7 +265,9 @@ const Sidebar = ({ active, setActive }) => {
                   to="/create-zone"
                   className={({ isActive }) => (isActive ? "active" : "")}
                 >
-                  <span className="dot-wrap"><span className="dot"></span></span>
+                  <span className="dot-wrap">
+                    <span className="dot"></span>
+                  </span>
                   <span className="submenu-text">Criar Zona</span>
                 </NavLink>
               </li>
@@ -283,7 +294,9 @@ const Sidebar = ({ active, setActive }) => {
                   to="/generator-list"
                   className={({ isActive }) => (isActive ? "active" : "")}
                 >
-                  <span className="dot-wrap"><span className="dot"></span></span>
+                  <span className="dot-wrap">
+                    <span className="dot"></span>
+                  </span>
                   <span className="submenu-text">Listar Geradores</span>
                 </NavLink>
               </li>
@@ -293,7 +306,9 @@ const Sidebar = ({ active, setActive }) => {
                   to="/create-generator"
                   className={({ isActive }) => (isActive ? "active" : "")}
                 >
-                  <span className="dot-wrap"><span className="dot"></span></span>
+                  <span className="dot-wrap">
+                    <span className="dot"></span>
+                  </span>
                   <span className="submenu-text">Criar Gerador</span>
                 </NavLink>
               </li>
@@ -303,7 +318,9 @@ const Sidebar = ({ active, setActive }) => {
                   to="/generator-documents"
                   className={({ isActive }) => (isActive ? "active" : "")}
                 >
-                  <span className="dot-wrap"><span className="dot"></span></span>
+                  <span className="dot-wrap">
+                    <span className="dot"></span>
+                  </span>
                   <span className="submenu-text">Documentos do Gerador</span>
                 </NavLink>
               </li>
@@ -330,7 +347,9 @@ const Sidebar = ({ active, setActive }) => {
                   to="/vehicle-list"
                   className={({ isActive }) => (isActive ? "active" : "")}
                 >
-                  <span className="dot-wrap"><span className="dot"></span></span>
+                  <span className="dot-wrap">
+                    <span className="dot"></span>
+                  </span>
                   <span className="submenu-text">Lista de Veículos</span>
                 </NavLink>
               </li>
@@ -340,7 +359,9 @@ const Sidebar = ({ active, setActive }) => {
                   to="/create-vehicle"
                   className={({ isActive }) => (isActive ? "active" : "")}
                 >
-                  <span className="dot-wrap"><span className="dot"></span></span>
+                  <span className="dot-wrap">
+                    <span className="dot"></span>
+                  </span>
                   <span className="submenu-text">Criar Veículo</span>
                 </NavLink>
               </li>
@@ -350,7 +371,9 @@ const Sidebar = ({ active, setActive }) => {
                   to="/document-list"
                   className={({ isActive }) => (isActive ? "active" : "")}
                 >
-                  <span className="dot-wrap"><span className="dot"></span></span>
+                  <span className="dot-wrap">
+                    <span className="dot"></span>
+                  </span>
                   <span className="submenu-text">Documentos do Veículo</span>
                 </NavLink>
               </li>
@@ -360,7 +383,9 @@ const Sidebar = ({ active, setActive }) => {
                   to="/maintenance-list"
                   className={({ isActive }) => (isActive ? "active" : "")}
                 >
-                  <span className="dot-wrap"><span className="dot"></span></span>
+                  <span className="dot-wrap">
+                    <span className="dot"></span>
+                  </span>
                   <span className="submenu-text">Log de Manutenção</span>
                 </NavLink>
               </li>
@@ -387,7 +412,9 @@ const Sidebar = ({ active, setActive }) => {
                   to="/route-list"
                   className={({ isActive }) => (isActive ? "active" : "")}
                 >
-                  <span className="dot-wrap"><span className="dot"></span></span>
+                  <span className="dot-wrap">
+                    <span className="dot"></span>
+                  </span>
                   <span className="submenu-text">Lista de Rotas</span>
                 </NavLink>
               </li>
@@ -397,19 +424,23 @@ const Sidebar = ({ active, setActive }) => {
                   to="/mtr-online"
                   className={({ isActive }) => (isActive ? "active" : "")}
                 >
-                  <span className="dot-wrap"><span className="dot"></span></span>
+                  <span className="dot-wrap">
+                    <span className="dot"></span>
+                  </span>
                   <span className="submenu-text">MTR Online</span>
                 </NavLink>
               </li>
 
               <li>
-                 <NavLink
+                <NavLink
                   to="/operational-calendar"
-                 className={({ isActive }) => (isActive ? "active" : "")}
-                  >
-                <span className="dot-wrap"><span className="dot"></span></span>
-                <span className="submenu-text">Calendário Operacional</span>
-                 </NavLink>
+                  className={({ isActive }) => (isActive ? "active" : "")}
+                >
+                  <span className="dot-wrap">
+                    <span className="dot"></span>
+                  </span>
+                  <span className="submenu-text">Calendário Operacional</span>
+                </NavLink>
               </li>
 
               <li>
@@ -417,7 +448,9 @@ const Sidebar = ({ active, setActive }) => {
                   to="/create-route"
                   className={({ isActive }) => (isActive ? "active" : "")}
                 >
-                  <span className="dot-wrap"><span className="dot"></span></span>
+                  <span className="dot-wrap">
+                    <span className="dot"></span>
+                  </span>
                   <span className="submenu-text">Criar Rota</span>
                 </NavLink>
               </li>
@@ -444,7 +477,9 @@ const Sidebar = ({ active, setActive }) => {
                   to="/staff-list"
                   className={({ isActive }) => (isActive ? "active" : "")}
                 >
-                  <span className="dot-wrap"><span className="dot"></span></span>
+                  <span className="dot-wrap">
+                    <span className="dot"></span>
+                  </span>
                   <span className="submenu-text">Listar Motoristas</span>
                 </NavLink>
               </li>
@@ -454,7 +489,9 @@ const Sidebar = ({ active, setActive }) => {
                   to="/create-staff"
                   className={({ isActive }) => (isActive ? "active" : "")}
                 >
-                  <span className="dot-wrap"><span className="dot"></span></span>
+                  <span className="dot-wrap">
+                    <span className="dot"></span>
+                  </span>
                   <span className="submenu-text">Adicionar Motorista</span>
                 </NavLink>
               </li>
@@ -464,7 +501,9 @@ const Sidebar = ({ active, setActive }) => {
                   to="/collector-list"
                   className={({ isActive }) => (isActive ? "active" : "")}
                 >
-                  <span className="dot-wrap"><span className="dot"></span></span>
+                  <span className="dot-wrap">
+                    <span className="dot"></span>
+                  </span>
                   <span className="submenu-text">Listar Catadores</span>
                 </NavLink>
               </li>
@@ -474,7 +513,9 @@ const Sidebar = ({ active, setActive }) => {
                   to="/create-collector"
                   className={({ isActive }) => (isActive ? "active" : "")}
                 >
-                  <span className="dot-wrap"><span className="dot"></span></span>
+                  <span className="dot-wrap">
+                    <span className="dot"></span>
+                  </span>
                   <span className="submenu-text">Adicionar Catador</span>
                 </NavLink>
               </li>
@@ -484,7 +525,9 @@ const Sidebar = ({ active, setActive }) => {
                   to="/collector-documents"
                   className={({ isActive }) => (isActive ? "active" : "")}
                 >
-                  <span className="dot-wrap"><span className="dot"></span></span>
+                  <span className="dot-wrap">
+                    <span className="dot"></span>
+                  </span>
                   <span className="submenu-text">Documentos dos Catadores</span>
                 </NavLink>
               </li>
@@ -494,7 +537,9 @@ const Sidebar = ({ active, setActive }) => {
                   to="/assign-list"
                   className={({ isActive }) => (isActive ? "active" : "")}
                 >
-                  <span className="dot-wrap"><span className="dot"></span></span>
+                  <span className="dot-wrap">
+                    <span className="dot"></span>
+                  </span>
                   <span className="submenu-text">Rotas Delegadas</span>
                 </NavLink>
               </li>
@@ -521,7 +566,9 @@ const Sidebar = ({ active, setActive }) => {
                   to="/waste-type-list"
                   className={({ isActive }) => (isActive ? "active" : "")}
                 >
-                  <span className="dot-wrap"><span className="dot"></span></span>
+                  <span className="dot-wrap">
+                    <span className="dot"></span>
+                  </span>
                   <span className="submenu-text">Lista de Resíduos</span>
                 </NavLink>
               </li>
@@ -531,8 +578,12 @@ const Sidebar = ({ active, setActive }) => {
                   to="/create-type"
                   className={({ isActive }) => (isActive ? "active" : "")}
                 >
-                  <span className="dot-wrap"><span className="dot"></span></span>
-                  <span className="submenu-text">Criar Estoque de Resíduo</span>
+                  <span className="dot-wrap">
+                    <span className="dot"></span>
+                  </span>
+                  <span className="submenu-text">
+                    Criar Estoque de Resíduo
+                  </span>
                 </NavLink>
               </li>
             </ul>
@@ -555,20 +606,27 @@ const Sidebar = ({ active, setActive }) => {
             <ul className="submenu collapse transition" id="reports">
               <li>
                 <NavLink
-              to="/analytics-dashboard"
-                className={({ isActive }) => (isActive ? "active" : "")}
-              >
-             <span className="dot-wrap"><span className="dot"></span></span>
-             <span className="submenu-text">Dashboard Analytics</span>
+                  to="/analytics-dashboard"
+                  className={({ isActive }) => (isActive ? "active" : "")}
+                >
+                  <span className="dot-wrap">
+                    <span className="dot"></span>
+                  </span>
+                  <span className="submenu-text">Dashboard Analytics</span>
                 </NavLink>
               </li>
+
               <li>
                 <NavLink
                   to="/waste-collection-reports"
                   className={({ isActive }) => (isActive ? "active" : "")}
                 >
-                  <span className="dot-wrap"><span className="dot"></span></span>
-                  <span className="submenu-text">Relatórios de Coleta de Resíduos</span>
+                  <span className="dot-wrap">
+                    <span className="dot"></span>
+                  </span>
+                  <span className="submenu-text">
+                    Relatórios de Coleta de Resíduos
+                  </span>
                 </NavLink>
               </li>
 
@@ -577,8 +635,12 @@ const Sidebar = ({ active, setActive }) => {
                   to="/waste-type-reports"
                   className={({ isActive }) => (isActive ? "active" : "")}
                 >
-                  <span className="dot-wrap"><span className="dot"></span></span>
-                  <span className="submenu-text">Relatórios de Tipos de Resíduos</span>
+                  <span className="dot-wrap">
+                    <span className="dot"></span>
+                  </span>
+                  <span className="submenu-text">
+                    Relatórios de Tipos de Resíduos
+                  </span>
                 </NavLink>
               </li>
 
@@ -587,7 +649,9 @@ const Sidebar = ({ active, setActive }) => {
                   to="/staff-reports"
                   className={({ isActive }) => (isActive ? "active" : "")}
                 >
-                  <span className="dot-wrap"><span className="dot"></span></span>
+                  <span className="dot-wrap">
+                    <span className="dot"></span>
+                  </span>
                   <span className="submenu-text">Relatórios de Equipe</span>
                 </NavLink>
               </li>
@@ -597,7 +661,9 @@ const Sidebar = ({ active, setActive }) => {
                   to="/vehicle-reports"
                   className={({ isActive }) => (isActive ? "active" : "")}
                 >
-                  <span className="dot-wrap"><span className="dot"></span></span>
+                  <span className="dot-wrap">
+                    <span className="dot"></span>
+                  </span>
                   <span className="submenu-text">Relatórios de Veículos</span>
                 </NavLink>
               </li>
@@ -624,8 +690,12 @@ const Sidebar = ({ active, setActive }) => {
                   to="/settings"
                   className={({ isActive }) => (isActive ? "active" : "")}
                 >
-                  <span className="dot-wrap"><span className="dot"></span></span>
-                  <span className="submenu-text">Configurações da Empresa</span>
+                  <span className="dot-wrap">
+                    <span className="dot"></span>
+                  </span>
+                  <span className="submenu-text">
+                    Configurações da Empresa
+                  </span>
                 </NavLink>
               </li>
 
@@ -634,7 +704,9 @@ const Sidebar = ({ active, setActive }) => {
                   to="/smtp-config"
                   className={({ isActive }) => (isActive ? "active" : "")}
                 >
-                  <span className="dot-wrap"><span className="dot"></span></span>
+                  <span className="dot-wrap">
+                    <span className="dot"></span>
+                  </span>
                   <span className="submenu-text">Configuração SMTP</span>
                 </NavLink>
               </li>
@@ -644,7 +716,9 @@ const Sidebar = ({ active, setActive }) => {
                   to="/system-alerts"
                   className={({ isActive }) => (isActive ? "active" : "")}
                 >
-                  <span className="dot-wrap"><span className="dot"></span></span>
+                  <span className="dot-wrap">
+                    <span className="dot"></span>
+                  </span>
                   <span className="submenu-text">Alertas do Sistema</span>
                 </NavLink>
               </li>

@@ -30,9 +30,9 @@ const BIN_TYPES = [
 ];
 
 const BIN_STATUS = [
-  { value: 'active', label: 'Ativa' },
-  { value: 'inactive', label: 'Inativa' },
-  { value: 'full', label: 'Cheia' },
+  { value: 'active', label: 'Ativo' },
+  { value: 'inactive', label: 'Inativo' },
+  { value: 'full', label: 'Cheio' },
   { value: 'maintenance', label: 'Manutenção' },
 ];
 
@@ -60,7 +60,14 @@ const formatDateInput = (value) => {
 };
 
 const getPhotoUrl = (data) => {
-  return data?.photo_url || data?.photoUrl || data?.image_url || data?.imageUrl || data?.photo || '';
+  return (
+    data?.photo_url ||
+    data?.photoUrl ||
+    data?.image_url ||
+    data?.imageUrl ||
+    data?.photo ||
+    ''
+  );
 };
 
 const EditBin = () => {
@@ -119,11 +126,11 @@ const EditBin = () => {
             currentPhotoUrl: getPhotoUrl(bin),
           });
         } else {
-          toast.error(binResponse?.message || 'Não foi possível carregar a lixeira.');
+          toast.error(binResponse?.message || 'Não foi possível carregar o PEV.');
         }
       } catch (error) {
-        console.error('Erro ao carregar lixeira:', error);
-        toast.error(error?.message || 'Erro ao carregar dados da lixeira.');
+        console.error('Erro ao carregar PEV:', error);
+        toast.error(error?.message || 'Erro ao carregar dados do PEV.');
       } finally {
         setLoading(false);
       }
@@ -184,15 +191,15 @@ const EditBin = () => {
     const validationErrors = {};
 
     if (!formData.bin_id.trim()) {
-      validationErrors.bin_id = ['Informe o código da lixeira.'];
+      validationErrors.bin_id = ['Informe o código do PEV.'];
     }
 
     if (!formData.bin_type) {
-      validationErrors.bin_type = ['Selecione o tipo da lixeira.'];
+      validationErrors.bin_type = ['Selecione o tipo do PEV.'];
     }
 
     if (!formData.location.trim()) {
-      validationErrors.location = ['Informe a localização da lixeira.'];
+      validationErrors.location = ['Informe a localização do PEV.'];
     }
 
     if (!formData.zone_id) {
@@ -249,25 +256,25 @@ const EditBin = () => {
       const response = await updateBin(id, buildPayload());
 
       if (response?.success) {
-        toast.success(response.message || 'Lixeira atualizada com sucesso.');
+        toast.success(response.message || 'PEV atualizado com sucesso.');
         setErrors({});
         navigate('/bin-list');
         return;
       }
 
-      toast.error(response?.message || 'Não foi possível atualizar a lixeira.');
+      toast.error(response?.message || 'Não foi possível atualizar o PEV.');
 
       if (response?.errors) {
         setErrors(response.errors);
       }
     } catch (error) {
-      console.error('Erro ao atualizar lixeira:', error);
+      console.error('Erro ao atualizar PEV:', error);
 
       if (error?.errors) {
         setErrors(error.errors);
       }
 
-      toast.error(error?.message || 'Erro ao atualizar lixeira.');
+      toast.error(error?.message || 'Erro ao atualizar PEV.');
     } finally {
       setSaving(false);
     }
@@ -275,14 +282,14 @@ const EditBin = () => {
 
   return (
     <>
-      <HeadTags title="Editar Lixeira | KATUÁ" />
+      <HeadTags title="Editar PEV | KATUÁ" />
       <TopProgressBar loading={loading || saving} />
 
       <div className="page-header mb-30 px-2">
         <div className="page-title mb-3">
-          <h3 className="fs-30">Editar Lixeira</h3>
+          <h3 className="fs-30">Editar PEV</h3>
           <p className="mb-0 text-muted">
-            Atualize os dados da lixeira, ponto de coleta, zona, veículo e foto.
+            Atualize os dados do PEV (Eco Ponto), zona, veículo vinculado e foto.
           </p>
         </div>
 
@@ -301,7 +308,7 @@ const EditBin = () => {
                 </li>
 
                 <li className="breadcrumb-item">
-                  <Link to="/bin-list">Lixeiras</Link>
+                  <Link to="/bin-list">PEVs</Link>
                 </li>
 
                 <li className="breadcrumb-item">
@@ -324,12 +331,12 @@ const EditBin = () => {
       <div className="row justify-content-center">
         <div className="col-lg-10 col-xl-8">
           <div className="card p-25 mb-5">
-            <h3 className="fw-600 fs-18 mb-4">Informações da Lixeira</h3>
+            <h3 className="fw-600 fs-18 mb-4">Informações do PEV</h3>
 
             <form className="form" onSubmit={handleSubmit}>
               <div className="mb-4">
                 <label htmlFor="bin_id" className="form-label">
-                  Código da Lixeira <span className="text-danger">*</span>
+                  Código do PEV <span className="text-danger">*</span>
                 </label>
 
                 <div className="left-inner-addon">
@@ -344,7 +351,7 @@ const EditBin = () => {
                     name="bin_id"
                     value={formData.bin_id}
                     onChange={handleInputChange}
-                    placeholder="Ex: KATUA-BIN-001"
+                    placeholder="Ex: KATUA-PEV-001"
                     disabled={saving || loading}
                   />
                 </div>
@@ -356,7 +363,7 @@ const EditBin = () => {
 
               <div className="mb-4">
                 <label htmlFor="bin_type" className="form-label">
-                  Tipo da Lixeira <span className="text-danger">*</span>
+                  Tipo do PEV <span className="text-danger">*</span>
                 </label>
 
                 <div className="left-inner-addon">
@@ -410,7 +417,7 @@ const EditBin = () => {
 
               <div className="mb-4">
                 <label htmlFor="zone_id" className="form-label">
-                  Zona Vinculada <span className="text-danger">*</span>
+                  Zona vinculada <span className="text-danger">*</span>
                 </label>
 
                 <div className="left-inner-addon">
@@ -443,7 +450,7 @@ const EditBin = () => {
 
               <div className="mb-4">
                 <label htmlFor="vehicle_id" className="form-label">
-                  Veículo Vinculado
+                  Veículo vinculado
                 </label>
 
                 <div className="left-inner-addon">
@@ -479,7 +486,7 @@ const EditBin = () => {
 
               <div className="mb-4">
                 <label htmlFor="collection_date" className="form-label">
-                  Última Coleta
+                  Última coleta
                 </label>
 
                 <div className="left-inner-addon">
@@ -507,7 +514,7 @@ const EditBin = () => {
 
               <div className="mb-4">
                 <label htmlFor="capacity_kg" className="form-label">
-                  Capacidade Estimada em KG
+                  Capacidade estimada em KG
                 </label>
 
                 <input
@@ -530,7 +537,7 @@ const EditBin = () => {
 
               <div className="mb-4">
                 <label htmlFor="photo" className="form-label">
-                  Foto da Lixeira
+                  Foto do PEV
                 </label>
 
                 <div className="left-inner-addon">
@@ -561,7 +568,7 @@ const EditBin = () => {
                   <div className="mt-3">
                     <img
                       src={newPhotoPreview || formData.currentPhotoUrl}
-                      alt="Foto da lixeira"
+                      alt="Foto do PEV"
                       style={{
                         width: '180px',
                         height: '130px',
