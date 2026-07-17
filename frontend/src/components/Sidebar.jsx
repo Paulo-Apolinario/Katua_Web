@@ -3,7 +3,6 @@ import {
   ChevronRight,
   Settings,
   ChartLine,
-  Box,
   Boxes,
   Users,
   Route,
@@ -15,8 +14,6 @@ import {
   Search,
   X,
   Building2,
-  Tags,
-  CirclePlus,
 } from "lucide-react";
 
 import MenuSearch from "./modal/MenuSearch";
@@ -82,7 +79,9 @@ const Sidebar = ({ active, setActive }) => {
     location.pathname.startsWith("/create-staff-document") ||
     location.pathname.startsWith("/edit-staff-document");
 
-  const isWasteStockSectionActive =
+  const isWasteManagementSectionActive =
+    location.pathname.startsWith("/collected-waste") ||
+    location.pathname.startsWith("/waste-destinations") ||
     location.pathname.startsWith("/waste-stock") ||
     location.pathname.startsWith("/waste-type-list") ||
     location.pathname.startsWith("/create-type") ||
@@ -786,24 +785,24 @@ const Sidebar = ({ active, setActive }) => {
             </ul>
           </li>
 
-          {/* Waste Stock and Catalog */}
+          {/* Waste Management */}
           <li className="nav-item">
             <a
-              href="#waste-stock-menu"
+              href="#waste-management-menu"
               className={`nav-link ${
-                isWasteStockSectionActive ? "active" : ""
+                isWasteManagementSectionActive ? "active" : ""
               }`}
               data-bs-toggle="collapse"
-              data-bs-target="#waste-stock-menu"
-              aria-expanded={isWasteStockSectionActive}
-              aria-controls="waste-stock-menu"
+              data-bs-target="#waste-management-menu"
+              aria-expanded={isWasteManagementSectionActive}
+              aria-controls="waste-management-menu"
             >
               <div className="icon-wrap">
-                <Box />
+                <Boxes />
               </div>
 
               <span className="text">
-                Estoque de Resíduos
+                Gestão de Resíduos
               </span>
 
               <ChevronRight className="ms-auto arrow align-middle" />
@@ -811,10 +810,44 @@ const Sidebar = ({ active, setActive }) => {
 
             <ul
               className={`submenu collapse transition ${
-                isWasteStockSectionActive ? "show" : ""
+                isWasteManagementSectionActive ? "show" : ""
               }`}
-              id="waste-stock-menu"
+              id="waste-management-menu"
             >
+              <li>
+                <NavLink
+                  to="/collected-waste"
+                  className={({ isActive }) =>
+                    isActive ? "active" : ""
+                  }
+                >
+                  <span className="dot-wrap">
+                    <span className="dot" />
+                  </span>
+
+                  <span className="submenu-text">
+                    Resíduos Coletados
+                  </span>
+                </NavLink>
+              </li>
+
+              <li>
+                <NavLink
+                  to="/waste-destinations"
+                  className={({ isActive }) =>
+                    isActive ? "active" : ""
+                  }
+                >
+                  <span className="dot-wrap">
+                    <span className="dot" />
+                  </span>
+
+                  <span className="submenu-text">
+                    Gestão de Destinações
+                  </span>
+                </NavLink>
+              </li>
+
               <li>
                 <NavLink
                   to="/waste-stock"
@@ -834,23 +867,6 @@ const Sidebar = ({ active, setActive }) => {
 
               <li>
                 <NavLink
-                  to="/waste-stock/create"
-                  className={({ isActive }) =>
-                    isActive ? "active" : ""
-                  }
-                >
-                  <span className="dot-wrap">
-                    <span className="dot" />
-                  </span>
-
-                  <span className="submenu-text">
-                    Adicionar Lote
-                  </span>
-                </NavLink>
-              </li>
-
-              <li>
-                <NavLink
                   to="/waste-type-list"
                   className={({ isActive }) =>
                     isActive ? "active" : ""
@@ -861,7 +877,7 @@ const Sidebar = ({ active, setActive }) => {
                   </span>
 
                   <span className="submenu-text">
-                    Gestão de Resíduos
+                    Catálogo de Resíduos
                   </span>
                 </NavLink>
               </li>
@@ -879,6 +895,23 @@ const Sidebar = ({ active, setActive }) => {
 
                   <span className="submenu-text">
                     Cadastrar Tipo de Resíduo
+                  </span>
+                </NavLink>
+              </li>
+
+              <li>
+                <NavLink
+                  to="/waste-stock/create"
+                  className={({ isActive }) =>
+                    isActive ? "active" : ""
+                  }
+                >
+                  <span className="dot-wrap">
+                    <span className="dot" />
+                  </span>
+
+                  <span className="submenu-text">
+                    Adicionar Lote
                   </span>
                 </NavLink>
               </li>
