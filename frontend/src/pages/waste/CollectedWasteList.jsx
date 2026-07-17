@@ -539,7 +539,7 @@ const canCreateDestination = (
  */
 
 const SummaryCard = ({
-  // icon: Icon,
+  icon: Icon,
   title,
   value,
   subtitle,
@@ -581,10 +581,12 @@ const SummaryCard = ({
               height: 44,
             }}
           >
-            <Icon
-              size={22}
-              aria-hidden="true"
-            />
+            {Icon && (
+              <Icon
+                size={22}
+                aria-hidden="true"
+              />
+            )}
           </div>
         </div>
       </div>
