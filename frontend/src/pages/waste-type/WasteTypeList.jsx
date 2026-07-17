@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import {
   House,
@@ -10,23 +10,30 @@ import {
   Package,
   Layers,
   Scale,
-  Archive,
+  Tags,
+  RotateCcw,
 } from "lucide-react";
+import toast from "react-hot-toast";
+
 import DataTable from "../../components/DataTable";
 import DeleteModal from "../../components/modal/DeleteModal";
-import {
-  getAllWasteTypes,
-  deleteWasteType,
-} from "../../services/wasteTypeService";
-import toast from "react-hot-toast";
 import HeadTags from "../../components/HeadTags";
 import TopProgressBar from "../../components/TopProgressBar";
 
-const getArray = (response) => {
+import {
+  activateWasteType,
+  deleteWasteType,
+  getAllWasteTypes,
+  getWasteClassLabel,
+  getWasteUnitShortLabel,
+} from "../../services/wasteTypeService";
+
+const extractItems = (response) => {
   if (Array.isArray(response)) return response;
-  if (Array.isArray(response?.stock)) return response.stock;
   if (Array.isArray(response?.items)) return response.items;
+  if (Array.isArray(response?.stock)) return response.stock;
   if (Array.isArray(response?.data)) return response.data;
+
   return [];
 };
 
@@ -34,162 +41,292 @@ const formatDate = (value) => {
   if (!value) return "N/A";
 
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "N/A";
+
+  if (Number.isNaN(date.getTime())) {
+    return "N/A";
+  }
 
   return date.toLocaleDateString("pt-BR");
 };
 
-const formatKg = (value) => `${Number(value || 0).toFixed(2)} KG`;
-
 const getStatusLabel = (status) => {
-  const labels = {
-    ACTIVE: "Ativo",
-    INACTIVE: "Inativo",
-  };
+  if (status === "ACTIVE") return "Ativo";
+  if (status === "INACTIVE") return "Inativo";
 
-  return labels[status] || status || "N/A";
+  return status || "N/A";
 };
 
 const getStatusClass = (status) => {
-  if (status === "ACTIVE") return "status status-success";
-  return "status status-danger";
+  return status === "ACTIVE"
+    ? "status status-success"
+    : "status status-danger";
 };
 
+const getTotalQuantity = (item) => {
+  if (item?.totalQuantity !== undefined) {
+    return Number(item.totalQuantity || 0);
+  }
 
-const getLotsTotalKg = (lots = []) => {
-  return lots.reduce((sum, lot) => {
-    if (lot?.status === "DISCARDED") return sum;
-    return sum + Number(lot?.quantityKg || 0);
-  }, 0);
+  if (item?.totalQuantityKg !== undefined) {
+    return Number(item.totalQuantityKg || 0);
+  }
+
+  return 0;
 };
 
 const WasteTypeList = () => {
   const [wasteTypes, setWasteTypes] = useState([]);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
+  const [unitFilter, setUnitFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [deleteId, setDeleteId] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [processingId, setProcessingId] = useState(null);
 
-  const loadStock = async () => {
+  const loadWasteTypes = async () => {
     try {
       setLoading(true);
 
       const response = await getAllWasteTypes();
-      const stock = getArray(response);
+      const items = extractItems(response);
 
-      const dataWithSn = stock.map((item, index) => {
-        const lots = Array.isArray(item?.lots) ? item.lots : [];
-        const totalQuantityKg =
-          item?.totalQuantityKg !== undefined
-            ? Number(item.totalQuantityKg || 0)
-            : getLotsTotalKg(lots);
+      const normalizedItems = items.map((item, index) => ({
+        ...item,
+        sn: index + 1,
+        totalQuantity: getTotalQuantity(item),
+        lotsCount:
+          item?.lotsCount !== undefined
+            ? Number(item.lotsCount || 0)
+            : Array.isArray(item?.lots)
+              ? item.lots.length
+              : 0,
+      }));
 
-        return {
-          ...item,
-          sn: index + 1,
-          lots,
-          totalQuantityKg,
-          lotsCount:
-            item?.lotsCount !== undefined ? item.lotsCount : lots.length,
-        };
-      });
-
-      setWasteTypes(dataWithSn);
+      setWasteTypes(normalizedItems);
     } catch (error) {
+      console.error("Erro ao carregar tipos de resíduos:", error);
+
       toast.error(
-        error?.message || "Erro ao carregar estoque de resíduos."
+        error?.error ||
+          error?.message ||
+          "Erro ao carregar a gestão de resíduos."
       );
-      console.error("Fetch stock error:", error);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadStock();
+    loadWasteTypes();
   }, []);
 
   const categories = useMemo(() => {
     return [...new Set(wasteTypes.map((item) => item.category))]
       .filter(Boolean)
+      .sort((a, b) => a.localeCompare(b, "pt-BR"));
+  }, [wasteTypes]);
+
+  const units = useMemo(() => {
+    return [...new Set(wasteTypes.map((item) => item.unit))]
+      .filter(Boolean)
       .sort();
   }, [wasteTypes]);
 
   const filteredData = useMemo(() => {
-    const term = search.toLowerCase().trim();
+    const normalizedSearch = search.trim().toLocaleLowerCase("pt-BR");
 
     return wasteTypes.filter((item) => {
-      const name = String(item?.name || "").toLowerCase();
-      const category = String(item?.category || "").toLowerCase();
-      const description = String(item?.description || "").toLowerCase();
-
-      const lotsText = (item?.lots || [])
-        .map((lot) =>
-          [
-            lot?.lotCode,
-            lot?.storageLocation,
-            lot?.origin,
-            lot?.processingStage,
-            lot?.status,
-          ]
-            .filter(Boolean)
-            .join(" ")
-        )
+      const searchableText = [
+        item?.name,
+        item?.category,
+        item?.subcategory,
+        item?.internalCode,
+        item?.ncm,
+        item?.description,
+      ]
+        .filter(Boolean)
         .join(" ")
-        .toLowerCase();
+        .toLocaleLowerCase("pt-BR");
 
       const matchesSearch =
-        !term ||
-        name.includes(term) ||
-        category.includes(term) ||
-        description.includes(term) ||
-        lotsText.includes(term);
+        !normalizedSearch ||
+        searchableText.includes(normalizedSearch);
 
       const matchesCategory =
-        !categoryFilter || item.category === categoryFilter;
+        !categoryFilter ||
+        item.category === categoryFilter;
 
-      const matchesStatus = !statusFilter || item.status === statusFilter;
+      const matchesUnit =
+        !unitFilter ||
+        item.unit === unitFilter;
 
-      return matchesSearch && matchesCategory && matchesStatus;
+      const matchesStatus =
+        !statusFilter ||
+        item.status === statusFilter;
+
+      return (
+        matchesSearch &&
+        matchesCategory &&
+        matchesUnit &&
+        matchesStatus
+      );
     });
-  }, [wasteTypes, search, categoryFilter, statusFilter]);
+  }, [
+    wasteTypes,
+    search,
+    categoryFilter,
+    unitFilter,
+    statusFilter,
+  ]);
 
   const stats = useMemo(() => {
-    const totalKg = wasteTypes.reduce(
-      (sum, item) => sum + Number(item.totalQuantityKg || 0),
-      0
-    );
+    const activeItems = wasteTypes.filter(
+      (item) => item.status === "ACTIVE"
+    ).length;
+
+    const inactiveItems = wasteTypes.filter(
+      (item) => item.status === "INACTIVE"
+    ).length;
 
     const totalLots = wasteTypes.reduce(
       (sum, item) => sum + Number(item.lotsCount || 0),
       0
     );
 
-    const activeItems = wasteTypes.filter(
-      (item) => item.status === "ACTIVE"
-    ).length;
-
     return {
-      totalKg,
-      totalLots,
+      totalItems: wasteTypes.length,
       activeItems,
-      categories: categories.length,
+      inactiveItems,
+      totalCategories: categories.length,
+      totalLots,
     };
   }, [wasteTypes, categories]);
 
+  const clearFilters = () => {
+    setSearch("");
+    setCategoryFilter("");
+    setUnitFilter("");
+    setStatusFilter("");
+    setCurrentPage(1);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteId) return;
+
+    try {
+      setProcessingId(deleteId);
+
+      const response = await deleteWasteType(deleteId);
+
+      if (response?.success === false) {
+        toast.error(
+          response?.error ||
+            response?.message ||
+            "Não foi possível inativar o tipo de resíduo."
+        );
+        return;
+      }
+
+      setWasteTypes((current) =>
+        current.map((item) =>
+          item.id === deleteId
+            ? {
+                ...item,
+                status: "INACTIVE",
+              }
+            : item
+        )
+      );
+
+      toast.success(
+        response?.message ||
+          "Tipo de resíduo inativado com sucesso."
+      );
+
+      setDeleteId(null);
+    } catch (error) {
+      console.error("Erro ao inativar tipo de resíduo:", error);
+
+      toast.error(
+        error?.error ||
+          error?.message ||
+          "Erro ao inativar tipo de resíduo."
+      );
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleActivate = async (id) => {
+    if (!id) return;
+
+    try {
+      setProcessingId(id);
+
+      const response = await activateWasteType(id);
+
+      if (response?.success === false) {
+        toast.error(
+          response?.error ||
+            response?.message ||
+            "Não foi possível reativar o tipo de resíduo."
+        );
+        return;
+      }
+
+      setWasteTypes((current) =>
+        current.map((item) =>
+          item.id === id
+            ? {
+                ...item,
+                status: "ACTIVE",
+              }
+            : item
+        )
+      );
+
+      toast.success(
+        response?.message ||
+          "Tipo de resíduo reativado com sucesso."
+      );
+    } catch (error) {
+      console.error("Erro ao reativar tipo de resíduo:", error);
+
+      toast.error(
+        error?.error ||
+          error?.message ||
+          "Erro ao reativar tipo de resíduo."
+      );
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
   const columns = [
-    { key: "sn", label: "SN" },
+    {
+      key: "sn",
+      label: "SN",
+    },
     {
       key: "name",
-      label: "Material",
+      label: "Tipo de resíduo",
       render: (value, row) => (
         <div>
           <strong>{value || "N/A"}</strong>
+
+          {row?.subcategory && (
+            <p className="text-muted small mb-0">
+              Subcategoria: {row.subcategory}
+            </p>
+          )}
+
           {row?.description && (
-            <p className="text-muted small mb-0">{row.description}</p>
+            <p className="text-muted small mb-0">
+              {row.description}
+            </p>
           )}
         </div>
       ),
@@ -200,49 +337,32 @@ const WasteTypeList = () => {
       render: (value) => value || "N/A",
     },
     {
-      key: "totalQuantityKg",
-      label: "Quantidade em estoque",
-      render: (value) => <strong>{formatKg(value)}</strong>,
+      key: "unit",
+      label: "Unidade",
+      render: (value) =>
+        value
+          ? getWasteUnitShortLabel(value)
+          : "N/A",
+    },
+    {
+      key: "internalCode",
+      label: "Código interno",
+      render: (value) => value || "N/A",
+    },
+    {
+      key: "ncm",
+      label: "NCM",
+      render: (value) => value || "N/A",
+    },
+    {
+      key: "wasteClass",
+      label: "Classe",
+      render: (value) => getWasteClassLabel(value),
     },
     {
       key: "lotsCount",
-      label: "Lotes",
-      render: (value, row) => (
-        <div>
-          <strong>{value || 0}</strong>
-          {row?.lots?.[0]?.lotCode && (
-            <p className="text-muted small mb-0">
-              Último: {row.lots[0].lotCode}
-            </p>
-          )}
-        </div>
-      ),
-    },
-    {
-      key: "lotStatus",
-      label: "Situação dos lotes",
-      render: (value, row) => {
-        const lots = Array.isArray(row?.lots) ? row.lots : [];
-        const available = lots.filter(
-          (lot) => lot.status === "AVAILABLE"
-        ).length;
-        const reserved = lots.filter((lot) => lot.status === "RESERVED").length;
-        const sold = lots.filter((lot) => lot.status === "SOLD").length;
-
-        return (
-          <div>
-            <p className="mb-0 small">
-              Disponíveis: <strong>{available}</strong>
-            </p>
-            <p className="mb-0 small">
-              Reservados: <strong>{reserved}</strong>
-            </p>
-            <p className="mb-0 small">
-              Vendidos: <strong>{sold}</strong>
-            </p>
-          </div>
-        );
-      },
+      label: "Lotes vinculados",
+      render: (value) => Number(value || 0),
     },
     {
       key: "createdAt",
@@ -253,85 +373,73 @@ const WasteTypeList = () => {
       key: "status",
       label: "Status",
       render: (value) => (
-        <span className={getStatusClass(value)}>{getStatusLabel(value)}</span>
+        <span className={getStatusClass(value)}>
+          {getStatusLabel(value)}
+        </span>
       ),
     },
   ];
 
-  const clearFilters = () => {
-    setSearch("");
-    setCategoryFilter("");
-    setStatusFilter("");
-    setCurrentPage(1);
-  };
-
-  const handleDelete = async () => {
-    if (!deleteId) return;
-
-    try {
-      const response = await deleteWasteType(deleteId);
-
-      if (response?.success === false) {
-        toast.error(response.message || "Erro ao inativar material.");
-        return;
-      }
-
-      setWasteTypes((prev) =>
-        prev
-          .map((item) =>
-            item.id === deleteId ? { ...item, status: "INACTIVE" } : item
-          )
-          .map((item, index) => ({
-            ...item,
-            sn: index + 1,
-          }))
-      );
-
-      toast.success(
-        response?.message || "Material de estoque inativado com sucesso."
-      );
-
-      setDeleteId(null);
-    } catch (error) {
-      toast.error(error?.message || "Erro ao inativar material de estoque.");
-      console.error("Delete stock error:", error);
-    }
-  };
-
   return (
     <>
-      <HeadTags title="Estoque de Resíduos" />
-      <TopProgressBar loading={loading} />
+      <HeadTags title="Gestão de Resíduos | KATUÁ" />
+
+      <TopProgressBar
+        loading={loading || Boolean(processingId)}
+      />
 
       <div className="page-header mb-30 px-2">
         <div className="page-title mb-3">
-          <h3 className="fs-30">Estoque de Resíduos</h3>
+          <h3 className="fs-30">Gestão de Resíduos</h3>
 
-          <div className="page-tool d-flex justify-content-between flex-wrap gap-20 align-items-center">
-            <div className="breadcrumb-wrap">
-              <nav aria-label="breadcrumb">
-                <ol className="breadcrumb pb-0 mb-0">
-                  <li className="breadcrumb-item">
-                    <Link to="/" className="d-flex align-items-center gap-8">
-                      <House /> Painel
-                    </Link>
-                  </li>
+          <p className="text-muted mb-0">
+            Cadastre e administre os materiais coletados pela cooperativa,
+            incluindo categoria, unidade, NCM e classificação.
+          </p>
+        </div>
 
-                  <li className="breadcrumb-item">
-                    <ChevronRight />
-                  </li>
+        <div className="page-tool d-flex justify-content-between flex-wrap gap-20 align-items-center">
+          <div className="breadcrumb-wrap">
+            <nav aria-label="breadcrumb">
+              <ol className="breadcrumb pb-0 mb-0">
+                <li className="breadcrumb-item">
+                  <Link
+                    to="/"
+                    className="d-flex align-items-center gap-8"
+                  >
+                    <House /> Painel
+                  </Link>
+                </li>
 
-                  <li className="breadcrumb-item active">
-                    Estoque de Resíduos
-                  </li>
-                </ol>
-              </nav>
-            </div>
+                <li className="breadcrumb-item">
+                  <ChevronRight />
+                </li>
 
-            <Link to="/create-type" className="primary-btn btn-sm">
-              <CirclePlus /> Novo material/lote
-            </Link>
+                <li className="breadcrumb-item">
+                  Estoque de Resíduos
+                </li>
+
+                <li className="breadcrumb-item">
+                  <ChevronRight />
+                </li>
+
+                <li
+                  className="breadcrumb-item active"
+                  aria-current="page"
+                >
+                  Gestão de Resíduos
+                </li>
+              </ol>
+            </nav>
           </div>
+
+          <Link
+            to="/create-type"
+            className="primary-btn btn-sm"
+          >
+            <CirclePlus />
+            Cadastrar Tipo de Resíduo
+          </Link>
         </div>
       </div>
 
@@ -340,21 +448,15 @@ const WasteTypeList = () => {
           <div className="card p-25 h-100">
             <div className="d-flex align-items-center justify-content-between gap-3">
               <div>
-                <p className="text-muted mb-1">Total em estoque</p>
-                <h4 className="mb-0">{formatKg(stats.totalKg)}</h4>
-              </div>
-              <Scale color="#028C56" size={34} />
-            </div>
-          </div>
-        </div>
+                <p className="text-muted mb-1">
+                  Tipos cadastrados
+                </p>
 
-        <div className="col-xl-3 col-md-6">
-          <div className="card p-25 h-100">
-            <div className="d-flex align-items-center justify-content-between gap-3">
-              <div>
-                <p className="text-muted mb-1">Materiais ativos</p>
-                <h4 className="mb-0">{stats.activeItems}</h4>
+                <h4 className="mb-0">
+                  {stats.totalItems}
+                </h4>
               </div>
+
               <Package color="#028C56" size={34} />
             </div>
           </div>
@@ -364,9 +466,33 @@ const WasteTypeList = () => {
           <div className="card p-25 h-100">
             <div className="d-flex align-items-center justify-content-between gap-3">
               <div>
-                <p className="text-muted mb-1">Categorias</p>
-                <h4 className="mb-0">{stats.categories}</h4>
+                <p className="text-muted mb-1">
+                  Tipos ativos
+                </p>
+
+                <h4 className="mb-0">
+                  {stats.activeItems}
+                </h4>
               </div>
+
+              <Tags color="#028C56" size={34} />
+            </div>
+          </div>
+        </div>
+
+        <div className="col-xl-3 col-md-6">
+          <div className="card p-25 h-100">
+            <div className="d-flex align-items-center justify-content-between gap-3">
+              <div>
+                <p className="text-muted mb-1">
+                  Categorias
+                </p>
+
+                <h4 className="mb-0">
+                  {stats.totalCategories}
+                </h4>
+              </div>
+
               <Layers color="#028C56" size={34} />
             </div>
           </div>
@@ -376,10 +502,16 @@ const WasteTypeList = () => {
           <div className="card p-25 h-100">
             <div className="d-flex align-items-center justify-content-between gap-3">
               <div>
-                <p className="text-muted mb-1">Lotes registrados</p>
-                <h4 className="mb-0">{stats.totalLots}</h4>
+                <p className="text-muted mb-1">
+                  Lotes vinculados
+                </p>
+
+                <h4 className="mb-0">
+                  {stats.totalLots}
+                </h4>
               </div>
-              <Archive color="#028C56" size={34} />
+
+              <Scale color="#028C56" size={34} />
             </div>
           </div>
         </div>
@@ -387,7 +519,7 @@ const WasteTypeList = () => {
 
       <div className="card p-25">
         <div className="filter row g-3 mb-4">
-          <div className="col-lg-4 col-md-6">
+          <div className="col-xl-4 col-lg-6">
             <div className="filter-section search w-100">
               <div className="icon">
                 <Search />
@@ -397,56 +529,101 @@ const WasteTypeList = () => {
                 className="form-control"
                 type="text"
                 value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
+                onChange={(event) => {
+                  setSearch(event.target.value);
                   setCurrentPage(1);
                 }}
-                placeholder="Buscar por material, lote, local ou origem..."
+                placeholder="Buscar por nome, categoria, NCM ou código..."
               />
             </div>
           </div>
 
-          <div className="col-lg-3 col-md-6">
+          <div className="col-xl-2 col-lg-3 col-md-6">
             <select
               className="form-select"
               value={categoryFilter}
-              onChange={(e) => {
-                setCategoryFilter(e.target.value);
+              onChange={(event) => {
+                setCategoryFilter(event.target.value);
                 setCurrentPage(1);
               }}
             >
-              <option value="">Todas as categorias</option>
+              <option value="">
+                Todas as categorias
+              </option>
 
               {categories.map((category) => (
-                <option key={category} value={category}>
+                <option
+                  key={category}
+                  value={category}
+                >
                   {category}
                 </option>
               ))}
             </select>
           </div>
 
-          <div className="col-lg-3 col-md-6">
+          <div className="col-xl-2 col-lg-3 col-md-6">
             <select
               className="form-select"
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value);
+              value={unitFilter}
+              onChange={(event) => {
+                setUnitFilter(event.target.value);
                 setCurrentPage(1);
               }}
             >
-              <option value="">Todos os status</option>
-              <option value="ACTIVE">Ativo</option>
-              <option value="INACTIVE">Inativo</option>
+              <option value="">
+                Todas as unidades
+              </option>
+
+              {units.map((unit) => (
+                <option
+                  key={unit}
+                  value={unit}
+                >
+                  {getWasteUnitShortLabel(unit)}
+                </option>
+              ))}
             </select>
           </div>
 
-          {(search || categoryFilter || statusFilter) && (
-            <div className="col-lg-2 col-md-6">
-              <button className="clear-filter w-100" onClick={clearFilters}>
-                Limpar filtros
-              </button>
-            </div>
-          )}
+          <div className="col-xl-2 col-lg-3 col-md-6">
+            <select
+              className="form-select"
+              value={statusFilter}
+              onChange={(event) => {
+                setStatusFilter(event.target.value);
+                setCurrentPage(1);
+              }}
+            >
+              <option value="">
+                Todos os status
+              </option>
+
+              <option value="ACTIVE">
+                Ativo
+              </option>
+
+              <option value="INACTIVE">
+                Inativo
+              </option>
+            </select>
+          </div>
+
+          <div className="col-xl-2 col-lg-3 col-md-6">
+            <button
+              type="button"
+              className="outline-btn btn-sm w-100"
+              onClick={clearFilters}
+              disabled={
+                !search &&
+                !categoryFilter &&
+                !unitFilter &&
+                !statusFilter
+              }
+            >
+              Limpar filtros
+            </button>
+          </div>
         </div>
 
         <DataTable
@@ -455,8 +632,8 @@ const WasteTypeList = () => {
           currentPage={currentPage}
           rowsPerPage={rowsPerPage}
           onPageChange={setCurrentPage}
-          onRowsPerPageChange={(n) => {
-            setRowsPerPage(n);
+          onRowsPerPageChange={(value) => {
+            setRowsPerPage(value);
             setCurrentPage(1);
           }}
           renderActions={(row) => (
@@ -464,20 +641,34 @@ const WasteTypeList = () => {
               <Link
                 to={`/edit-waste-type/${row.id}`}
                 className="action-button edit"
-                title="Editar material"
+                title="Editar tipo de resíduo"
               >
                 <Pencil />
               </Link>
 
-              <button
-                className="action-button delete"
-                onClick={() => setDeleteId(row.id)}
-                data-bs-toggle="modal"
-                data-bs-target="#deleteModal"
-                title="Inativar material"
-              >
-                <Trash2 />
-              </button>
+              {row.status === "ACTIVE" ? (
+                <button
+                  type="button"
+                  className="action-button delete"
+                  title="Inativar tipo de resíduo"
+                  data-bs-toggle="modal"
+                  data-bs-target="#deleteModal"
+                  onClick={() => setDeleteId(row.id)}
+                  disabled={processingId === row.id}
+                >
+                  <Trash2 />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="action-button edit"
+                  title="Reativar tipo de resíduo"
+                  onClick={() => handleActivate(row.id)}
+                  disabled={processingId === row.id}
+                >
+                  <RotateCcw />
+                </button>
+              )}
             </div>
           )}
         />

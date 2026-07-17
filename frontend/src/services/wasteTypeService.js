@@ -1,155 +1,312 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+import { apiRequest } from "./apiClient";
 
-const WASTE_STOCK_API = `${API_BASE_URL}/api/waste-stock`;
+const WASTE_TYPE_ENDPOINT = "/waste-stock/items";
 
-const getToken = () => localStorage.getItem("auth_token");
+const normalizeText = (value) => {
+  if (value === null || value === undefined) {
+    return "";
+  }
 
-const parseResponse = async (res) => {
-  const data = await res.json().catch(() => ({}));
+  return String(value).trim();
+};
 
-  if (!res.ok) {
-    throw data;
+const normalizeNcm = (value) => {
+  const normalized = normalizeText(value).replace(/\D/g, "");
+  return normalized || "";
+};
+
+const normalizeInternalCode = (value) => {
+  const normalized = normalizeText(value);
+
+  return normalized ? normalized.toUpperCase() : "";
+};
+
+const normalizeWasteTypePayload = (payload = {}) => {
+  const source = payload?.item || payload;
+
+  const data = {
+    name: normalizeText(source.name),
+    category: normalizeText(source.category),
+    unit: normalizeText(source.unit || "KG").toUpperCase(),
+    wasteClass: normalizeText(
+      source.wasteClass || "NOT_INFORMED"
+    ).toUpperCase(),
+    status: normalizeText(source.status || "ACTIVE").toUpperCase(),
+  };
+
+  const subcategory = normalizeText(source.subcategory);
+  const ncm = normalizeNcm(source.ncm);
+  const internalCode = normalizeInternalCode(source.internalCode);
+  const description = normalizeText(source.description);
+
+  if (subcategory) {
+    data.subcategory = subcategory;
+  }
+
+  if (ncm) {
+    data.ncm = ncm;
+  }
+
+  if (internalCode) {
+    data.internalCode = internalCode;
+  }
+
+  if (description) {
+    data.description = description;
   }
 
   return data;
 };
 
-const buildHeaders = () => {
-  const token = getToken();
+const buildQueryString = (filters = {}) => {
+  const params = new URLSearchParams();
 
-  return {
-    Authorization: `Bearer ${token}`,
-    "Content-Type": "application/json",
-    Accept: "application/json",
-  };
+  const status = normalizeText(filters.status);
+  const category = normalizeText(filters.category);
+  const search = normalizeText(filters.search);
+
+  if (status) {
+    params.set("status", status.toUpperCase());
+  }
+
+  if (category) {
+    params.set("category", category);
+  }
+
+  if (search) {
+    params.set("search", search);
+  }
+
+  const query = params.toString();
+
+  return query ? `?${query}` : "";
 };
 
 /**
- * Lista estoque de resíduos/lotes da cooperativa
- * GET /api/waste-stock
+ * Lista os tipos de resíduos pertencentes à cooperativa autenticada.
+ *
+ * GET /waste-stock/items
  */
-export const getAllWasteTypes = async () => {
-  const res = await fetch(WASTE_STOCK_API, {
+export const getAllWasteTypes = async (filters = {}) => {
+  const queryString = buildQueryString(filters);
+
+  return apiRequest(`${WASTE_TYPE_ENDPOINT}${queryString}`, {
     method: "GET",
-    headers: buildHeaders(),
-    credentials: "include",
   });
-
-  return parseResponse(res);
 };
 
 /**
- * Cria material e lote de estoque
- * POST /api/waste-stock
+ * Alias semântico para telas que usam a nomenclatura
+ * "Gestão de Resíduos".
  */
-export const createWasteType = async (payload) => {
-  const res = await fetch(WASTE_STOCK_API, {
-    method: "POST",
-    headers: buildHeaders(),
-    credentials: "include",
-    body: JSON.stringify(payload),
-  });
-
-  return parseResponse(res);
+export const getWasteCatalog = async (filters = {}) => {
+  return getAllWasteTypes(filters);
 };
 
 /**
- * Busca material/lote de estoque por ID
- * GET /api/waste-stock/:id
+ * Busca um tipo de resíduo pelo ID.
+ *
+ * GET /waste-stock/items/:id
  */
 export const getWasteTypeById = async (id) => {
-  const res = await fetch(`${WASTE_STOCK_API}/${id}`, {
+  if (!id) {
+    throw new Error("ID do tipo de resíduo não informado.");
+  }
+
+  return apiRequest(`${WASTE_TYPE_ENDPOINT}/${id}`, {
     method: "GET",
-    headers: buildHeaders(),
-    credentials: "include",
   });
-
-  return parseResponse(res);
 };
 
 /**
- * Atualiza material/lote de estoque
- * PUT /api/waste-stock/:id
+ * Cadastra somente o tipo de resíduo.
+ *
+ * Não cria lote nem quantidade de estoque.
+ *
+ * POST /waste-stock/items
  */
-export const updateWasteType = async (id, payload) => {
-  const res = await fetch(`${WASTE_STOCK_API}/${id}`, {
-    method: "PUT",
-    headers: buildHeaders(),
-    credentials: "include",
-    body: JSON.stringify(payload),
-  });
+export const createWasteType = async (payload = {}) => {
+  const data = normalizeWasteTypePayload(payload);
 
-  return parseResponse(res);
+  return apiRequest(WASTE_TYPE_ENDPOINT, {
+    method: "POST",
+    body: data,
+  });
 };
 
 /**
- * Remove/inativa material/lote de estoque
- * DELETE /api/waste-stock/:id
+ * Atualiza os dados do tipo de resíduo.
+ *
+ * PUT /waste-stock/items/:id
+ */
+export const updateWasteType = async (id, payload = {}) => {
+  if (!id) {
+    throw new Error("ID do tipo de resíduo não informado.");
+  }
+
+  const data = normalizeWasteTypePayload(payload);
+
+  return apiRequest(`${WASTE_TYPE_ENDPOINT}/${id}`, {
+    method: "PUT",
+    body: data,
+  });
+};
+
+/**
+ * Atualiza parcialmente os dados do tipo de resíduo.
+ *
+ * PATCH /waste-stock/items/:id
+ */
+export const patchWasteType = async (id, payload = {}) => {
+  if (!id) {
+    throw new Error("ID do tipo de resíduo não informado.");
+  }
+
+  const data = normalizeWasteTypePayload(payload);
+
+  return apiRequest(`${WASTE_TYPE_ENDPOINT}/${id}`, {
+    method: "PATCH",
+    body: data,
+  });
+};
+
+/**
+ * Inativa um tipo de resíduo.
+ *
+ * O backend não remove definitivamente para preservar
+ * coletas, lotes, relatórios e histórico.
+ *
+ * DELETE /waste-stock/items/:id
  */
 export const deleteWasteType = async (id) => {
-  const res = await fetch(`${WASTE_STOCK_API}/${id}`, {
+  if (!id) {
+    throw new Error("ID do tipo de resíduo não informado.");
+  }
+
+  return apiRequest(`${WASTE_TYPE_ENDPOINT}/${id}`, {
     method: "DELETE",
-    headers: buildHeaders(),
-    credentials: "include",
   });
-
-  return parseResponse(res);
 };
 
 /**
- * Lista somente lotes de um material específico
- * GET /api/waste-stock/:id/lots
+ * Ativa novamente um tipo de resíduo inativo.
  */
-export const getWasteStockLots = async (id) => {
-  const res = await fetch(`${WASTE_STOCK_API}/${id}/lots`, {
-    method: "GET",
-    headers: buildHeaders(),
-    credentials: "include",
-  });
+export const activateWasteType = async (id) => {
+  if (!id) {
+    throw new Error("ID do tipo de resíduo não informado.");
+  }
 
-  return parseResponse(res);
+  return patchWasteType(id, {
+    status: "ACTIVE",
+  });
 };
 
 /**
- * Cria um novo lote para um material já existente
- * POST /api/waste-stock/:id/lots
+ * Inativa explicitamente um tipo de resíduo.
  */
-export const createWasteStockLot = async (id, payload) => {
-  const res = await fetch(`${WASTE_STOCK_API}/${id}/lots`, {
-    method: "POST",
-    headers: buildHeaders(),
-    credentials: "include",
-    body: JSON.stringify(payload),
-  });
+export const deactivateWasteType = async (id) => {
+  if (!id) {
+    throw new Error("ID do tipo de resíduo não informado.");
+  }
 
-  return parseResponse(res);
+  return patchWasteType(id, {
+    status: "INACTIVE",
+  });
 };
 
-/**
- * Atualiza um lote específico
- * PUT /api/waste-stock/lots/:lotId
- */
-export const updateWasteStockLot = async (lotId, payload) => {
-  const res = await fetch(`${WASTE_STOCK_API}/lots/${lotId}`, {
-    method: "PUT",
-    headers: buildHeaders(),
-    credentials: "include",
-    body: JSON.stringify(payload),
-  });
+export const WASTE_UNIT_OPTIONS = [
+  {
+    value: "KG",
+    label: "Quilograma (kg)",
+    shortLabel: "kg",
+  },
+  {
+    value: "TON",
+    label: "Tonelada (t)",
+    shortLabel: "t",
+  },
+  {
+    value: "LITER",
+    label: "Litro (L)",
+    shortLabel: "L",
+  },
+  {
+    value: "UNIT",
+    label: "Unidade",
+    shortLabel: "un.",
+  },
+  {
+    value: "CUBIC_METER",
+    label: "Metro cúbico (m³)",
+    shortLabel: "m³",
+  },
+];
 
-  return parseResponse(res);
+export const WASTE_CLASS_OPTIONS = [
+  {
+    value: "NOT_INFORMED",
+    label: "Não informado",
+  },
+  {
+    value: "CLASS_I",
+    label: "Classe I — Perigoso",
+  },
+  {
+    value: "CLASS_II_A",
+    label: "Classe II A — Não inerte",
+  },
+  {
+    value: "CLASS_II_B",
+    label: "Classe II B — Inerte",
+  },
+];
+
+export const WASTE_STATUS_OPTIONS = [
+  {
+    value: "ACTIVE",
+    label: "Ativo",
+  },
+  {
+    value: "INACTIVE",
+    label: "Inativo",
+  },
+];
+
+export const getWasteUnitLabel = (unit) => {
+  return (
+    WASTE_UNIT_OPTIONS.find((item) => item.value === unit)?.label ||
+    unit ||
+    "Não informado"
+  );
 };
 
-/**
- * Remove/inativa um lote específico
- * DELETE /api/waste-stock/lots/:lotId
- */
-export const deleteWasteStockLot = async (lotId) => {
-  const res = await fetch(`${WASTE_STOCK_API}/lots/${lotId}`, {
-    method: "DELETE",
-    headers: buildHeaders(),
-    credentials: "include",
-  });
+export const getWasteUnitShortLabel = (unit) => {
+  return (
+    WASTE_UNIT_OPTIONS.find((item) => item.value === unit)
+      ?.shortLabel ||
+    unit ||
+    ""
+  );
+};
 
-  return parseResponse(res);
+export const getWasteClassLabel = (wasteClass) => {
+  return (
+    WASTE_CLASS_OPTIONS.find(
+      (item) => item.value === wasteClass
+    )?.label ||
+    wasteClass ||
+    "Não informado"
+  );
+};
+
+export default {
+  getAllWasteTypes,
+  getWasteCatalog,
+  getWasteTypeById,
+  createWasteType,
+  updateWasteType,
+  patchWasteType,
+  deleteWasteType,
+  activateWasteType,
+  deactivateWasteType,
 };

@@ -4,6 +4,7 @@ import {
   Settings,
   ChartLine,
   Box,
+  Boxes,
   Users,
   Route,
   Truck,
@@ -14,6 +15,8 @@ import {
   Search,
   X,
   Building2,
+  Tags,
+  CirclePlus,
 } from "lucide-react";
 
 import MenuSearch from "./modal/MenuSearch";
@@ -69,14 +72,23 @@ const Sidebar = ({ active, setActive }) => {
     location.pathname.startsWith("/collector-list") ||
     location.pathname.startsWith("/create-collector") ||
     location.pathname.startsWith("/collector-documents") ||
-    location.pathname.startsWith("/assign-list");
+    location.pathname.startsWith("/assign-list") ||
+    location.pathname.startsWith("/create-assign") ||
+    location.pathname.startsWith("/edit-assign") ||
+    location.pathname.startsWith("/attendance-list") ||
+    location.pathname.startsWith("/create-attendance") ||
+    location.pathname.startsWith("/edit-attendance") ||
+    location.pathname.startsWith("/staff-document-list") ||
+    location.pathname.startsWith("/create-staff-document") ||
+    location.pathname.startsWith("/edit-staff-document");
 
-  const isWasteTypeSectionActive =
+  const isWasteStockSectionActive =
+    location.pathname.startsWith("/waste-stock") ||
     location.pathname.startsWith("/waste-type-list") ||
     location.pathname.startsWith("/create-type") ||
     location.pathname.startsWith("/edit-waste-type");
 
-  const isReportsectionActive =
+  const isReportSectionActive =
     location.pathname.startsWith("/analytics-dashboard") ||
     location.pathname.startsWith("/waste-collection-reports") ||
     location.pathname.startsWith("/waste-type-reports") ||
@@ -88,16 +100,24 @@ const Sidebar = ({ active, setActive }) => {
     location.pathname.startsWith("/settings") ||
     location.pathname.startsWith("/smtp-config");
 
+  const closeSidebarOnMobile = () => {
+    setActive(true);
+  };
+
   return (
     <>
       <MenuSearch />
 
       <div
         className={`back-drop ${active ? "" : "close"}`}
-        onClick={() => setActive(true)}
-      ></div>
+        onClick={closeSidebarOnMobile}
+      />
 
-      <div className={`sidebar tablet-sidebar py-3 ${active ? "" : "close"}`}>
+      <div
+        className={`sidebar tablet-sidebar py-3 ${
+          active ? "" : "close"
+        }`}
+      >
         <div className="logo-wrap">
           <div className="logo-a">
             <img
@@ -113,8 +133,10 @@ const Sidebar = ({ active, setActive }) => {
           </div>
 
           <button
+            type="button"
             className="sidebar-close border-0 bg-transparent"
-            onClick={() => setActive(true)}
+            onClick={closeSidebarOnMobile}
+            aria-label="Fechar menu lateral"
           >
             <X size={30} />
           </button>
@@ -137,9 +159,11 @@ const Sidebar = ({ active, setActive }) => {
         </div>
 
         <ul className="nav flex-column mt-4">
+          {/* Dashboard */}
           <li className="nav-item">
             <NavLink
               to="/"
+              end
               className={({ isActive }) =>
                 `nav-link ${isActive ? "active" : ""}`
               }
@@ -147,485 +171,779 @@ const Sidebar = ({ active, setActive }) => {
               <div className="icon-wrap">
                 <House />
               </div>
-              <span className="text">Painel Geral</span>
+
+              <span className="text">
+                Painel Geral
+              </span>
             </NavLink>
           </li>
 
+          {/* Waste Collection */}
           <li className="nav-item">
             <a
-              href="#"
-              className={`nav-link ${isWasteSectionActive ? "active" : ""}`}
+              href="#waste"
+              className={`nav-link ${
+                isWasteSectionActive ? "active" : ""
+              }`}
               data-bs-toggle="collapse"
               data-bs-target="#waste"
+              aria-expanded={isWasteSectionActive}
+              aria-controls="waste"
             >
               <div className="icon-wrap">
                 <Recycle />
               </div>
-              <span className="text">Coleta de Resíduo</span>
+
+              <span className="text">
+                Coleta de Resíduo
+              </span>
+
               <ChevronRight className="ms-auto arrow align-middle" />
             </a>
 
-            <ul className="submenu collapse transition" id="waste">
+            <ul
+              className={`submenu collapse transition ${
+                isWasteSectionActive ? "show" : ""
+              }`}
+              id="waste"
+            >
               <li>
                 <NavLink
                   to="/waste-list"
-                  className={({ isActive }) => (isActive ? "active" : "")}
+                  className={({ isActive }) =>
+                    isActive ? "active" : ""
+                  }
                 >
                   <span className="dot-wrap">
-                    <span className="dot"></span>
+                    <span className="dot" />
                   </span>
-                  <span className="submenu-text">Lista de Resíduos</span>
+
+                  <span className="submenu-text">
+                    Lista de Coletas
+                  </span>
                 </NavLink>
               </li>
 
               <li>
                 <NavLink
                   to="/collection-requests"
-                  className={({ isActive }) => (isActive ? "active" : "")}
+                  className={({ isActive }) =>
+                    isActive ? "active" : ""
+                  }
                 >
                   <span className="dot-wrap">
-                    <span className="dot"></span>
+                    <span className="dot" />
                   </span>
-                  <span className="submenu-text">Coletas Solicitadas</span>
+
+                  <span className="submenu-text">
+                    Coletas Solicitadas
+                  </span>
                 </NavLink>
               </li>
             </ul>
           </li>
 
+          {/* PEV */}
           <li className="nav-item">
             <a
-              href=""
-              className={`nav-link ${isBinSectionActive ? "active" : ""}`}
+              href="#bin"
+              className={`nav-link ${
+                isBinSectionActive ? "active" : ""
+              }`}
               data-bs-toggle="collapse"
               data-bs-target="#bin"
+              aria-expanded={isBinSectionActive}
+              aria-controls="bin"
             >
               <div className="icon-wrap">
                 <Archive />
               </div>
-              <span className="text">Gestão de PEVs</span>
+
+              <span className="text">
+                Gestão de PEVs
+              </span>
+
               <ChevronRight className="ms-auto arrow align-middle" />
             </a>
 
-            <ul className="submenu collapse transition" id="bin">
+            <ul
+              className={`submenu collapse transition ${
+                isBinSectionActive ? "show" : ""
+              }`}
+              id="bin"
+            >
               <li>
                 <NavLink
                   to="/bin-list"
-                  className={({ isActive }) => (isActive ? "active" : "")}
+                  className={({ isActive }) =>
+                    isActive ? "active" : ""
+                  }
                 >
                   <span className="dot-wrap">
-                    <span className="dot"></span>
+                    <span className="dot" />
                   </span>
-                  <span className="submenu-text">Lista de PEVs</span>
+
+                  <span className="submenu-text">
+                    Lista de PEVs
+                  </span>
                 </NavLink>
               </li>
 
               <li>
                 <NavLink
                   to="/create-bin"
-                  className={({ isActive }) => (isActive ? "active" : "")}
+                  className={({ isActive }) =>
+                    isActive ? "active" : ""
+                  }
                 >
                   <span className="dot-wrap">
-                    <span className="dot"></span>
+                    <span className="dot" />
                   </span>
-                  <span className="submenu-text">Cadastrar PEV</span>
+
+                  <span className="submenu-text">
+                    Cadastrar PEV
+                  </span>
                 </NavLink>
               </li>
             </ul>
           </li>
 
+          {/* Zones */}
           <li className="nav-item">
             <a
-              href=""
-              className={`nav-link ${isZoneSectionActive ? "active" : ""}`}
+              href="#zone"
+              className={`nav-link ${
+                isZoneSectionActive ? "active" : ""
+              }`}
               data-bs-toggle="collapse"
               data-bs-target="#zone"
+              aria-expanded={isZoneSectionActive}
+              aria-controls="zone"
             >
               <div className="icon-wrap">
                 <MapPinned />
               </div>
-              <span className="text">Zona & Área</span>
+
+              <span className="text">
+                Zona & Área
+              </span>
+
               <ChevronRight className="ms-auto arrow align-middle" />
             </a>
 
-            <ul className="submenu collapse transition" id="zone">
+            <ul
+              className={`submenu collapse transition ${
+                isZoneSectionActive ? "show" : ""
+              }`}
+              id="zone"
+            >
               <li>
                 <NavLink
                   to="/zone-list"
-                  className={({ isActive }) => (isActive ? "active" : "")}
+                  className={({ isActive }) =>
+                    isActive ? "active" : ""
+                  }
                 >
                   <span className="dot-wrap">
-                    <span className="dot"></span>
+                    <span className="dot" />
                   </span>
-                  <span className="submenu-text">Lista de Zonas</span>
+
+                  <span className="submenu-text">
+                    Lista de Zonas
+                  </span>
                 </NavLink>
               </li>
 
               <li>
                 <NavLink
                   to="/create-zone"
-                  className={({ isActive }) => (isActive ? "active" : "")}
+                  className={({ isActive }) =>
+                    isActive ? "active" : ""
+                  }
                 >
                   <span className="dot-wrap">
-                    <span className="dot"></span>
+                    <span className="dot" />
                   </span>
-                  <span className="submenu-text">Criar Zona</span>
+
+                  <span className="submenu-text">
+                    Criar Zona
+                  </span>
                 </NavLink>
               </li>
             </ul>
           </li>
 
+          {/* Generators */}
           <li className="nav-item">
             <a
-              href=""
-              className={`nav-link ${isGeneratorSectionActive ? "active" : ""}`}
+              href="#generator"
+              className={`nav-link ${
+                isGeneratorSectionActive ? "active" : ""
+              }`}
               data-bs-toggle="collapse"
               data-bs-target="#generator"
+              aria-expanded={isGeneratorSectionActive}
+              aria-controls="generator"
             >
               <div className="icon-wrap">
                 <Building2 />
               </div>
-              <span className="text">Gestão de Geradores</span>
+
+              <span className="text">
+                Gestão de Geradores
+              </span>
+
               <ChevronRight className="ms-auto arrow align-middle" />
             </a>
 
-            <ul className="submenu collapse transition" id="generator">
+            <ul
+              className={`submenu collapse transition ${
+                isGeneratorSectionActive ? "show" : ""
+              }`}
+              id="generator"
+            >
               <li>
                 <NavLink
                   to="/generator-list"
-                  className={({ isActive }) => (isActive ? "active" : "")}
+                  className={({ isActive }) =>
+                    isActive ? "active" : ""
+                  }
                 >
                   <span className="dot-wrap">
-                    <span className="dot"></span>
+                    <span className="dot" />
                   </span>
-                  <span className="submenu-text">Listar Geradores</span>
+
+                  <span className="submenu-text">
+                    Listar Geradores
+                  </span>
                 </NavLink>
               </li>
 
               <li>
                 <NavLink
                   to="/create-generator"
-                  className={({ isActive }) => (isActive ? "active" : "")}
+                  className={({ isActive }) =>
+                    isActive ? "active" : ""
+                  }
                 >
                   <span className="dot-wrap">
-                    <span className="dot"></span>
+                    <span className="dot" />
                   </span>
-                  <span className="submenu-text">Criar Gerador</span>
+
+                  <span className="submenu-text">
+                    Criar Gerador
+                  </span>
                 </NavLink>
               </li>
 
               <li>
                 <NavLink
                   to="/generator-documents"
-                  className={({ isActive }) => (isActive ? "active" : "")}
+                  className={({ isActive }) =>
+                    isActive ? "active" : ""
+                  }
                 >
                   <span className="dot-wrap">
-                    <span className="dot"></span>
+                    <span className="dot" />
                   </span>
-                  <span className="submenu-text">Documentos do Gerador</span>
+
+                  <span className="submenu-text">
+                    Documentos do Gerador
+                  </span>
                 </NavLink>
               </li>
             </ul>
           </li>
 
+          {/* Vehicles */}
           <li className="nav-item">
             <a
-              href=""
-              className={`nav-link ${isVehicleSectionActive ? "active" : ""}`}
+              href="#vehicle"
+              className={`nav-link ${
+                isVehicleSectionActive ? "active" : ""
+              }`}
               data-bs-toggle="collapse"
               data-bs-target="#vehicle"
+              aria-expanded={isVehicleSectionActive}
+              aria-controls="vehicle"
             >
               <div className="icon-wrap">
                 <Truck />
               </div>
-              <span className="text">Gestão de Veículos</span>
+
+              <span className="text">
+                Gestão de Veículos
+              </span>
+
               <ChevronRight className="ms-auto arrow align-middle" />
             </a>
 
-            <ul className="submenu collapse transition" id="vehicle">
+            <ul
+              className={`submenu collapse transition ${
+                isVehicleSectionActive ? "show" : ""
+              }`}
+              id="vehicle"
+            >
               <li>
                 <NavLink
                   to="/vehicle-list"
-                  className={({ isActive }) => (isActive ? "active" : "")}
+                  className={({ isActive }) =>
+                    isActive ? "active" : ""
+                  }
                 >
                   <span className="dot-wrap">
-                    <span className="dot"></span>
+                    <span className="dot" />
                   </span>
-                  <span className="submenu-text">Lista de Veículos</span>
+
+                  <span className="submenu-text">
+                    Lista de Veículos
+                  </span>
                 </NavLink>
               </li>
 
               <li>
                 <NavLink
                   to="/create-vehicle"
-                  className={({ isActive }) => (isActive ? "active" : "")}
+                  className={({ isActive }) =>
+                    isActive ? "active" : ""
+                  }
                 >
                   <span className="dot-wrap">
-                    <span className="dot"></span>
+                    <span className="dot" />
                   </span>
-                  <span className="submenu-text">Criar Veículo</span>
+
+                  <span className="submenu-text">
+                    Criar Veículo
+                  </span>
                 </NavLink>
               </li>
 
               <li>
                 <NavLink
                   to="/document-list"
-                  className={({ isActive }) => (isActive ? "active" : "")}
+                  className={({ isActive }) =>
+                    isActive ? "active" : ""
+                  }
                 >
                   <span className="dot-wrap">
-                    <span className="dot"></span>
+                    <span className="dot" />
                   </span>
-                  <span className="submenu-text">Documentos do Veículo</span>
+
+                  <span className="submenu-text">
+                    Documentos do Veículo
+                  </span>
                 </NavLink>
               </li>
 
               <li>
                 <NavLink
                   to="/maintenance-list"
-                  className={({ isActive }) => (isActive ? "active" : "")}
+                  className={({ isActive }) =>
+                    isActive ? "active" : ""
+                  }
                 >
                   <span className="dot-wrap">
-                    <span className="dot"></span>
+                    <span className="dot" />
                   </span>
-                  <span className="submenu-text">Log de Manutenção</span>
+
+                  <span className="submenu-text">
+                    Log de Manutenção
+                  </span>
                 </NavLink>
               </li>
             </ul>
           </li>
 
+          {/* Routes */}
           <li className="nav-item">
             <a
-              href=""
-              className={`nav-link ${isRouteSectionActive ? "active" : ""}`}
+              href="#route"
+              className={`nav-link ${
+                isRouteSectionActive ? "active" : ""
+              }`}
               data-bs-toggle="collapse"
               data-bs-target="#route"
+              aria-expanded={isRouteSectionActive}
+              aria-controls="route"
             >
               <div className="icon-wrap">
                 <Route />
               </div>
-              <span className="text">Gestão de Rotas</span>
+
+              <span className="text">
+                Gestão de Rotas
+              </span>
+
               <ChevronRight className="ms-auto arrow align-middle" />
             </a>
 
-            <ul className="submenu collapse transition" id="route">
+            <ul
+              className={`submenu collapse transition ${
+                isRouteSectionActive ? "show" : ""
+              }`}
+              id="route"
+            >
               <li>
                 <NavLink
                   to="/route-list"
-                  className={({ isActive }) => (isActive ? "active" : "")}
+                  className={({ isActive }) =>
+                    isActive ? "active" : ""
+                  }
                 >
                   <span className="dot-wrap">
-                    <span className="dot"></span>
+                    <span className="dot" />
                   </span>
-                  <span className="submenu-text">Lista de Rotas</span>
+
+                  <span className="submenu-text">
+                    Lista de Rotas
+                  </span>
                 </NavLink>
               </li>
 
               <li>
                 <NavLink
                   to="/mtr-online"
-                  className={({ isActive }) => (isActive ? "active" : "")}
+                  className={({ isActive }) =>
+                    isActive ? "active" : ""
+                  }
                 >
                   <span className="dot-wrap">
-                    <span className="dot"></span>
+                    <span className="dot" />
                   </span>
-                  <span className="submenu-text">MTR Online</span>
+
+                  <span className="submenu-text">
+                    MTR Online
+                  </span>
                 </NavLink>
               </li>
 
               <li>
                 <NavLink
                   to="/operational-calendar"
-                  className={({ isActive }) => (isActive ? "active" : "")}
+                  className={({ isActive }) =>
+                    isActive ? "active" : ""
+                  }
                 >
                   <span className="dot-wrap">
-                    <span className="dot"></span>
+                    <span className="dot" />
                   </span>
-                  <span className="submenu-text">Calendário Operacional</span>
+
+                  <span className="submenu-text">
+                    Calendário Operacional
+                  </span>
                 </NavLink>
               </li>
 
               <li>
                 <NavLink
                   to="/create-route"
-                  className={({ isActive }) => (isActive ? "active" : "")}
+                  className={({ isActive }) =>
+                    isActive ? "active" : ""
+                  }
                 >
                   <span className="dot-wrap">
-                    <span className="dot"></span>
+                    <span className="dot" />
                   </span>
-                  <span className="submenu-text">Criar Rota</span>
+
+                  <span className="submenu-text">
+                    Criar Rota
+                  </span>
                 </NavLink>
               </li>
             </ul>
           </li>
 
+          {/* Staff */}
           <li className="nav-item">
             <a
-              href=""
-              className={`nav-link ${isStaffSectionActive ? "active" : ""}`}
+              href="#driver"
+              className={`nav-link ${
+                isStaffSectionActive ? "active" : ""
+              }`}
               data-bs-toggle="collapse"
               data-bs-target="#driver"
+              aria-expanded={isStaffSectionActive}
+              aria-controls="driver"
             >
               <div className="icon-wrap">
                 <Users />
               </div>
-              <span className="text">Motoristas e Catadores</span>
+
+              <span className="text">
+                Motoristas e Catadores
+              </span>
+
               <ChevronRight className="ms-auto arrow align-middle" />
             </a>
 
-            <ul className="submenu collapse transition" id="driver">
+            <ul
+              className={`submenu collapse transition ${
+                isStaffSectionActive ? "show" : ""
+              }`}
+              id="driver"
+            >
               <li>
                 <NavLink
                   to="/staff-list"
-                  className={({ isActive }) => (isActive ? "active" : "")}
+                  className={({ isActive }) =>
+                    isActive ? "active" : ""
+                  }
                 >
                   <span className="dot-wrap">
-                    <span className="dot"></span>
+                    <span className="dot" />
                   </span>
-                  <span className="submenu-text">Listar Motoristas</span>
+
+                  <span className="submenu-text">
+                    Listar Motoristas
+                  </span>
                 </NavLink>
               </li>
 
               <li>
                 <NavLink
                   to="/create-staff"
-                  className={({ isActive }) => (isActive ? "active" : "")}
+                  className={({ isActive }) =>
+                    isActive ? "active" : ""
+                  }
                 >
                   <span className="dot-wrap">
-                    <span className="dot"></span>
+                    <span className="dot" />
                   </span>
-                  <span className="submenu-text">Adicionar Motorista</span>
+
+                  <span className="submenu-text">
+                    Adicionar Motorista
+                  </span>
                 </NavLink>
               </li>
 
               <li>
                 <NavLink
                   to="/collector-list"
-                  className={({ isActive }) => (isActive ? "active" : "")}
+                  className={({ isActive }) =>
+                    isActive ? "active" : ""
+                  }
                 >
                   <span className="dot-wrap">
-                    <span className="dot"></span>
+                    <span className="dot" />
                   </span>
-                  <span className="submenu-text">Listar Catadores</span>
+
+                  <span className="submenu-text">
+                    Listar Catadores
+                  </span>
                 </NavLink>
               </li>
 
               <li>
                 <NavLink
                   to="/create-collector"
-                  className={({ isActive }) => (isActive ? "active" : "")}
+                  className={({ isActive }) =>
+                    isActive ? "active" : ""
+                  }
                 >
                   <span className="dot-wrap">
-                    <span className="dot"></span>
+                    <span className="dot" />
                   </span>
-                  <span className="submenu-text">Adicionar Catador</span>
+
+                  <span className="submenu-text">
+                    Adicionar Catador
+                  </span>
                 </NavLink>
               </li>
 
               <li>
                 <NavLink
                   to="/collector-documents"
-                  className={({ isActive }) => (isActive ? "active" : "")}
+                  className={({ isActive }) =>
+                    isActive ? "active" : ""
+                  }
                 >
                   <span className="dot-wrap">
-                    <span className="dot"></span>
+                    <span className="dot" />
                   </span>
-                  <span className="submenu-text">Documentos dos Catadores</span>
+
+                  <span className="submenu-text">
+                    Documentos dos Catadores
+                  </span>
                 </NavLink>
               </li>
 
               <li>
                 <NavLink
                   to="/assign-list"
-                  className={({ isActive }) => (isActive ? "active" : "")}
+                  className={({ isActive }) =>
+                    isActive ? "active" : ""
+                  }
                 >
                   <span className="dot-wrap">
-                    <span className="dot"></span>
+                    <span className="dot" />
                   </span>
-                  <span className="submenu-text">Rotas Delegadas</span>
+
+                  <span className="submenu-text">
+                    Rotas Delegadas
+                  </span>
                 </NavLink>
               </li>
             </ul>
           </li>
 
+          {/* Waste Stock and Catalog */}
           <li className="nav-item">
             <a
-              href=""
-              className={`nav-link ${isWasteTypeSectionActive ? "active" : ""}`}
+              href="#waste-stock-menu"
+              className={`nav-link ${
+                isWasteStockSectionActive ? "active" : ""
+              }`}
               data-bs-toggle="collapse"
-              data-bs-target="#material"
+              data-bs-target="#waste-stock-menu"
+              aria-expanded={isWasteStockSectionActive}
+              aria-controls="waste-stock-menu"
             >
               <div className="icon-wrap">
                 <Box />
               </div>
-              <span className="text">Estoque de Resíduos</span>
+
+              <span className="text">
+                Estoque de Resíduos
+              </span>
+
               <ChevronRight className="ms-auto arrow align-middle" />
             </a>
 
-            <ul className="submenu collapse transition" id="material">
+            <ul
+              className={`submenu collapse transition ${
+                isWasteStockSectionActive ? "show" : ""
+              }`}
+              id="waste-stock-menu"
+            >
+              <li>
+                <NavLink
+                  to="/waste-stock"
+                  className={({ isActive }) =>
+                    isActive ? "active" : ""
+                  }
+                >
+                  <span className="dot-wrap">
+                    <span className="dot" />
+                  </span>
+
+                  <span className="submenu-text">
+                    Visão do Estoque
+                  </span>
+                </NavLink>
+              </li>
+
+              <li>
+                <NavLink
+                  to="/waste-stock/create"
+                  className={({ isActive }) =>
+                    isActive ? "active" : ""
+                  }
+                >
+                  <span className="dot-wrap">
+                    <span className="dot" />
+                  </span>
+
+                  <span className="submenu-text">
+                    Adicionar Lote
+                  </span>
+                </NavLink>
+              </li>
+
               <li>
                 <NavLink
                   to="/waste-type-list"
-                  className={({ isActive }) => (isActive ? "active" : "")}
+                  className={({ isActive }) =>
+                    isActive ? "active" : ""
+                  }
                 >
                   <span className="dot-wrap">
-                    <span className="dot"></span>
+                    <span className="dot" />
                   </span>
-                  <span className="submenu-text">Lista de Resíduos</span>
+
+                  <span className="submenu-text">
+                    Gestão de Resíduos
+                  </span>
                 </NavLink>
               </li>
 
               <li>
                 <NavLink
                   to="/create-type"
-                  className={({ isActive }) => (isActive ? "active" : "")}
+                  className={({ isActive }) =>
+                    isActive ? "active" : ""
+                  }
                 >
                   <span className="dot-wrap">
-                    <span className="dot"></span>
+                    <span className="dot" />
                   </span>
+
                   <span className="submenu-text">
-                    Criar Estoque de Resíduo
+                    Cadastrar Tipo de Resíduo
                   </span>
                 </NavLink>
               </li>
             </ul>
           </li>
 
+          {/* Reports */}
           <li className="nav-item">
             <a
-              href=""
-              className={`nav-link ${isReportsectionActive ? "active" : ""}`}
+              href="#reports"
+              className={`nav-link ${
+                isReportSectionActive ? "active" : ""
+              }`}
               data-bs-toggle="collapse"
               data-bs-target="#reports"
+              aria-expanded={isReportSectionActive}
+              aria-controls="reports"
             >
               <div className="icon-wrap">
                 <ChartLine />
               </div>
-              <span className="text">Relatórios e Análises</span>
+
+              <span className="text">
+                Relatórios e Análises
+              </span>
+
               <ChevronRight className="ms-auto arrow align-middle" />
             </a>
 
-            <ul className="submenu collapse transition" id="reports">
+            <ul
+              className={`submenu collapse transition ${
+                isReportSectionActive ? "show" : ""
+              }`}
+              id="reports"
+            >
               <li>
                 <NavLink
                   to="/analytics-dashboard"
-                  className={({ isActive }) => (isActive ? "active" : "")}
+                  className={({ isActive }) =>
+                    isActive ? "active" : ""
+                  }
                 >
                   <span className="dot-wrap">
-                    <span className="dot"></span>
+                    <span className="dot" />
                   </span>
-                  <span className="submenu-text">Dashboard Analytics</span>
+
+                  <span className="submenu-text">
+                    Dashboard Analytics
+                  </span>
                 </NavLink>
               </li>
 
               <li>
                 <NavLink
                   to="/waste-collection-reports"
-                  className={({ isActive }) => (isActive ? "active" : "")}
+                  className={({ isActive }) =>
+                    isActive ? "active" : ""
+                  }
                 >
                   <span className="dot-wrap">
-                    <span className="dot"></span>
+                    <span className="dot" />
                   </span>
+
                   <span className="submenu-text">
-                    Relatórios de Coleta de Resíduos
+                    Relatórios de Coletas
                   </span>
                 </NavLink>
               </li>
@@ -633,13 +951,16 @@ const Sidebar = ({ active, setActive }) => {
               <li>
                 <NavLink
                   to="/waste-type-reports"
-                  className={({ isActive }) => (isActive ? "active" : "")}
+                  className={({ isActive }) =>
+                    isActive ? "active" : ""
+                  }
                 >
                   <span className="dot-wrap">
-                    <span className="dot"></span>
+                    <span className="dot" />
                   </span>
+
                   <span className="submenu-text">
-                    Relatórios de Tipos de Resíduos
+                    Relatórios de Resíduos
                   </span>
                 </NavLink>
               </li>
@@ -647,52 +968,79 @@ const Sidebar = ({ active, setActive }) => {
               <li>
                 <NavLink
                   to="/staff-reports"
-                  className={({ isActive }) => (isActive ? "active" : "")}
+                  className={({ isActive }) =>
+                    isActive ? "active" : ""
+                  }
                 >
                   <span className="dot-wrap">
-                    <span className="dot"></span>
+                    <span className="dot" />
                   </span>
-                  <span className="submenu-text">Relatórios de Equipe</span>
+
+                  <span className="submenu-text">
+                    Relatórios de Equipe
+                  </span>
                 </NavLink>
               </li>
 
               <li>
                 <NavLink
                   to="/vehicle-reports"
-                  className={({ isActive }) => (isActive ? "active" : "")}
+                  className={({ isActive }) =>
+                    isActive ? "active" : ""
+                  }
                 >
                   <span className="dot-wrap">
-                    <span className="dot"></span>
+                    <span className="dot" />
                   </span>
-                  <span className="submenu-text">Relatórios de Veículos</span>
+
+                  <span className="submenu-text">
+                    Relatórios de Veículos
+                  </span>
                 </NavLink>
               </li>
             </ul>
           </li>
 
+          {/* Settings */}
           <li className="nav-item">
             <a
-              href=""
-              className={`nav-link ${isSettingSectionActive ? "active" : ""}`}
+              href="#system"
+              className={`nav-link ${
+                isSettingSectionActive ? "active" : ""
+              }`}
               data-bs-toggle="collapse"
               data-bs-target="#system"
+              aria-expanded={isSettingSectionActive}
+              aria-controls="system"
             >
               <div className="icon-wrap">
                 <Settings />
               </div>
-              <span className="text">Configurações do Sistema</span>
+
+              <span className="text">
+                Configurações do Sistema
+              </span>
+
               <ChevronRight className="ms-auto arrow align-middle" />
             </a>
 
-            <ul className="submenu collapse transition" id="system">
+            <ul
+              className={`submenu collapse transition ${
+                isSettingSectionActive ? "show" : ""
+              }`}
+              id="system"
+            >
               <li>
                 <NavLink
                   to="/settings"
-                  className={({ isActive }) => (isActive ? "active" : "")}
+                  className={({ isActive }) =>
+                    isActive ? "active" : ""
+                  }
                 >
                   <span className="dot-wrap">
-                    <span className="dot"></span>
+                    <span className="dot" />
                   </span>
+
                   <span className="submenu-text">
                     Configurações da Empresa
                   </span>
@@ -702,24 +1050,34 @@ const Sidebar = ({ active, setActive }) => {
               <li>
                 <NavLink
                   to="/smtp-config"
-                  className={({ isActive }) => (isActive ? "active" : "")}
+                  className={({ isActive }) =>
+                    isActive ? "active" : ""
+                  }
                 >
                   <span className="dot-wrap">
-                    <span className="dot"></span>
+                    <span className="dot" />
                   </span>
-                  <span className="submenu-text">Configuração SMTP</span>
+
+                  <span className="submenu-text">
+                    Configuração SMTP
+                  </span>
                 </NavLink>
               </li>
 
               <li>
                 <NavLink
                   to="/system-alerts"
-                  className={({ isActive }) => (isActive ? "active" : "")}
+                  className={({ isActive }) =>
+                    isActive ? "active" : ""
+                  }
                 >
                   <span className="dot-wrap">
-                    <span className="dot"></span>
+                    <span className="dot" />
                   </span>
-                  <span className="submenu-text">Alertas do Sistema</span>
+
+                  <span className="submenu-text">
+                    Alertas do Sistema
+                  </span>
                 </NavLink>
               </li>
             </ul>

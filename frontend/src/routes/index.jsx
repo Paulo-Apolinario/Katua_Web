@@ -12,6 +12,7 @@ import Dashboard from "../pages/Dashboard";
 import WasteList from "../pages/waste-management/WasteList";
 import AddWaste from "../pages/waste-management/AddWaste";
 import EditWaste from "../pages/waste-management/EditWaste";
+import CollectionRequests from "../pages/waste-management/CollectionRequests";
 
 // Zone Management
 import ZoneList from "../pages/zone-management/ZoneList";
@@ -35,7 +36,7 @@ import MaintenanceLogList from "../pages/vehicle-management/MaintenanceLogList";
 import AddMaintenanceLog from "../pages/vehicle-management/AddMaintenanceLog";
 import EditMaintenanceLog from "../pages/vehicle-management/EditMaintenanceLog";
 
-// Bin Management
+// Bin / PEV Management
 import BinList from "../pages/bin-management/BinList";
 import AddBin from "../pages/bin-management/AddBin";
 import EditBin from "../pages/bin-management/EditBin";
@@ -64,11 +65,15 @@ import CollectorList from "../pages/staff-management/CollectorList";
 import AddCollector from "../pages/staff-management/AddCollector";
 import CollectorDocuments from "../pages/staff-management/CollectorDocuments";
 
-// Waste Type Management
+// Waste Type / Waste Catalog Management
 import WasteTypeList from "../pages/waste-type/WasteTypeList";
 import AddWasteType from "../pages/waste-type/AddWasteType";
-import CollectionRequests from "../pages/waste-management/CollectionRequests";
 import EditWasteType from "../pages/waste-type/EditWasteType";
+
+// Waste Stock Management
+import WasteStockList from "../pages/waste-stock/WasteStockList";
+import AddWasteStockLot from "../pages/waste-stock/AddWasteStockLot";
+import EditWasteStockLot from "../pages/waste-stock/EditWasteStockLot";
 
 // Reports
 import AnalyticsDashboard from "../pages/reports/AnalyticsDashboard";
@@ -104,12 +109,16 @@ const Router = () => {
             }
           >
             {/* Dashboard */}
-            <Route path="" element={<Dashboard />} />
+            <Route index element={<Dashboard />} />
 
-            {/* Waste Management */}
+            {/* Waste Collection Management */}
             <Route path="waste-list" element={<WasteList />} />
             <Route path="create-waste" element={<AddWaste />} />
             <Route path="edit-waste/:id" element={<EditWaste />} />
+            <Route
+              path="collection-requests"
+              element={<CollectionRequests />}
+            />
 
             {/* Zone Management */}
             <Route path="zone-list" element={<ZoneList />} />
@@ -118,22 +127,48 @@ const Router = () => {
 
             {/* Generator Management */}
             <Route path="generator-list" element={<GeneratorList />} />
-            <Route path="create-generator" element={<AddGenerator />} />
-            <Route path="edit-generator/:id" element={<EditGenerator />} />
-            <Route path="generator-documents" element={<GeneratorDocuments />} />
+            <Route
+              path="create-generator"
+              element={<AddGenerator />}
+            />
+            <Route
+              path="edit-generator/:id"
+              element={<EditGenerator />}
+            />
+            <Route
+              path="generator-documents"
+              element={<GeneratorDocuments />}
+            />
 
             {/* Vehicle Management */}
             <Route path="vehicle-list" element={<VehicleList />} />
             <Route path="create-vehicle" element={<AddVehicle />} />
-            <Route path="edit-vehicle/:id" element={<EditVehicle />} />
+            <Route
+              path="edit-vehicle/:id"
+              element={<EditVehicle />}
+            />
+
             <Route path="document-list" element={<DocumentList />} />
             <Route path="create-document" element={<AddDocument />} />
-            <Route path="edit-document/:id" element={<EditDocument />} />
-            <Route path="maintenance-list" element={<MaintenanceLogList />} />
-            <Route path="create-maintenance" element={<AddMaintenanceLog />} />
-            <Route path="edit-maintenance/:id" element={<EditMaintenanceLog />} />
+            <Route
+              path="edit-document/:id"
+              element={<EditDocument />}
+            />
 
-            {/* Bin Management */}
+            <Route
+              path="maintenance-list"
+              element={<MaintenanceLogList />}
+            />
+            <Route
+              path="create-maintenance"
+              element={<AddMaintenanceLog />}
+            />
+            <Route
+              path="edit-maintenance/:id"
+              element={<EditMaintenanceLog />}
+            />
+
+            {/* PEV Management */}
             <Route path="bin-list" element={<BinList />} />
             <Route path="create-bin" element={<AddBin />} />
             <Route path="edit-bin/:id" element={<EditBin />} />
@@ -143,7 +178,10 @@ const Router = () => {
             <Route path="create-route" element={<AddRoute />} />
             <Route path="edit-route/:id" element={<EditRoute />} />
             <Route path="mtr-online" element={<MtrOnlineStatus />} />
-            <Route path="operational-calendar" element={<OperationalCalendar />} />
+            <Route
+              path="operational-calendar"
+              element={<OperationalCalendar />}
+            />
 
             {/* Staff Management */}
             <Route path="staff-list" element={<StaffList />} />
@@ -151,42 +189,111 @@ const Router = () => {
             <Route path="edit-staff/:id" element={<EditStaff />} />
 
             <Route path="collector-list" element={<CollectorList />} />
-            <Route path="create-collector" element={<AddCollector />} />
-            <Route path="collector-documents" element={<CollectorDocuments />} />
+            <Route
+              path="create-collector"
+              element={<AddCollector />}
+            />
+            <Route
+              path="collector-documents"
+              element={<CollectorDocuments />}
+            />
 
             <Route path="assign-list" element={<AssignRouteList />} />
-            <Route path="create-assign" element={<AddAssignRoute />} />
-            <Route path="edit-assign/:id" element={<EditAssignRoute />} />
-            <Route path="attendance-list" element={<StaffAttendanceList />} />
-            <Route path="create-attendance" element={<AddStaffAttendance />} />
-            <Route path="edit-attendance/:id" element={<EditStaffAttendance />} />
-            <Route path="staff-document-list" element={<StaffDocumentList />} />
-            <Route path="create-staff-document" element={<AddStaffDocument />} />
-            <Route path="edit-staff-document/:id" element={<EditStaffDocument />} />
+            <Route
+              path="create-assign"
+              element={<AddAssignRoute />}
+            />
+            <Route
+              path="edit-assign/:id"
+              element={<EditAssignRoute />}
+            />
 
-            {/* Waste Type Management */}
-            <Route path="waste-type-list" element={<WasteTypeList />} />
+            <Route
+              path="attendance-list"
+              element={<StaffAttendanceList />}
+            />
+            <Route
+              path="create-attendance"
+              element={<AddStaffAttendance />}
+            />
+            <Route
+              path="edit-attendance/:id"
+              element={<EditStaffAttendance />}
+            />
+
+            <Route
+              path="staff-document-list"
+              element={<StaffDocumentList />}
+            />
+            <Route
+              path="create-staff-document"
+              element={<AddStaffDocument />}
+            />
+            <Route
+              path="edit-staff-document/:id"
+              element={<EditStaffDocument />}
+            />
+
+            {/* Waste Catalog / Gestão de Resíduos */}
+            <Route
+              path="waste-type-list"
+              element={<WasteTypeList />}
+            />
             <Route path="create-type" element={<AddWasteType />} />
-            <Route path="collection-requests" element={<CollectionRequests />} />
-            <Route path="edit-waste-type/:id" element={<EditWasteType />} />
+            <Route
+              path="edit-waste-type/:id"
+              element={<EditWasteType />}
+            />
+
+            {/* Waste Stock / Estoque Físico */}
+            <Route
+              path="waste-stock"
+              element={<WasteStockList />}
+            />
+            <Route
+              path="waste-stock/create"
+              element={<AddWasteStockLot />}
+            />
+            <Route
+              path="waste-stock/lots/:lotId/edit"
+              element={<EditWasteStockLot />}
+            />
 
             {/* Reports */}
-            <Route path="analytics-dashboard" element={<AnalyticsDashboard />} />
+            <Route
+              path="analytics-dashboard"
+              element={<AnalyticsDashboard />}
+            />
             <Route
               path="waste-collection-reports"
               element={<WasteCollectionReports />}
             />
-            <Route path="waste-type-reports" element={<WasteTypeReports />} />
-            <Route path="staff-reports" element={<StaffReports />} />
-            <Route path="vehicle-reports" element={<VehicleReports />} />
+            <Route
+              path="waste-type-reports"
+              element={<WasteTypeReports />}
+            />
+            <Route
+              path="staff-reports"
+              element={<StaffReports />}
+            />
+            <Route
+              path="vehicle-reports"
+              element={<VehicleReports />}
+            />
 
             {/* Settings */}
             <Route path="settings" element={<CompanySetting />} />
             <Route path="smtp-config" element={<SmtpConfig />} />
-            <Route path="system-alerts" element={<SystemAlerts />} />
+            <Route
+              path="system-alerts"
+              element={<SystemAlerts />}
+            />
 
             {/* Profile Setup */}
-            <Route path="profile-setup" element={<ProfileSetup />} />
+            <Route
+              path="profile-setup"
+              element={<ProfileSetup />}
+            />
           </Route>
 
           {/* Authentication */}
@@ -198,6 +305,7 @@ const Router = () => {
               </GuestOnlyRoute>
             }
           />
+
           <Route
             path="/forgot-password"
             element={
@@ -206,6 +314,7 @@ const Router = () => {
               </GuestOnlyRoute>
             }
           />
+
           <Route
             path="/reset-password"
             element={

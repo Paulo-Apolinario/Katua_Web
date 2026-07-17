@@ -1,79 +1,112 @@
 import { useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import {
-  House,
+  ArrowLeft,
   ChevronRight,
+  House,
   PackagePlus,
   Save,
-  ArrowLeft,
 } from "lucide-react";
-import { createWasteType } from "../../services/wasteTypeService";
-import { toast } from "react-hot-toast";
+import toast from "react-hot-toast";
+
 import HeadTags from "../../components/HeadTags";
+import TopProgressBar from "../../components/TopProgressBar";
+
+import {
+  createWasteType,
+  WASTE_CLASS_OPTIONS,
+  WASTE_STATUS_OPTIONS,
+  WASTE_UNIT_OPTIONS,
+} from "../../services/wasteTypeService";
 
 const initialFormState = {
   name: "",
   category: "",
+  subcategory: "",
+  unit: "KG",
+  ncm: "",
+  internalCode: "",
+  wasteClass: "NOT_INFORMED",
   description: "",
-  lotCode: "",
-  quantityKg: "",
-  storageLocation: "",
-  processingStage: "TRIADO",
-  origin: "",
-  notes: "",
-  itemStatus: "ACTIVE",
-  lotStatus: "AVAILABLE",
+  status: "ACTIVE",
+};
+
+const normalizeNcm = (value) => {
+  return String(value || "").replace(/\D/g, "");
 };
 
 const AddWasteType = () => {
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState(initialFormState);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
+  const handleInputChange = (event) => {
+    const { name, value } = event.target;
 
-    setFormData((prev) => ({
-      ...prev,
+    setFormData((current) => ({
+      ...current,
       [name]: value,
     }));
 
-    setErrors((prev) => ({
-      ...prev,
+    setErrors((current) => ({
+      ...current,
       [name]: "",
     }));
   };
 
   const validateForm = () => {
-    const nextErrors = {};
+    const validationErrors = {};
 
     if (!formData.name.trim()) {
-      nextErrors.name = ["Informe o nome do material."];
+      validationErrors.name = [
+        "Informe o nome do tipo de resíduo.",
+      ];
+    } else if (formData.name.trim().length < 2) {
+      validationErrors.name = [
+        "O nome deve possuir pelo menos 2 caracteres.",
+      ];
     }
 
     if (!formData.category.trim()) {
-      nextErrors.category = ["Informe a categoria."];
+      validationErrors.category = [
+        "Informe a categoria do resíduo.",
+      ];
+    } else if (formData.category.trim().length < 2) {
+      validationErrors.category = [
+        "A categoria deve possuir pelo menos 2 caracteres.",
+      ];
     }
 
-    if (!formData.lotCode.trim()) {
-      nextErrors.lotCode = ["Informe o código do lote."];
+    const normalizedNcm = normalizeNcm(formData.ncm);
+
+    if (
+      normalizedNcm &&
+      normalizedNcm.length > 8
+    ) {
+      validationErrors.ncm = [
+        "O NCM deve possuir no máximo 8 dígitos.",
+      ];
     }
 
-    if (!formData.quantityKg || Number(formData.quantityKg) <= 0) {
-      nextErrors.quantityKg = ["Informe uma quantidade válida em KG."];
-    }
+    setErrors(validationErrors);
 
-    return nextErrors;
+    return Object.keys(validationErrors).length === 0;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const clearForm = () => {
+    setFormData(initialFormState);
+    setErrors({});
+  };
 
-    const validationErrors = validateForm();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
 
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      toast.error("Revise os campos obrigatórios.");
+    if (!validateForm()) {
+      toast.error(
+        "Revise os campos obrigatórios antes de salvar."
+      );
       return;
     }
 
@@ -82,36 +115,72 @@ const AddWasteType = () => {
       setErrors({});
 
       const payload = {
-        item: {
-          name: formData.name,
-          category: formData.category,
-          description: formData.description,
-          status: formData.itemStatus,
-        },
-        lot: {
-          lotCode: formData.lotCode,
-          quantityKg: Number(formData.quantityKg),
-          storageLocation: formData.storageLocation,
-          processingStage: formData.processingStage,
-          origin: formData.origin,
-          notes: formData.notes,
-          status: formData.lotStatus,
-        },
+        name: formData.name.trim(),
+        category: formData.category.trim(),
+        subcategory:
+          formData.subcategory.trim() || undefined,
+        unit: formData.unit,
+        ncm: normalizeNcm(formData.ncm) || undefined,
+        internalCode:
+          formData.internalCode.trim().toUpperCase() ||
+          undefined,
+        wasteClass: formData.wasteClass,
+        description:
+          formData.description.trim() || undefined,
+        status: formData.status,
       };
 
       const response = await createWasteType(payload);
 
       if (response?.success === false) {
-        toast.error(response.message || "Não foi possível cadastrar o estoque.");
-        setErrors(response.errors || {});
+        if (response?.errors) {
+          setErrors(response.errors);
+        }
+
+        toast.error(
+          response?.error ||
+            response?.message ||
+            "Não foi possível cadastrar o tipo de resíduo."
+        );
+
         return;
       }
 
-      toast.success("Material e lote cadastrados no estoque com sucesso.");
-      setFormData(initialFormState);
-    } catch (err) {
-      if (err?.errors) setErrors(err.errors);
-      toast.error(err?.message || "Erro ao cadastrar estoque.");
+      toast.success(
+        response?.message ||
+          "Cadastro efetuado com sucesso."
+      );
+
+      clearForm();
+
+      navigate("/waste-type-list");
+    } catch (error) {
+      console.error(
+        "Erro ao cadastrar tipo de resíduo:",
+        error
+      );
+
+      if (
+        error?.errors &&
+        typeof error.errors === "object"
+      ) {
+        setErrors(error.errors);
+
+        const firstError = Object.values(error.errors)
+          .flat()
+          .find(Boolean);
+
+        if (firstError) {
+          toast.error(firstError);
+          return;
+        }
+      }
+
+      toast.error(
+        error?.error ||
+          error?.message ||
+          "Erro ao cadastrar tipo de resíduo."
+      );
     } finally {
       setSubmitting(false);
     }
@@ -119,24 +188,34 @@ const AddWasteType = () => {
 
   return (
     <>
-      <HeadTags title="Cadastrar Estoque de Resíduo" />
+      <HeadTags title="Cadastrar Tipo de Resíduo | KATUÁ" />
+
+      <TopProgressBar loading={submitting} />
 
       <div className="page-header mb-30 px-2">
         <div className="page-title mb-3">
-          <h3 className="fs-30">Cadastrar Estoque de Resíduo</h3>
+          <h3 className="fs-30">
+            Cadastrar Tipo de Resíduo
+          </h3>
+
           <p className="text-muted mb-0">
-            Registre materiais reciclados, lotes, quantidade disponível e local
-            de armazenamento.
+            Cadastre os materiais coletados pela cooperativa,
+            definindo categoria, unidade de medida, classificação
+            e identificação operacional.
           </p>
         </div>
 
-        <div className="page-tool d-flex justify-content-between align-items-center">
+        <div className="page-tool d-flex justify-content-between align-items-center flex-wrap gap-3">
           <div className="breadcrumb-wrap">
             <nav aria-label="breadcrumb">
               <ol className="breadcrumb pb-0 mb-0">
                 <li className="breadcrumb-item">
-                  <Link to="/" className="d-flex align-items-center gap-8">
-                    <House /> Painel
+                  <Link
+                    to="/"
+                    className="d-flex align-items-center gap-8"
+                  >
+                    <House />
+                    Painel
                   </Link>
                 </li>
 
@@ -145,17 +224,32 @@ const AddWasteType = () => {
                 </li>
 
                 <li className="breadcrumb-item">
-                  <Link to="/waste-type-list">Estoque de Resíduos</Link>
+                  <Link to="/waste-type-list">
+                    Gestão de Resíduos
+                  </Link>
                 </li>
 
                 <li className="breadcrumb-item">
                   <ChevronRight />
                 </li>
 
-                <li className="breadcrumb-item active">Novo Lote</li>
+                <li
+                  className="breadcrumb-item active"
+                  aria-current="page"
+                >
+                  Novo Tipo
+                </li>
               </ol>
             </nav>
           </div>
+
+          <Link
+            to="/waste-type-list"
+            className="outline-btn btn-sm"
+          >
+            <ArrowLeft size={18} />
+            Voltar
+          </Link>
         </div>
       </div>
 
@@ -165,11 +259,12 @@ const AddWasteType = () => {
             <div className="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
               <div>
                 <h3 className="fw-600 fs-18 mb-1">
-                  Informações do material e lote
+                  Informações do tipo de resíduo
                 </h3>
+
                 <p className="text-muted mb-0">
-                  Exemplo: vidro triturado, papelão prensado, plástico separado,
-                  alumínio enfardado.
+                  Essas informações serão utilizadas nas coletas,
+                  pesagens, estoque, relatórios e Analytics.
                 </p>
               </div>
 
@@ -179,32 +274,81 @@ const AddWasteType = () => {
             <form className="form" onSubmit={handleSubmit}>
               <div className="row g-4">
                 <div className="col-md-8">
-                  <label className="form-label">
-                    Nome do material <span className="text-danger">*</span>
+                  <label
+                    htmlFor="name"
+                    className="form-label"
+                  >
+                    Nome do resíduo{" "}
+                    <span className="text-danger">*</span>
                   </label>
+
                   <input
+                    id="name"
                     name="name"
+                    type="text"
                     className="form-control"
                     value={formData.name}
                     onChange={handleInputChange}
-                    placeholder="Ex: Vidro triturado verde"
+                    placeholder="Ex.: Óleo de cozinha usado"
+                    maxLength={150}
+                    disabled={submitting}
                   />
+
                   {errors.name && (
-                    <p className="text-danger mt-1 mb-0">{errors.name[0]}</p>
+                    <p className="text-danger mt-1 mb-0">
+                      {errors.name[0]}
+                    </p>
                   )}
                 </div>
 
                 <div className="col-md-4">
-                  <label className="form-label">
-                    Categoria <span className="text-danger">*</span>
+                  <label
+                    htmlFor="internalCode"
+                    className="form-label"
+                  >
+                    Código interno
                   </label>
+
                   <input
+                    id="internalCode"
+                    name="internalCode"
+                    type="text"
+                    className="form-control"
+                    value={formData.internalCode}
+                    onChange={handleInputChange}
+                    placeholder="Ex.: OLEO-COZ"
+                    maxLength={50}
+                    disabled={submitting}
+                  />
+
+                  {errors.internalCode && (
+                    <p className="text-danger mt-1 mb-0">
+                      {errors.internalCode[0]}
+                    </p>
+                  )}
+                </div>
+
+                <div className="col-md-6">
+                  <label
+                    htmlFor="category"
+                    className="form-label"
+                  >
+                    Categoria{" "}
+                    <span className="text-danger">*</span>
+                  </label>
+
+                  <input
+                    id="category"
                     name="category"
+                    type="text"
                     className="form-control"
                     value={formData.category}
                     onChange={handleInputChange}
-                    placeholder="Ex: Vidro"
+                    placeholder="Ex.: Óleos e gorduras"
+                    maxLength={100}
+                    disabled={submitting}
                   />
+
                   {errors.category && (
                     <p className="text-danger mt-1 mb-0">
                       {errors.category[0]}
@@ -212,148 +356,211 @@ const AddWasteType = () => {
                   )}
                 </div>
 
-                <div className="col-12">
-                  <label className="form-label">Descrição do material</label>
+                <div className="col-md-6">
+                  <label
+                    htmlFor="subcategory"
+                    className="form-label"
+                  >
+                    Subcategoria
+                  </label>
+
                   <input
+                    id="subcategory"
+                    name="subcategory"
+                    type="text"
+                    className="form-control"
+                    value={formData.subcategory}
+                    onChange={handleInputChange}
+                    placeholder="Ex.: Óleo vegetal usado"
+                    maxLength={100}
+                    disabled={submitting}
+                  />
+
+                  {errors.subcategory && (
+                    <p className="text-danger mt-1 mb-0">
+                      {errors.subcategory[0]}
+                    </p>
+                  )}
+                </div>
+
+                <div className="col-md-4">
+                  <label
+                    htmlFor="unit"
+                    className="form-label"
+                  >
+                    Unidade de medida
+                  </label>
+
+                  <select
+                    id="unit"
+                    name="unit"
+                    className="form-select"
+                    value={formData.unit}
+                    onChange={handleInputChange}
+                    disabled={submitting}
+                  >
+                    {WASTE_UNIT_OPTIONS.map((option) => (
+                      <option
+                        key={option.value}
+                        value={option.value}
+                      >
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+
+                  {errors.unit && (
+                    <p className="text-danger mt-1 mb-0">
+                      {errors.unit[0]}
+                    </p>
+                  )}
+                </div>
+
+                <div className="col-md-4">
+                  <label
+                    htmlFor="ncm"
+                    className="form-label"
+                  >
+                    NCM
+                  </label>
+
+                  <input
+                    id="ncm"
+                    name="ncm"
+                    type="text"
+                    inputMode="numeric"
+                    className="form-control"
+                    value={formData.ncm}
+                    onChange={handleInputChange}
+                    placeholder="Ex.: 15180090"
+                    maxLength={10}
+                    disabled={submitting}
+                  />
+
+                  <small className="text-muted d-block mt-1">
+                    Informe somente os números.
+                  </small>
+
+                  {errors.ncm && (
+                    <p className="text-danger mt-1 mb-0">
+                      {errors.ncm[0]}
+                    </p>
+                  )}
+                </div>
+
+                <div className="col-md-4">
+                  <label
+                    htmlFor="wasteClass"
+                    className="form-label"
+                  >
+                    Classe do resíduo
+                  </label>
+
+                  <select
+                    id="wasteClass"
+                    name="wasteClass"
+                    className="form-select"
+                    value={formData.wasteClass}
+                    onChange={handleInputChange}
+                    disabled={submitting}
+                  >
+                    {WASTE_CLASS_OPTIONS.map((option) => (
+                      <option
+                        key={option.value}
+                        value={option.value}
+                      >
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+
+                  {errors.wasteClass && (
+                    <p className="text-danger mt-1 mb-0">
+                      {errors.wasteClass[0]}
+                    </p>
+                  )}
+                </div>
+
+                <div className="col-md-6">
+                  <label
+                    htmlFor="status"
+                    className="form-label"
+                  >
+                    Status
+                  </label>
+
+                  <select
+                    id="status"
+                    name="status"
+                    className="form-select"
+                    value={formData.status}
+                    onChange={handleInputChange}
+                    disabled={submitting}
+                  >
+                    {WASTE_STATUS_OPTIONS.map((option) => (
+                      <option
+                        key={option.value}
+                        value={option.value}
+                      >
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+
+                  {errors.status && (
+                    <p className="text-danger mt-1 mb-0">
+                      {errors.status[0]}
+                    </p>
+                  )}
+                </div>
+
+                <div className="col-md-12">
+                  <label
+                    htmlFor="description"
+                    className="form-label"
+                  >
+                    Descrição
+                  </label>
+
+                  <textarea
+                    id="description"
                     name="description"
                     className="form-control"
+                    rows="4"
                     value={formData.description}
                     onChange={handleInputChange}
-                    placeholder="Ex: Vidro verde já triturado e pronto para comercialização"
+                    placeholder="Descreva o material, a forma de coleta, armazenamento ou outras informações importantes."
+                    maxLength={1500}
+                    disabled={submitting}
                   />
-                </div>
 
-                <div className="col-md-4">
-                  <label className="form-label">
-                    Código do lote <span className="text-danger">*</span>
-                  </label>
-                  <input
-                    name="lotCode"
-                    className="form-control"
-                    value={formData.lotCode}
-                    onChange={handleInputChange}
-                    placeholder="Ex: VID-TRI-001"
-                  />
-                  {errors.lotCode && (
+                  {errors.description && (
                     <p className="text-danger mt-1 mb-0">
-                      {errors.lotCode[0]}
+                      {errors.description[0]}
                     </p>
                   )}
-                </div>
-
-                <div className="col-md-4">
-                  <label className="form-label">
-                    Quantidade em KG <span className="text-danger">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    name="quantityKg"
-                    className="form-control"
-                    value={formData.quantityKg}
-                    onChange={handleInputChange}
-                    placeholder="Ex: 350.50"
-                  />
-                  {errors.quantityKg && (
-                    <p className="text-danger mt-1 mb-0">
-                      {errors.quantityKg[0]}
-                    </p>
-                  )}
-                </div>
-
-                <div className="col-md-4">
-                  <label className="form-label">Etapa</label>
-                  <select
-                    name="processingStage"
-                    className="form-select"
-                    value={formData.processingStage}
-                    onChange={handleInputChange}
-                  >
-                    <option value="TRIADO">Triado</option>
-                    <option value="TRITURADO">Triturado</option>
-                    <option value="PRENSADO">Prensado</option>
-                    <option value="ENFARDADO">Enfardado</option>
-                    <option value="ARMAZENADO">Armazenado</option>
-                    <option value="DESTINADO">Destinado</option>
-                  </select>
-                </div>
-
-                <div className="col-md-6">
-                  <label className="form-label">Local de armazenamento</label>
-                  <input
-                    name="storageLocation"
-                    className="form-control"
-                    value={formData.storageLocation}
-                    onChange={handleInputChange}
-                    placeholder="Ex: Galpão 01, Baia de vidro"
-                  />
-                </div>
-
-                <div className="col-md-6">
-                  <label className="form-label">Origem</label>
-                  <input
-                    name="origin"
-                    className="form-control"
-                    value={formData.origin}
-                    onChange={handleInputChange}
-                    placeholder="Ex: Coletas comerciais, triagem interna"
-                  />
-                </div>
-
-                <div className="col-md-6">
-                  <label className="form-label">Status do material</label>
-                  <select
-                    name="itemStatus"
-                    className="form-select"
-                    value={formData.itemStatus}
-                    onChange={handleInputChange}
-                  >
-                    <option value="ACTIVE">Ativo</option>
-                    <option value="INACTIVE">Inativo</option>
-                  </select>
-                </div>
-
-                <div className="col-md-6">
-                  <label className="form-label">Status do lote</label>
-                  <select
-                    name="lotStatus"
-                    className="form-select"
-                    value={formData.lotStatus}
-                    onChange={handleInputChange}
-                  >
-                    <option value="AVAILABLE">Disponível</option>
-                    <option value="RESERVED">Reservado</option>
-                    <option value="SOLD">Vendido/Destinado</option>
-                    <option value="DISCARDED">Descartado</option>
-                  </select>
-                </div>
-
-                <div className="col-12">
-                  <label className="form-label">Observações</label>
-                  <textarea
-                    name="notes"
-                    rows="4"
-                    className="form-control"
-                    value={formData.notes}
-                    onChange={handleInputChange}
-                    placeholder="Observações internas sobre o lote."
-                  />
                 </div>
               </div>
 
               <div className="d-flex gap-20 mt-4 flex-wrap">
-                <Link to="/waste-type-list" className="btn-md outline-btn">
+                <Link
+                  to="/waste-type-list"
+                  className="btn-md outline-btn"
+                >
                   <ArrowLeft size={18} />
-                  Voltar
+                  Cancelar
                 </Link>
 
                 <button
+                  type="submit"
                   className="btn-md primary-btn border-0"
                   disabled={submitting}
                 >
                   <Save size={18} />
-                  {submitting ? "Salvando..." : "Salvar estoque"}
+
+                  {submitting
+                    ? "Salvando..."
+                    : "Salvar Tipo de Resíduo"}
                 </button>
               </div>
             </form>
