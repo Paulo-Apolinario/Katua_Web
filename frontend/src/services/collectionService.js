@@ -1,26 +1,47 @@
 import { apiRequest } from "./apiClient";
 
-const normalizeMaterialItem = (item = {}) => {
-  return {
-    type: String(item.type || "").trim(),
-    quantityKg: Number(item.quantityKg || 0),
-  };
-};
+/*
+==========================================================
+COLLECTION SERVICE
+Nova arquitetura KATUÁ Enterprise
+==========================================================
 
-const normalizeMaterials = (materials = []) => {
-  if (!Array.isArray(materials)) return [];
+A criação da coleta NÃO recebe mais:
 
-  return materials
-    .map(normalizeMaterialItem)
-    .filter((item) => item.type && item.quantityKg >= 0);
+- materials
+- totalWeightKg
+
+Os materiais reais serão informados posteriormente
+pelo catador durante a execução da coleta.
+
+Fluxo aprovado:
+
+Schedule
+    ↓
+Create Collection
+    ↓
+Collector registra materiais
+    ↓
+CollectionWasteEntry
+    ↓
+Destinações
+    ↓
+Lotes
+==========================================================
+*/
+
+const normalizeText = (value) => {
+  if (value === null || value === undefined) {
+    return "";
+  }
+
+  return String(value).trim();
 };
 
 const normalizeCollectionPayload = (payload = {}) => {
   const data = {
     scheduleId: payload.scheduleId,
     collectorId: payload.collectorId,
-    materials: normalizeMaterials(payload.materials),
-    totalWeightKg: Number(payload.totalWeightKg || 0),
   };
 
   if (payload.driverId) {
@@ -35,12 +56,12 @@ const normalizeCollectionPayload = (payload = {}) => {
     data.routeId = payload.routeId;
   }
 
-  if (payload.collectedAt) {
-    data.collectedAt = payload.collectedAt;
-  }
+  if (payload.notes) {
+    const notes = normalizeText(payload.notes);
 
-  if (payload.notes?.trim()) {
-    data.notes = payload.notes.trim();
+    if (notes) {
+      data.notes = notes;
+    }
   }
 
   return data;
@@ -58,7 +79,23 @@ export const getCollectionById = async (id) => {
   });
 };
 
-export const createCollectionFromSchedule = async (payload) => {
+/*
+==========================================================
+Cria a coleta operacional
+
+IMPORTANTE
+
+Não envia:
+
+- materials
+- totalWeightKg
+
+Essas informações serão registradas posteriormente
+durante a execução da coleta.
+==========================================================
+*/
+
+export const createCollectionFromSchedule = async (payload = {}) => {
   return apiRequest("/collections", {
     method: "POST",
     body: normalizeCollectionPayload(payload),
@@ -70,4 +107,11 @@ export const updateCollectionStatus = async (id, payload) => {
     method: "PATCH",
     body: payload,
   });
+};
+
+export default {
+  getAllCollections,
+  getCollectionById,
+  createCollectionFromSchedule,
+  updateCollectionStatus,
 };
