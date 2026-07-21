@@ -681,19 +681,80 @@ const DelegationModal = ({
     getScheduleDate(schedule);
 
   return createPortal(
-    <div
+    <>
+      <style>
+        {`
+          @media (max-width: 1199.98px) {
+            .katua-delegation-dialog {
+              width: min(920px, calc(100vw - 32px)) !important;
+              max-width: calc(100vw - 32px) !important;
+              margin: 0 auto !important;
+            }
+          }
+
+          @media (max-width: 767.98px) {
+            .katua-delegation-dialog {
+              width: calc(100vw - 20px) !important;
+              max-width: calc(100vw - 20px) !important;
+              max-height: calc(100dvh - 20px) !important;
+            }
+
+            .katua-delegation-content {
+              max-height: calc(100dvh - 20px) !important;
+              border-radius: 12px !important;
+            }
+
+            .katua-delegation-header,
+            .katua-delegation-body,
+            .katua-delegation-footer {
+              padding-left: 16px !important;
+              padding-right: 16px !important;
+            }
+
+            .katua-delegation-footer {
+              flex-wrap: nowrap !important;
+            }
+
+            .katua-delegation-footer button {
+              flex: 1 1 0;
+              white-space: nowrap;
+            }
+          }
+
+          @media (max-height: 720px) {
+            .katua-delegation-dialog,
+            .katua-delegation-content {
+              max-height: calc(100dvh - 16px) !important;
+            }
+
+            .katua-delegation-header {
+              padding-top: 12px !important;
+              padding-bottom: 12px !important;
+            }
+
+            .katua-delegation-footer {
+              padding-top: 10px !important;
+              padding-bottom: 10px !important;
+            }
+          }
+        `}
+      </style>
+
+      <div
       className="modal fade show"
       style={{
-        display: "block",
+        display: "flex",
         position: "fixed",
         inset: 0,
         zIndex: 1080,
-        overflowX: "hidden",
-        overflowY: "auto",
+        alignItems: "center",
+        justifyContent: "center",
+        overflow: "hidden",
+        boxSizing: "border-box",
         backgroundColor:
           "rgba(15, 23, 42, 0.62)",
         padding:
-          "clamp(12px, 3vw, 32px)",
+          "clamp(10px, 2vw, 20px)",
       }}
       tabIndex="-1"
       role="dialog"
@@ -710,32 +771,44 @@ const DelegationModal = ({
       }}
     >
       <div
-        className="modal-dialog modal-dialog-centered modal-lg"
+        className="modal-dialog modal-lg katua-delegation-dialog"
         role="document"
         style={{
-          width: "100%",
-          maxWidth: 920,
-          minHeight:
-            "calc(100% - 2rem)",
-          margin: "0 auto",
+          width:
+            "min(920px, calc(100vw - 300px))",
+          maxWidth: "920px",
+          height: "auto",
+          maxHeight:
+            "calc(100dvh - 24px)",
+          margin:
+            "0 12px 0 clamp(250px, 19vw, 280px)",
           display: "flex",
-          alignItems: "center",
+          alignItems: "stretch",
+          boxSizing: "border-box",
         }}
       >
         <form
-          className="modal-content border-0 shadow-lg"
+          className="modal-content border-0 shadow-lg katua-delegation-content"
           onSubmit={onSubmit}
           style={{
+            width: "100%",
+            maxWidth: "100%",
             maxHeight:
-              "calc(100vh - 32px)",
+              "calc(100dvh - 24px)",
+            display: "flex",
+            flexDirection: "column",
             overflow: "hidden",
             borderRadius: 18,
+            boxSizing: "border-box",
           }}
         >
           <div
-            className="modal-header"
+            className="modal-header katua-delegation-header"
             style={{
-              flexShrink: 0,
+              flex: "0 0 auto",
+              position: "relative",
+              zIndex: 2,
+              backgroundColor: "#fff",
             }}
           >
             <div>
@@ -764,11 +837,16 @@ const DelegationModal = ({
           </div>
 
           <div
-            className="modal-body"
+            className="modal-body katua-delegation-body"
             style={{
+              flex: "1 1 auto",
+              minHeight: 0,
+              overflowX: "hidden",
               overflowY: "auto",
               overscrollBehavior:
                 "contain",
+              WebkitOverflowScrolling:
+                "touch",
             }}
           >
             <div className="alert alert-light border mb-4">
@@ -1058,9 +1136,11 @@ const DelegationModal = ({
           </div>
 
           <div
-            className="modal-footer"
+            className="modal-footer katua-delegation-footer"
             style={{
-              flexShrink: 0,
+              flex: "0 0 auto",
+              position: "relative",
+              zIndex: 2,
               backgroundColor: "#fff",
             }}
           >
@@ -1103,7 +1183,8 @@ const DelegationModal = ({
           </div>
         </form>
       </div>
-    </div>,
+    </div>
+    </>,
     document.body
   );
 };
