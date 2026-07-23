@@ -282,22 +282,32 @@ export const extractCollectionEntry = (
     return null;
   }
 
-  if (response.entry) {
-    return response.entry;
-  }
+  const candidates = [
+    response?.entry,
+    response?.collectionEntry,
+    response?.collectionWasteEntry,
+    response?.data?.entry,
+    response?.data?.collectionEntry,
+    response?.data?.collectionWasteEntry,
+    response?.data?.data?.entry,
+    response?.data?.data?.collectionEntry,
+    response?.data?.data?.collectionWasteEntry,
+    response?.data?.data,
+    response?.data,
+    response,
+  ];
 
-  if (response.data?.entry) {
-    return response.data.entry;
-  }
-
-  if (
-    response.id &&
-    response.collectionId
-  ) {
-    return response;
-  }
-
-  return null;
+  return (
+    candidates.find((candidate) =>
+      Boolean(
+        candidate &&
+          typeof candidate === "object" &&
+          !Array.isArray(candidate) &&
+          (candidate.id ||
+            candidate.collectionWasteEntryId)
+      )
+    ) || null
+  );
 };
 
 export const extractCollectionEntrySummary = (
@@ -493,7 +503,7 @@ export const getCollectionEntryById =
     }
 
     return apiRequest(
-      `${COLLECTION_ENTRY_ENDPOINT}/${normalizedEntryId}`,
+      `${COLLECTION_ENTRY_ENDPOINT}/${encodeURIComponent(normalizedEntryId)}`,
       {
         method: "GET",
       }

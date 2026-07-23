@@ -21,6 +21,7 @@ import {
   useMemo,
   useState,
 } from "react";
+import { createPortal } from "react-dom";
 
 import {
   createWasteDestination,
@@ -161,10 +162,26 @@ const getErrorMessage = (
   error,
   fallbackMessage
 ) => {
+  const details =
+    error?.response?.data?.details ||
+    error?.data?.details ||
+    error?.details;
+
+  const detailMessage =
+    details && typeof details === "object"
+      ? Object.entries(details)
+          .map(([key, value]) => `${key}: ${String(value)}`)
+          .join(" | ")
+      : "";
+
   return (
+    error?.response?.data?.error ||
     error?.response?.data?.message ||
+    error?.data?.error ||
     error?.data?.message ||
+    error?.error ||
     error?.message ||
+    detailMessage ||
     fallbackMessage
   );
 };
@@ -318,6 +335,21 @@ const getStockItemCategory = (
   );
 };
 
+const getStockItemUnits = (item) => {
+  const units = [
+    item?.defaultUnit,
+    item?.unit,
+    item?.wasteType?.defaultUnit,
+    item?.wasteType?.unit,
+  ]
+    .map((value) =>
+      normalizeText(value).toUpperCase()
+    )
+    .filter(Boolean);
+
+  return [...new Set(units)];
+};
+
 const isStockItemActive = (item) => {
   return (
     item?.isActive !== false &&
@@ -463,11 +495,24 @@ const WasteDestinationModal = ({
 
   const availableStockItems =
     useMemo(() => {
+      const entryUnit =
+        normalizeText(getEntryUnit(entry)).toUpperCase();
+
       return stockItems
-        .filter(
-          (item) =>
-            isStockItemActive(item)
-        )
+        .filter((item) => {
+          if (!isStockItemActive(item)) {
+            return false;
+          }
+
+          const itemUnits =
+            getStockItemUnits(item);
+
+          return (
+            !entryUnit ||
+            itemUnits.length === 0 ||
+            itemUnits.includes(entryUnit)
+          );
+        })
         .sort((first, second) =>
           getStockItemName(
             first
@@ -476,7 +521,7 @@ const WasteDestinationModal = ({
             "pt-BR"
           )
         );
-    }, [stockItems]);
+    }, [stockItems, entry]);
 
   /*
    * ==========================================================
@@ -861,18 +906,134 @@ const WasteDestinationModal = ({
    * ==========================================================
    */
 
-  return (
+  if (typeof document === "undefined") {
+    return null;
+  }
+
+  return createPortal(
     <>
+      <style>
+        {`
+          @media (max-width: 1199.98px) {
+            .katua-destination-dialog {
+              width: min(1120px, calc(100vw - 32px)) !important;
+              max-width: calc(100vw - 32px) !important;
+              margin: 0 auto !important;
+            }
+          }
+
+          @media (max-width: 767.98px) {
+            .katua-destination-dialog {
+              width: calc(100vw - 20px) !important;
+              max-width: calc(100vw - 20px) !important;
+              max-height: calc(100dvh - 20px) !important;
+            }
+
+            .katua-destination-content {
+              max-height: calc(100dvh - 20px) !important;
+              border-radius: 12px !important;
+            }
+
+            .katua-destination-header,
+            .katua-destination-body,
+            .katua-destination-footer {
+              padding-left: 16px !important;
+              padding-right: 16px !important;
+            }
+
+            .katua-destination-footer {
+              flex-wrap: nowrap !important;
+            }
+
+            .katua-destination-footer button {
+              flex: 1 1 0;
+              white-space: nowrap;
+            }
+          }
+
+          @media (max-height: 720px) {
+            .katua-destination-dialog,
+            .katua-destination-content {
+              max-height: calc(100dvh - 16px) !important;
+            }
+
+            .katua-destination-header {
+              padding-top: 12px !important;
+              padding-bottom: 12px !important;
+            }
+
+            .katua-destination-footer {
+              padding-top: 10px !important;
+              padding-bottom: 10px !important;
+            }
+          }
+        `}
+      </style>
+
       <div
-        className="modal fade show d-block"
+        className="modal fade show"
+        style={{
+          display: "flex",
+          position: "fixed",
+          inset: 0,
+          zIndex: 1080,
+          alignItems: "center",
+          justifyContent: "center",
+          overflow: "hidden",
+          boxSizing: "border-box",
+          backgroundColor: "rgba(15, 23, 42, 0.62)",
+          padding: "clamp(10px, 2vw, 20px)",
+        }}
+        tabIndex="-1"
         role="dialog"
         aria-modal="true"
         aria-labelledby="waste-destination-modal-title"
-        tabIndex="-1"
+        onMouseDown={(event) => {
+          if (
+            event.target === event.currentTarget &&
+            !submitting
+          ) {
+            onClose?.();
+          }
+        }}
       >
-        <div className="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
-          <div className="modal-content border-0 shadow">
-            <div className="modal-header">
+        <div
+          className="modal-dialog modal-xl katua-destination-dialog"
+          role="document"
+          style={{
+            width: "min(1120px, calc(100vw - 300px))",
+            maxWidth: "1120px",
+            height: "auto",
+            maxHeight: "calc(100dvh - 24px)",
+            margin: "0 12px 0 clamp(250px, 19vw, 280px)",
+            display: "flex",
+            alignItems: "stretch",
+            boxSizing: "border-box",
+          }}
+        >
+          <form
+            className="modal-content border-0 shadow-lg katua-destination-content"
+            onSubmit={handleSubmit}
+            style={{
+              width: "100%",
+              maxWidth: "100%",
+              maxHeight: "calc(100dvh - 24px)",
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
+              borderRadius: 18,
+              boxSizing: "border-box",
+            }}
+          >
+            <div
+              className="modal-header katua-destination-header"
+              style={{
+                flex: "0 0 auto",
+                position: "relative",
+                zIndex: 2,
+                backgroundColor: "#fff",
+              }}
+            >
               <div className="d-flex align-items-center gap-3">
                 <div
                   className="d-flex align-items-center justify-content-center rounded-3 bg-light flex-shrink-0"
@@ -904,7 +1065,7 @@ const WasteDestinationModal = ({
 
               <button
                 type="button"
-                className="btn btn-link text-secondary p-1"
+                className="btn border-0"
                 aria-label="Fechar janela"
                 disabled={submitting}
                 onClick={() =>
@@ -918,8 +1079,17 @@ const WasteDestinationModal = ({
               </button>
             </div>
 
-            <form onSubmit={handleSubmit}>
-              <div className="modal-body">
+              <div
+                className="modal-body katua-destination-body"
+                style={{
+                  flex: "1 1 auto",
+                  minHeight: 0,
+                  overflowX: "hidden",
+                  overflowY: "auto",
+                  overscrollBehavior: "contain",
+                  WebkitOverflowScrolling: "touch",
+                }}
+              >
                 {requestError && (
                   <div
                     className="alert alert-danger d-flex align-items-start gap-2"
@@ -1325,9 +1495,17 @@ const WasteDestinationModal = ({
                                     item
                                   );
 
+                                const itemUnits =
+                                  getStockItemUnits(
+                                    item
+                                  );
+
                                 const details = [
                                   code,
                                   category,
+                                  itemUnits.length
+                                    ? itemUnits.join("/")
+                                    : "",
                                 ]
                                   .filter(
                                     Boolean
@@ -1406,10 +1584,10 @@ const WasteDestinationModal = ({
                           availableStockItems.length ===
                             0 && (
                             <div className="form-text text-warning">
-                              Nenhum tipo de
-                              resíduo ativo foi
-                              encontrado no
-                              catálogo.
+                              Nenhum item ativo com unidade compatível
+                              com esta entrada foi encontrado no catálogo.
+                              Confirme se o resíduo está cadastrado com a
+                              unidade correta.
                             </div>
                           )}
                       </div>
@@ -1708,7 +1886,15 @@ const WasteDestinationModal = ({
                   )}
               </div>
 
-              <div className="modal-footer">
+              <div
+                className="modal-footer katua-destination-footer"
+                style={{
+                  flex: "0 0 auto",
+                  position: "relative",
+                  zIndex: 2,
+                  backgroundColor: "#fff",
+                }}
+              >
                 <button
                   type="button"
                   className="btn btn-outline-secondary"
@@ -1764,20 +1950,11 @@ const WasteDestinationModal = ({
                   )}
                 </button>
               </div>
-            </form>
-          </div>
+          </form>
         </div>
       </div>
-
-      <div
-        className="modal-backdrop fade show"
-        onClick={() => {
-          if (!submitting) {
-            onClose?.();
-          }
-        }}
-      />
-    </>
+    </>,
+    document.body
   );
 };
 

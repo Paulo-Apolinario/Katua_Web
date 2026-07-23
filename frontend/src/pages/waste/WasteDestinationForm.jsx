@@ -692,7 +692,7 @@ const getDestinationStockLotCode = (
  */
 
 const InformationItem = ({
-  //icon: Icon,
+  icon: Icon,
   label,
   value,
   fullWidth = false,
@@ -713,10 +713,17 @@ const InformationItem = ({
             height: 36,
           }}
         >
-          <Icon
-            size={18}
-            aria-hidden="true"
-          />
+          {Icon ? (
+            <Icon
+              size={18}
+              aria-hidden="true"
+            />
+          ) : (
+            <ClipboardList
+              size={18}
+              aria-hidden="true"
+            />
+          )}
         </div>
 
         <div className="min-w-0">
@@ -903,9 +910,9 @@ const WasteDestinationForm = () => {
         setError("");
 
         const [
-          entryResponse,
-          destinationsResponse,
-        ] = await Promise.all([
+          entryResult,
+          destinationsResult,
+        ] = await Promise.allSettled([
           getCollectionEntryById(
             entryId
           ),
@@ -920,15 +927,21 @@ const WasteDestinationForm = () => {
           ),
         ]);
 
+        if (entryResult.status === "rejected") {
+          throw entryResult.reason;
+        }
+
         const extractedEntry =
           extractCollectionEntry(
-            entryResponse
+            entryResult.value
           );
 
         const extractedDestinations =
-          extractWasteDestinations(
-            destinationsResponse
-          );
+          destinationsResult.status === "fulfilled"
+            ? extractWasteDestinations(
+                destinationsResult.value
+              )
+            : [];
 
         if (!extractedEntry) {
           throw new Error(

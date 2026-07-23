@@ -1,236 +1,258 @@
-import { useState, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { ChevronRight, House, Package, RefreshCcw, Search, Scale, Users } from "lucide-react";
 import { Link } from "react-router";
-import { House, ChevronRight, Search, Package, Scale, BarChart3, Users } from "lucide-react";
-import DataTable from "../../components/DataTable";
 import toast from "react-hot-toast";
-import { getAllWastes } from "../../services/wasteService";
+
+import DataTable from "../../components/DataTable";
 import HeadTags from "../../components/HeadTags";
 import TopProgressBar from "../../components/TopProgressBar";
+import { apiRequest } from "../../services/apiClient";
+
+const UNIT_LABELS = {
+  KG: "kg",
+  TON: "t",
+  UNIT: "un.",
+  LITER: "L",
+  CUBIC_METER: "m³",
+};
 
 const getArray = (response) => {
   if (Array.isArray(response)) return response;
   if (Array.isArray(response?.data)) return response.data;
+  if (Array.isArray(response?.entries)) return response.entries;
+  if (Array.isArray(response?.data?.entries)) return response.data.entries;
   if (Array.isArray(response?.items)) return response.items;
-  if (Array.isArray(response?.collections)) return response.collections;
+  if (Array.isArray(response?.data?.items)) return response.data.items;
   return [];
+};
+
+const normalizeText = (value) => String(value ?? "").trim();
+
+const normalizeSearch = (value) => normalizeText(value).toLocaleLowerCase("pt-BR");
+
+const normalizeNumber = (value) => {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : 0;
+};
+
+const formatNumber = (value, maximumFractionDigits = 3) =>
+  new Intl.NumberFormat("pt-BR", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits,
+  }).format(normalizeNumber(value));
+
+const formatQuantity = (quantity, unit) => {
+  const normalizedUnit = normalizeText(unit).toUpperCase() || "KG";
+  return `${formatNumber(quantity)} ${UNIT_LABELS[normalizedUnit] || normalizedUnit.toLowerCase()}`;
 };
 
 const formatDate = (value) => {
-  if (!value) return "N/A";
-
+  if (!value) return "Não informada";
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "N/A";
-
-  return date.toLocaleDateString("pt-BR");
+  if (Number.isNaN(date.getTime())) return "Não informada";
+  return new Intl.DateTimeFormat("pt-BR").format(date);
 };
 
-const formatKg = (value) => `${Number(value || 0).toFixed(2)} KG`;
+const getMaterialName = (entry) =>
+  normalizeText(
+    entry?.materialNameSnapshot ||
+      entry?.wasteType?.name ||
+      entry?.collectionMaterial?.nameSnapshot ||
+      entry?.collectionMaterial?.wasteType?.name ||
+      entry?.materialName ||
+      entry?.wasteName
+  ) || "Resíduo não informado";
 
-const formatPercent = (value) => `${Number(value || 0).toFixed(1)}%`;
+const getUnit = (entry) =>
+  normalizeText(
+    entry?.unit ||
+      entry?.collectionMaterial?.unit ||
+      entry?.wasteType?.defaultUnit ||
+      entry?.wasteType?.unit
+  ).toUpperCase() || "KG";
 
-const normalizeText = (value) => String(value || "").toLowerCase().trim();
+const getQuantity = (entry) =>
+  normalizeNumber(
+    entry?.collectedQuantity ??
+      entry?.quantity ??
+      entry?.totalQuantity ??
+      entry?.collectionMaterial?.quantity ??
+      entry?.collectionMaterial?.quantityKg
+  );
 
-const getGeneratorName = (collection) => {
+const getCollection = (entry) =>
+  entry?.collection || entry?.collectionMaterial?.collection || {};
+
+const getGeneratorName = (entry) => {
+  const collection = getCollection(entry);
+  const generator =
+    entry?.generator ||
+    collection?.generator ||
+    collection?.schedule?.generator ||
+    {};
+
   return (
-    collection?.generator?.companyName ||
-    collection?.generator?.name ||
-    collection?.schedule?.generator?.companyName ||
-    collection?.schedule?.generator?.name ||
-    collection?.schedule?.requestedBy?.displayName ||
-    "N/A"
+    normalizeText(generator?.companyName) ||
+    normalizeText(generator?.tradeName) ||
+    normalizeText(generator?.name) ||
+    "Não informado"
   );
 };
 
-const getCollectorName = (collection) => {
+const getCollectorName = (entry) => {
+  const collection = getCollection(entry);
+  const collector = entry?.collector || collection?.collector || {};
+
   return (
-    collection?.collector?.name ||
-    collection?.collector?.user?.displayName ||
-    collection?.collector?.user?.name ||
-    "N/A"
+    normalizeText(collector?.name) ||
+    normalizeText(collector?.user?.displayName) ||
+    normalizeText(collector?.user?.name) ||
+    "Não informado"
   );
 };
 
-const getMaterialName = (material) => {
+const getEntryDate = (entry) => {
+  const collection = getCollection(entry);
+
   return (
-    material?.type ||
-    material?.materialType ||
-    material?.name ||
-    material?.material?.name ||
-    "Resíduo não informado"
+    entry?.collectedAt ||
+    collection?.collectedAt ||
+    entry?.createdAt ||
+    collection?.createdAt
   );
-};
-
-const getMaterialQuantity = (material) => {
-  return Number(
-    material?.quantityKg ??
-      material?.weightKg ??
-      material?.kg ??
-      material?.quantity ??
-      0
-  );
-};
-
-const getCollectionMaterials = (collection) => {
-  if (Array.isArray(collection?.materials)) return collection.materials;
-  if (Array.isArray(collection?.collectionMaterials)) return collection.collectionMaterials;
-  if (Array.isArray(collection?.wastes)) return collection.wastes;
-
-  if (collection?.totalWeightKg) {
-    return [
-      {
-        type: "Resíduo coletado",
-        quantityKg: Number(collection.totalWeightKg || 0),
-      },
-    ];
-  }
-
-  return [];
 };
 
 const WasteList = () => {
-  const [collections, setCollections] = useState([]);
+  const [entries, setEntries] = useState([]);
   const [search, setSearch] = useState("");
   const [materialFilter, setMaterialFilter] = useState("");
   const [generatorFilter, setGeneratorFilter] = useState("");
   const [collectorFilter, setCollectorFilter] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [loading, setLoading] = useState(true);
 
-  const loadCollections = async () => {
+  const loadEntries = useCallback(async () => {
     try {
       setLoading(true);
 
-      const response = await getAllWastes();
-      const data = getArray(response);
+      const response = await apiRequest("/collection-entries", {
+        method: "GET",
+      });
 
-      setCollections(data);
+      setEntries(getArray(response));
     } catch (error) {
       toast.error(
-        error?.error ||
+        error?.response?.data?.error ||
+          error?.data?.error ||
+          error?.error ||
           error?.message ||
-          "Erro ao carregar resíduos coletados."
+          "Erro ao carregar os resíduos coletados."
       );
-      console.error("Fetch collected wastes error:", error);
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    loadCollections();
   }, []);
 
-  const collectedRows = useMemo(() => {
-    const rows = [];
+  useEffect(() => {
+    void loadEntries();
+  }, [loadEntries]);
 
-    collections
-      .filter((collection) => collection?.status === "COMPLETED")
-      .forEach((collection) => {
-        const materials = getCollectionMaterials(collection);
-        const generatorName = getGeneratorName(collection);
-        const collectorName = getCollectorName(collection);
-        const collectionDate =
-          collection?.collectedAt ||
-          collection?.completedAt ||
-          collection?.updatedAt ||
-          collection?.createdAt;
+  const rows = useMemo(
+    () =>
+      entries
+        .map((entry, index) => {
+          const collection = getCollection(entry);
 
-        materials.forEach((material) => {
-          const materialName = getMaterialName(material);
-          const quantityKg = getMaterialQuantity(material);
+          return {
+            id: entry?.id || `entry-${index}`,
+            sn: index + 1,
+            material: getMaterialName(entry),
+            quantity: getQuantity(entry),
+            unit: getUnit(entry),
+            generator: getGeneratorName(entry),
+            collector: getCollectorName(entry),
+            route:
+              normalizeText(entry?.route?.name) ||
+              normalizeText(collection?.route?.name) ||
+              "Não informada",
+            date: getEntryDate(entry),
+            status: normalizeText(entry?.status) || "PENDING_DESTINATION",
+            collectionStatus: normalizeText(collection?.status),
+            raw: entry,
+          };
+        })
+        .filter((row) => row.quantity > 0),
+    [entries]
+  );
 
-          if (quantityKg <= 0) return;
-
-          rows.push({
-            id: `${collection?.id || "collection"}-${materialName}-${rows.length}`,
-            collectionId: collection?.id,
-            material: materialName,
-            quantityKg,
-            generator: generatorName,
-            collector: collectorName,
-            date: collectionDate,
-            route: collection?.route?.name || collection?.route?.description || "N/A",
-            raw: collection,
-          });
-        });
-      });
-
-    return rows.map((row, index) => ({
-      ...row,
-      sn: index + 1,
-    }));
-  }, [collections]);
-
-  const totalKg = useMemo(() => {
-    return collectedRows.reduce((sum, item) => sum + Number(item.quantityKg || 0), 0);
-  }, [collectedRows]);
-
-  const materialSummary = useMemo(() => {
+  const summaryByMaterial = useMemo(() => {
     const map = new Map();
 
-    collectedRows.forEach((item) => {
-      const current = map.get(item.material) || {
-        material: item.material,
-        quantityKg: 0,
-        collections: 0,
+    rows.forEach((row) => {
+      const key = `${row.material}::${row.unit}`;
+      const current = map.get(key) || {
+        material: row.material,
+        unit: row.unit,
+        quantity: 0,
       };
 
-      current.quantityKg += Number(item.quantityKg || 0);
-      current.collections += 1;
-
-      map.set(item.material, current);
+      current.quantity += row.quantity;
+      map.set(key, current);
     });
 
-    return Array.from(map.values())
-      .map((item) => ({
-        ...item,
-        percent: totalKg > 0 ? (item.quantityKg / totalKg) * 100 : 0,
-      }))
-      .sort((a, b) => b.quantityKg - a.quantityKg);
-  }, [collectedRows, totalKg]);
+    return Array.from(map.values()).sort((a, b) => b.quantity - a.quantity);
+  }, [rows]);
 
-  const materialOptions = useMemo(() => {
-    return [...new Set(collectedRows.map((item) => item.material))]
-      .filter(Boolean)
-      .sort();
-  }, [collectedRows]);
+  const totalByUnit = useMemo(() => {
+    const totals = new Map();
 
-  const generatorOptions = useMemo(() => {
-    return [...new Set(collectedRows.map((item) => item.generator))]
-      .filter(Boolean)
-      .sort();
-  }, [collectedRows]);
+    rows.forEach((row) => {
+      totals.set(row.unit, (totals.get(row.unit) || 0) + row.quantity);
+    });
 
-  const collectorOptions = useMemo(() => {
-    return [...new Set(collectedRows.map((item) => item.collector))]
-      .filter(Boolean)
-      .sort();
-  }, [collectedRows]);
+    return Array.from(totals.entries()).map(([unit, quantity]) => ({
+      unit,
+      quantity,
+    }));
+  }, [rows]);
 
-  const filteredData = useMemo(() => {
-    const term = normalizeText(search);
+  const materialOptions = useMemo(
+    () => [...new Set(rows.map((row) => row.material))].sort(),
+    [rows]
+  );
 
-    return collectedRows.filter((item) => {
-      const matchesMaterial = !materialFilter || item.material === materialFilter;
-      const matchesGenerator = !generatorFilter || item.generator === generatorFilter;
-      const matchesCollector = !collectorFilter || item.collector === collectorFilter;
+  const generatorOptions = useMemo(
+    () => [...new Set(rows.map((row) => row.generator))].sort(),
+    [rows]
+  );
 
+  const collectorOptions = useMemo(
+    () => [...new Set(rows.map((row) => row.collector))].sort(),
+    [rows]
+  );
+
+  const filteredRows = useMemo(() => {
+    const term = normalizeSearch(search);
+
+    return rows.filter((row) => {
       const matchesSearch =
         !term ||
-        normalizeText(item.material).includes(term) ||
-        normalizeText(item.generator).includes(term) ||
-        normalizeText(item.collector).includes(term) ||
-        normalizeText(item.route).includes(term) ||
-        normalizeText(formatDate(item.date)).includes(term);
+        [
+          row.material,
+          row.generator,
+          row.collector,
+          row.route,
+          formatDate(row.date),
+          row.status,
+        ].some((value) => normalizeSearch(value).includes(term));
 
-      return matchesMaterial && matchesGenerator && matchesCollector && matchesSearch;
+      return (
+        matchesSearch &&
+        (!materialFilter || row.material === materialFilter) &&
+        (!generatorFilter || row.generator === generatorFilter) &&
+        (!collectorFilter || row.collector === collectorFilter)
+      );
     });
-  }, [collectedRows, search, materialFilter, generatorFilter, collectorFilter]);
-
-  const filteredKg = useMemo(() => {
-    return filteredData.reduce((sum, item) => sum + Number(item.quantityKg || 0), 0);
-  }, [filteredData]);
+  }, [rows, search, materialFilter, generatorFilter, collectorFilter]);
 
   const columns = [
     { key: "sn", label: "SN" },
@@ -240,307 +262,222 @@ const WasteList = () => {
       render: (value) => <strong>{value}</strong>,
     },
     {
-      key: "quantityKg",
+      key: "quantity",
       label: "Quantidade",
-      render: (value) => formatKg(value),
+      render: (value, row) => <strong>{formatQuantity(value, row.unit)}</strong>,
     },
-    {
-      key: "percent",
-      label: "Percentual",
-      render: (value, row) => {
-        const percent = totalKg > 0 ? (Number(row.quantityKg || 0) / totalKg) * 100 : 0;
-
-        return (
-          <div style={{ minWidth: 120 }}>
-            <strong>{formatPercent(percent)}</strong>
-            <div
-              style={{
-                width: "100%",
-                height: 6,
-                background: "#E5E7EB",
-                borderRadius: 999,
-                marginTop: 6,
-                overflow: "hidden",
-              }}
-            >
-              <div
-                style={{
-                  width: `${Math.min(percent, 100)}%`,
-                  height: "100%",
-                  background: "#16A34A",
-                  borderRadius: 999,
-                }}
-              />
-            </div>
-          </div>
-        );
-      },
-    },
-    {
-      key: "generator",
-      label: "Gerador",
-    },
-    {
-      key: "collector",
-      label: "Catador",
-    },
+    { key: "generator", label: "Gerador" },
+    { key: "collector", label: "Catador" },
     {
       key: "date",
       label: "Data",
       render: (value) => formatDate(value),
     },
+    {
+      key: "status",
+      label: "Situação",
+      render: (value) => (
+        <span className="badge text-bg-light border">
+          {value === "PENDING_DESTINATION"
+            ? "Aguardando destinação"
+            : value === "PARTIALLY_DESTINED"
+              ? "Parcialmente destinado"
+              : value === "FULLY_DESTINED"
+                ? "Destinado"
+                : value}
+        </span>
+      ),
+    },
   ];
-
-  const clearFilters = () => {
-    setSearch("");
-    setMaterialFilter("");
-    setGeneratorFilter("");
-    setCollectorFilter("");
-    setCurrentPage(1);
-  };
 
   return (
     <>
-      <HeadTags title="Lista de Resíduos Coletados" />
+      <HeadTags title="Resíduos coletados | KATUÁ" />
       <TopProgressBar loading={loading} />
 
-      <div className="page-header mb-30 px-2">
-        <div className="page-title mb-3">
-          <h3 className="fs-30">Lista de Resíduos Coletados</h3>
+      <main className="container-fluid py-4">
+        <div className="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
+          <div>
+            <h1 className="h3 fw-bold mb-2">Lista de Resíduos Coletados</h1>
 
-          <div className="page-tool d-flex justify-content-between flex-wrap gap-20 align-items-center">
-            <div className="breadcrumb-wrap">
-              <nav aria-label="breadcrumb">
-                <ol className="breadcrumb pb-0 mb-0">
-                  <li className="breadcrumb-item">
-                    <Link to="/" className="d-flex align-items-center gap-8">
-                      <House /> Painel
-                    </Link>
-                  </li>
-
-                  <li className="breadcrumb-item">
-                    <ChevronRight />
-                  </li>
-
-                  <li className="breadcrumb-item active">
-                    Resíduos Coletados
-                  </li>
-                </ol>
-              </nav>
-            </div>
+            <nav aria-label="breadcrumb">
+              <ol className="breadcrumb mb-0">
+                <li className="breadcrumb-item">
+                  <Link to="/" className="text-decoration-none">
+                    <House size={15} className="me-1" />
+                    Painel
+                  </Link>
+                </li>
+                <li className="breadcrumb-item active">
+                  <ChevronRight size={14} className="me-1" />
+                  Resíduos coletados
+                </li>
+              </ol>
+            </nav>
           </div>
-        </div>
-      </div>
 
-      <div className="row g-4 mb-4">
-        <div className="col-xl-3 col-md-6">
-          <div className="card p-25 h-100">
-            <div className="d-flex align-items-center justify-content-between gap-3">
-              <div>
-                <p className="mb-1 text-muted">Total coletado</p>
-                <h4 className="mb-0">{formatKg(filteredKg || totalKg)}</h4>
+          <button
+            type="button"
+            className="btn btn-outline-success"
+            onClick={() => void loadEntries()}
+            disabled={loading}
+          >
+            <RefreshCcw size={17} className="me-2" />
+            Atualizar
+          </button>
+        </div>
+
+        <div className="row g-3 mb-4">
+          <div className="col-12 col-md-3">
+            <div className="card h-100 shadow-sm border-0">
+              <div className="card-body d-flex justify-content-between">
+                <div>
+                  <div className="text-secondary mb-1">Entradas registradas</div>
+                  <div className="fs-4 fw-bold">{rows.length}</div>
+                </div>
+                <Package className="text-success" />
               </div>
-              <Scale size={34} color="#16A34A" />
             </div>
           </div>
-        </div>
 
-        <div className="col-xl-3 col-md-6">
-          <div className="card p-25 h-100">
-            <div className="d-flex align-items-center justify-content-between gap-3">
-              <div>
-                <p className="mb-1 text-muted">Tipos de resíduos</p>
-                <h4 className="mb-0">{materialSummary.length}</h4>
+          <div className="col-12 col-md-3">
+            <div className="card h-100 shadow-sm border-0">
+              <div className="card-body d-flex justify-content-between">
+                <div>
+                  <div className="text-secondary mb-1">Tipos de resíduos</div>
+                  <div className="fs-4 fw-bold">{materialOptions.length}</div>
+                </div>
+                <Scale className="text-success" />
               </div>
-              <Package size={34} color="#16A34A" />
             </div>
           </div>
-        </div>
 
-        <div className="col-xl-3 col-md-6">
-          <div className="card p-25 h-100">
-            <div className="d-flex align-items-center justify-content-between gap-3">
-              <div>
-                <p className="mb-1 text-muted">Geradores atendidos</p>
-                <h4 className="mb-0">{generatorOptions.length}</h4>
+          <div className="col-12 col-md-3">
+            <div className="card h-100 shadow-sm border-0">
+              <div className="card-body d-flex justify-content-between">
+                <div>
+                  <div className="text-secondary mb-1">Geradores atendidos</div>
+                  <div className="fs-4 fw-bold">{generatorOptions.length}</div>
+                </div>
+                <Users className="text-success" />
               </div>
-              <BarChart3 size={34} color="#16A34A" />
             </div>
           </div>
-        </div>
 
-        <div className="col-xl-3 col-md-6">
-          <div className="card p-25 h-100">
-            <div className="d-flex align-items-center justify-content-between gap-3">
-              <div>
-                <p className="mb-1 text-muted">Catadores envolvidos</p>
-                <h4 className="mb-0">{collectorOptions.length}</h4>
-              </div>
-              <Users size={34} color="#16A34A" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="row g-4 mb-4">
-        <div className="col-xl-4">
-          <div className="card p-25 h-100">
-            <h5 className="mb-3">Visão por tipo de resíduo</h5>
-
-            {materialSummary.length === 0 ? (
-              <p className="text-muted mb-0">Nenhum resíduo coletado encontrado.</p>
-            ) : (
-              <div className="d-flex flex-column gap-3">
-                {materialSummary.slice(0, 6).map((item) => (
-                  <div key={item.material}>
-                    <div className="d-flex justify-content-between gap-3 mb-1">
-                      <strong>{item.material}</strong>
-                      <span>{formatKg(item.quantityKg)}</span>
+          <div className="col-12 col-md-3">
+            <div className="card h-100 shadow-sm border-0">
+              <div className="card-body">
+                <div className="text-secondary mb-2">Totais por unidade</div>
+                {totalByUnit.length === 0 ? (
+                  <span className="text-secondary">Nenhum registro</span>
+                ) : (
+                  totalByUnit.map((item) => (
+                    <div key={item.unit} className="fw-bold">
+                      {formatQuantity(item.quantity, item.unit)}
                     </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
 
-                    <div className="d-flex align-items-center gap-2">
+        <div className="row g-3">
+          <div className="col-12 col-xl-4">
+            <div className="card shadow-sm border-0 h-100">
+              <div className="card-body">
+                <h2 className="h5 fw-bold mb-4">Visão por tipo de resíduo</h2>
+
+                {summaryByMaterial.map((item) => (
+                  <div key={`${item.material}-${item.unit}`} className="mb-3">
+                    <div className="d-flex justify-content-between gap-3">
+                      <strong>{item.material}</strong>
+                      <span>{formatQuantity(item.quantity, item.unit)}</span>
+                    </div>
+                    <div className="progress mt-2" style={{ height: 6 }}>
                       <div
-                        style={{
-                          width: "100%",
-                          height: 8,
-                          background: "#E5E7EB",
-                          borderRadius: 999,
-                          overflow: "hidden",
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: `${Math.min(item.percent, 100)}%`,
-                            height: "100%",
-                            background: "#16A34A",
-                            borderRadius: 999,
-                          }}
-                        />
-                      </div>
-
-                      <small style={{ minWidth: 48, textAlign: "right" }}>
-                        {formatPercent(item.percent)}
-                      </small>
+                        className="progress-bar bg-success"
+                        style={{ width: "100%" }}
+                      />
                     </div>
                   </div>
                 ))}
               </div>
-            )}
+            </div>
           </div>
-        </div>
 
-        <div className="col-xl-8">
-          <div className="card p-25 h-100">
-            <div className="filter row g-3">
-              <div className="col-lg-3 col-md-6">
-                <select
-                  className="form-select"
-                  value={materialFilter}
-                  onChange={(e) => {
-                    setMaterialFilter(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                >
-                  <option value="">Todos os resíduos</option>
-                  {materialOptions.map((item) => (
-                    <option key={item} value={item}>
-                      {item}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="col-lg-3 col-md-6">
-                <select
-                  className="form-select"
-                  value={generatorFilter}
-                  onChange={(e) => {
-                    setGeneratorFilter(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                >
-                  <option value="">Todos os geradores</option>
-                  {generatorOptions.map((item) => (
-                    <option key={item} value={item}>
-                      {item}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="col-lg-3 col-md-6">
-                <select
-                  className="form-select"
-                  value={collectorFilter}
-                  onChange={(e) => {
-                    setCollectorFilter(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                >
-                  <option value="">Todos os catadores</option>
-                  {collectorOptions.map((item) => (
-                    <option key={item} value={item}>
-                      {item}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="col-lg-3 col-md-6">
-                <div className="filter-section search w-100">
-                  <div className="icon">
-                    <Search />
+          <div className="col-12 col-xl-8">
+            <div className="card shadow-sm border-0">
+              <div className="card-body">
+                <div className="row g-2 mb-3">
+                  <div className="col-12 col-md-3">
+                    <select
+                      className="form-select"
+                      value={materialFilter}
+                      onChange={(event) => setMaterialFilter(event.target.value)}
+                    >
+                      <option value="">Todos os resíduos</option>
+                      {materialOptions.map((item) => (
+                        <option key={item} value={item}>{item}</option>
+                      ))}
+                    </select>
                   </div>
 
-                  <input
-                    className="form-control"
-                    type="text"
-                    value={search}
-                    onChange={(e) => {
-                      setSearch(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                    placeholder="Buscar..."
-                  />
+                  <div className="col-12 col-md-3">
+                    <select
+                      className="form-select"
+                      value={generatorFilter}
+                      onChange={(event) => setGeneratorFilter(event.target.value)}
+                    >
+                      <option value="">Todos os geradores</option>
+                      {generatorOptions.map((item) => (
+                        <option key={item} value={item}>{item}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="col-12 col-md-3">
+                    <select
+                      className="form-select"
+                      value={collectorFilter}
+                      onChange={(event) => setCollectorFilter(event.target.value)}
+                    >
+                      <option value="">Todos os catadores</option>
+                      {collectorOptions.map((item) => (
+                        <option key={item} value={item}>{item}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="col-12 col-md-3">
+                    <div className="input-group">
+                      <span className="input-group-text bg-white">
+                        <Search size={17} />
+                      </span>
+                      <input
+                        className="form-control"
+                        value={search}
+                        onChange={(event) => setSearch(event.target.value)}
+                        placeholder="Buscar..."
+                      />
+                    </div>
+                  </div>
                 </div>
+
+                <p className="text-secondary">
+                  Exibindo <strong>{filteredRows.length}</strong> entrada(s) de resíduos coletados.
+                </p>
+
+                <DataTable
+                  columns={columns}
+                  data={filteredRows}
+                  loading={loading}
+                />
               </div>
-
-              {(materialFilter || generatorFilter || collectorFilter || search) && (
-                <div className="col-12">
-                  <button className="clear-filter" onClick={clearFilters}>
-                    Limpar filtros
-                  </button>
-                </div>
-              )}
-            </div>
-
-            <div className="mt-4">
-              <p className="mb-0 text-muted">
-                Exibindo <strong>{filteredData.length}</strong> registros de resíduos
-                coletados, totalizando <strong>{formatKg(filteredKg)}</strong>.
-              </p>
             </div>
           </div>
         </div>
-      </div>
-
-      <div className="row mb-4">
-        <div className="col-12">
-          <div className="card p-25">
-            <DataTable
-              data={filteredData}
-              columns={columns}
-              currentPage={currentPage}
-              rowsPerPage={rowsPerPage}
-              onPageChange={setCurrentPage}
-              onRowsPerPageChange={(n) => {
-                setRowsPerPage(n);
-                setCurrentPage(1);
-              }}
-            />
-          </div>
-        </div>
-      </div>
+      </main>
     </>
   );
 };

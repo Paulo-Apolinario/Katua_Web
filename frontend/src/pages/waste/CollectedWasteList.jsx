@@ -1191,6 +1191,9 @@ const CollectedWasteList = () => {
         "Destinação registrada com sucesso. A lista foi atualizada."
       );
 
+      setDestinationModalOpen(false);
+      setSelectedEntry(null);
+
       await loadEntries({
         showPageLoader: false,
       });
