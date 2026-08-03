@@ -1,8 +1,8 @@
-import { AlertCircle, ArrowLeft, CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, ClipboardList, Eye, FileText, Filter, History, Loader2, PackageSearch, RefreshCcw, RotateCcw, Search, SlidersHorizontal, Warehouse, XCircle } from "lucide-react";
+import { AlertCircle, ArrowLeft, CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, ClipboardList, Eye, FileText, Filter, History, Loader2, PackageSearch, RefreshCcw, RotateCcw, Search, SlidersHorizontal, Warehouse } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { getCollectionEntryUnitShortLabel } from "../../services/collectionEntryService";
-import { extractWasteDestinationPagination, extractWasteDestinations, getWasteDestinations, getWasteDestinationStatusLabel, getWasteDestinationTypeLabel } from "../../services/collectionWasteDestinationService";
+import { extractWasteDestinationPagination, extractWasteDestinations, getWasteDestinations, getWasteDestinationsByEntry, getWasteDestinationStatusLabel, getWasteDestinationTypeLabel } from "../../services/collectionWasteDestinationService";
 
 const DEFAULT_FILTERS = { search: "", entryId: "", type: "", status: "", destinationName: "", dateFrom: "", dateTo: "", includeCancelled: true, page: 1, limit: 20, sortBy: "createdAt", sortOrder: "desc" };
 
@@ -29,7 +29,14 @@ const normalizeText = (value) => (value === null || value === undefined) ? "" : 
 const formatNumber = (value, maximumFractionDigits = 3) => new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits }).format(normalizeNumber(value));
 const formatDate = (value) => !value || Number.isNaN(new Date(value).getTime()) ? "Não informada" : new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(value));
 const formatDateTime = (value) => !value || Number.isNaN(new Date(value).getTime()) ? "Não informado" : new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(value));
-const getErrorMessage = (error, fallbackMessage) => error?.response?.data?.message || error?.data?.message || error?.message || fallbackMessage;
+
+// Melhoria: Mostra o erro real que vem da API na VPS
+const getErrorMessage = (error, fallbackMessage) => {
+  console.error("API Error Detail:", error?.response?.data || error);
+  const serverError = error?.response?.data?.error || error?.response?.data?.message;
+  const validationDetails = error?.response?.data?.errors ? ` Detalhes: ${JSON.stringify(error.response.data.errors)}` : "";
+  return serverError ? `${serverError}${validationDetails}` : (error?.message || fallbackMessage);
+};
 
 const getDestinationId = (destination) => destination?.id || destination?.collectionWasteDestinationId || "";
 const getDestinationEntry = (destination) => destination?.collectionWasteEntry || destination?.entry || {};
@@ -60,9 +67,11 @@ const SummaryCard = ({ icon: Icon, title, value, subtitle, loading = false }) =>
           {loading ? <div className="placeholder-glow"><span className="placeholder col-8 rounded" /></div> : <h4 className="fw-bold mb-1">{value}</h4>}
           {subtitle && <span className="text-muted small">{subtitle}</span>}
         </div>
-        <div className="d-flex align-items-center justify-content-center rounded-3 bg-light flex-shrink-0" style={{ width: 44, height: 44 }}>
-          {Icon && <Icon size={22} aria-hidden="true" />}
-        </div>
+        {Icon && (
+          <div className="d-flex align-items-center justify-content-center rounded-3 bg-light flex-shrink-0" style={{ width: 44, height: 44 }}>
+            <Icon size={22} aria-hidden="true" />
+          </div>
+        )}
       </div>
     </div>
   </div>
@@ -117,7 +126,12 @@ const WasteDestinationHistory = () => {
     try {
       if (showPageLoader) setLoading(true); else setRefreshing(true);
       setError("");
-      const response = await getWasteDestinations(appliedFilters);
+      
+      // Usa o endpoint correto dependendo se há um ID de entrada filtrado
+      const response = appliedFilters.entryId 
+        ? await getWasteDestinationsByEntry(appliedFilters.entryId, appliedFilters)
+        : await getWasteDestinations(appliedFilters);
+        
       setDestinations(extractWasteDestinations(response));
       setPagination(extractWasteDestinationPagination(response));
     } catch (requestError) {
@@ -211,7 +225,7 @@ const WasteDestinationHistory = () => {
         <div className="col-sm-6 col-xl-3"><SummaryCard icon={History} title="Registros encontrados" value={formatNumber(pagination.total || summary.total)} subtitle="Conforme os filtros aplicados" loading={loading} /></div>
         <div className="col-sm-6 col-xl-3"><SummaryCard icon={CheckCircle2} title="Destinações ativas" value={formatNumber(summary.active)} subtitle="Movimentações não canceladas" loading={loading} /></div>
         <div className="col-sm-6 col-xl-3"><SummaryCard icon={Warehouse} title="Movimentações para estoque" value={formatNumber(summary.stock)} subtitle="Destinações que geraram estoque" loading={loading} /></div>
-        <div className="col-sm-6 col-xl-3"><SummaryCard icon={XCircle} title="Destinações canceladas" value={formatNumber(summary.cancelled)} subtitle="Movimentações anuladas" loading={loading} /></div>
+        <div className="col-sm-6 col-xl-3"><SummaryCard title="Destinações canceladas" value={formatNumber(summary.cancelled)} subtitle="Movimentações anuladas" loading={loading} /></div>
       </div>
 
       <div className="card border-0 shadow-sm mb-4">
