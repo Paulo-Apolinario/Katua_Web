@@ -184,7 +184,7 @@ const extractWasteCatalogItems = (
 
 /*
  * ============================================================
- * HELPERS DA ENTRADA
+ * HELPERS DA ENTRADA (CORRIGIDOS PARA PEGAR O SNAPSHOT)
  * ============================================================
  */
 
@@ -198,13 +198,13 @@ const getEntryId = (entry) => {
 
 const getWasteName = (entry) => {
   return (
+    entry?.materialNameSnapshot ||
+    entry?.collectionMaterial?.nameSnapshot ||
     entry?.wasteType?.name ||
     entry?.wasteStockItem?.name ||
     entry?.stockItem?.name ||
-    entry?.collectionMaterial?.wasteType
-      ?.name ||
-    entry?.collectionMaterial
-      ?.materialType?.name ||
+    entry?.collectionMaterial?.wasteType?.name ||
+    entry?.collectionMaterial?.materialType?.name ||
     entry?.collectionMaterial?.type ||
     entry?.materialName ||
     entry?.wasteName ||
@@ -216,15 +216,12 @@ const getWasteCode = (entry) => {
   return (
     entry?.wasteType?.internalCode ||
     entry?.wasteType?.code ||
-    entry?.wasteStockItem
-      ?.internalCode ||
+    entry?.wasteStockItem?.internalCode ||
     entry?.wasteStockItem?.code ||
     entry?.stockItem?.internalCode ||
     entry?.stockItem?.code ||
-    entry?.collectionMaterial?.wasteType
-      ?.internalCode ||
-    entry?.collectionMaterial?.wasteType
-      ?.code ||
+    entry?.collectionMaterial?.wasteType?.internalCode ||
+    entry?.collectionMaterial?.wasteType?.code ||
     entry?.collectionMaterial?.code ||
     entry?.materialCode ||
     ""
@@ -233,12 +230,16 @@ const getWasteCode = (entry) => {
 
 const getWasteCategory = (entry) => {
   return (
+    entry?.categorySnapshot ||
+    entry?.collectionMaterial?.categorySnapshot ||
     entry?.wasteType?.category?.name ||
     entry?.wasteType?.category ||
-    entry?.collectionMaterial?.wasteType
-      ?.category?.name ||
-    entry?.collectionMaterial?.wasteType
-      ?.category ||
+    entry?.wasteStockItem?.category?.name ||
+    entry?.wasteStockItem?.category ||
+    entry?.stockItem?.category?.name ||
+    entry?.stockItem?.category ||
+    entry?.collectionMaterial?.wasteType?.category?.name ||
+    entry?.collectionMaterial?.wasteType?.category ||
     entry?.collectionMaterial?.category ||
     entry?.category ||
     "Não informada"
@@ -250,8 +251,7 @@ const getWasteDescription = (entry) => {
     entry?.wasteType?.description ||
     entry?.stockItem?.description ||
     entry?.wasteStockItem?.description ||
-    entry?.collectionMaterial
-      ?.description ||
+    entry?.collectionMaterial?.description ||
     entry?.description ||
     ""
   );
@@ -272,10 +272,8 @@ const getTotalQuantity = (entry) => {
       entry?.totalQuantity ??
       entry?.collectedQuantity ??
       entry?.originalQuantity ??
-      entry?.collectionMaterial
-        ?.quantity ??
-      entry?.collectionMaterial
-        ?.quantityKg ??
+      entry?.collectionMaterial?.quantity ??
+      entry?.collectionMaterial?.quantityKg ??
       0
   );
 };
@@ -324,8 +322,7 @@ const getEntryStatus = (entry) => {
 const getCollection = (entry) => {
   return (
     entry?.collection ||
-    entry?.collectionMaterial
-      ?.collection ||
+    entry?.collectionMaterial?.collection ||
     {}
   );
 };
@@ -778,7 +775,6 @@ const EmptyDestinations = ({
             size={17}
             aria-hidden="true"
           />
-
           Registrar primeira destinação
         </button>
       )}
@@ -1947,7 +1943,7 @@ const WasteDestinationForm = () => {
                                     "CANCELLED"
                                       ? "text-bg-danger"
                                       : destinationStatus ===
-                                          "COMPLETED"
+                                        "COMPLETED"
                                         ? "text-bg-primary"
                                         : "text-bg-success",
                                   ].join(" ")}

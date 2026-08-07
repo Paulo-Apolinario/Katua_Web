@@ -7,13 +7,11 @@ const normalizeUppercase = (value) => normalizeText(value).toUpperCase();
 const normalizeNumber = (value) => Number.isFinite(Number(value)) ? Number(value) : 0;
 const normalizePositiveNumber = (value, fieldLabel) => { const n = normalizeNumber(value); if (n <= 0) throw new Error(`${fieldLabel} deve ser maior que zero.`); return n; };
 const normalizePositiveInteger = (value, fallback) => (Number.isInteger(Number(value)) && Number(value) > 0) ? Number(value) : fallback;
-const normalizeBoolean = (value) => (value === true || value === "true") ? true : (value === false || value === "false") ? false : undefined;
 const normalizeDate = (value) => { const n = normalizeText(value); if (!n) return undefined; const d = new Date(n); return Number.isNaN(d.getTime()) ? undefined : d.toISOString(); };
 
 const appendTextParam = (params, key, value) => { const n = normalizeText(value); if (n) params.set(key, n); };
 const appendUppercaseParam = (params, key, value) => { const n = normalizeUppercase(value); if (n) params.set(key, n); };
 const appendDateParam = (params, key, value) => { const n = normalizeDate(value); if (n) params.set(key, n); };
-const appendBooleanParam = (params, key, value) => { const n = normalizeBoolean(value); if (n !== undefined) params.set(key, String(n)); };
 
 const buildWasteDestinationQueryString = (filters = {}) => {
   const params = new URLSearchParams();
@@ -37,7 +35,6 @@ const buildWasteDestinationQueryString = (filters = {}) => {
   appendTextParam(params, "routeId", filters.routeId);
   appendDateParam(params, "dateFrom", filters.dateFrom);
   appendDateParam(params, "dateTo", filters.dateTo);
-  appendBooleanParam(params, "includeCancelled", filters.includeCancelled);
 
   const queryString = params.toString();
   return queryString ? `?${queryString}` : "";
@@ -73,14 +70,25 @@ const normalizeCreatePayload = (payload = {}) => {
   return data;
 };
 
+// ==========================================
+// AQUI ESTÁ A CORREÇÃO PRINCIPAL
+// ==========================================
 const normalizeUpdatePayload = (payload = {}) => {
   const data = {};
-  const optionalTextFields = ["destinationName", "destinationDocument", "destinationAddress", "destinationContact", "transportDocument", "environmentalDocument", "notes"];
+  
+  // Adicionado stockItemId na lista de campos de texto opcionais
+  const optionalTextFields = ["destinationName", "destinationDocument", "destinationAddress", "destinationContact", "transportDocument", "environmentalDocument", "notes", "stockItemId"];
   
   for (const field of optionalTextFields) {
     if (Object.prototype.hasOwnProperty.call(payload, field)) {
       data[field] = payload[field] === null ? null : normalizeText(payload[field]) || null;
     }
+  }
+
+  // Permite enviar o tipo alterado
+  if (Object.prototype.hasOwnProperty.call(payload, "type")) {
+    const type = normalizeUppercase(payload.type);
+    if (type) data.type = type;
   }
 
   if (Object.prototype.hasOwnProperty.call(payload, "destinationDate")) {
@@ -89,6 +97,7 @@ const normalizeUpdatePayload = (payload = {}) => {
   if (Object.prototype.hasOwnProperty.call(payload, "metadata")) {
     data.metadata = payload.metadata === null ? null : normalizeMetadata(payload.metadata);
   }
+  
   return data;
 };
 

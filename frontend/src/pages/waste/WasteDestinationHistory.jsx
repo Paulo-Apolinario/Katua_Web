@@ -1,8 +1,22 @@
-import { AlertCircle, ArrowLeft, CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, ClipboardList, Eye, FileText, Filter, History, Loader2, PackageSearch, RefreshCcw, RotateCcw, Search, SlidersHorizontal, Warehouse } from "lucide-react";
+import { AlertCircle, ArrowLeft, CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, ClipboardList, Eye, FileText, Filter, History, Loader2, PackageSearch, RefreshCcw, RotateCcw, Search, SlidersHorizontal, Warehouse, Edit, Ban } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
+
+// Importação do seu modal oficial
+import WasteDestinationModal from "../../components/waste/WasteDestinationModal";
+
 import { getCollectionEntryUnitShortLabel } from "../../services/collectionEntryService";
-import { extractWasteDestinationPagination, extractWasteDestinations, getWasteDestinations, getWasteDestinationsByEntry, getWasteDestinationStatusLabel, getWasteDestinationTypeLabel } from "../../services/collectionWasteDestinationService";
+import { 
+  extractWasteDestinationPagination, 
+  extractWasteDestinations, 
+  getWasteDestinations, 
+  getWasteDestinationStatusLabel, 
+  getWasteDestinationTypeLabel,
+  cancelWasteDestination
+} from "../../services/collectionWasteDestinationService";
+
+// IMPORTANDO O SERVIÇO DO CATÁLOGO (Tipos de Resíduo)
+import { getAllWasteTypes } from "../../services/wasteTypeService";
 
 const DEFAULT_FILTERS = { search: "", entryId: "", type: "", status: "", destinationName: "", dateFrom: "", dateTo: "", includeCancelled: true, page: 1, limit: 20, sortBy: "createdAt", sortOrder: "desc" };
 
@@ -30,7 +44,6 @@ const formatNumber = (value, maximumFractionDigits = 3) => new Intl.NumberFormat
 const formatDate = (value) => !value || Number.isNaN(new Date(value).getTime()) ? "Não informada" : new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date(value));
 const formatDateTime = (value) => !value || Number.isNaN(new Date(value).getTime()) ? "Não informado" : new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(value));
 
-// Melhoria: Mostra o erro real que vem da API na VPS
 const getErrorMessage = (error, fallbackMessage) => {
   console.error("API Error Detail:", error?.response?.data || error);
   const serverError = error?.response?.data?.error || error?.response?.data?.message;
@@ -112,6 +125,48 @@ const WasteDestinationHistory = () => {
   const [error, setError] = useState("");
   const [filtersExpanded, setFiltersExpanded] = useState(Boolean(queryEntryId));
 
+  // ==========================================
+  // ESTADOS DO CATÁLOGO
+  // ==========================================
+  const [stockItems, setStockItems] = useState([]);
+  const [loadingStockItems, setLoadingStockItems] = useState(false);
+  const [stockItemsError, setStockItemsError] = useState("");
+
+  // ==========================================
+  // ESTADOS PARA O MODAL DE EDIÇÃO
+  // ==========================================
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [destinationToEdit, setDestinationToEdit] = useState(null);
+
+  // ==========================================
+  // ESTADOS PARA O MODAL DE CANCELAMENTO
+  // ==========================================
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [destinationToCancel, setDestinationToCancel] = useState(null);
+  const [cancelReason, setCancelReason] = useState("");
+  const [isCancelling, setIsCancelling] = useState(false);
+
+  // ==========================================
+  // BUSCA DO CATÁLOGO 
+  // ==========================================
+  const loadStockItems = useCallback(async () => {
+    try {
+      setLoadingStockItems(true);
+      setStockItemsError("");
+      const response = await getAllWasteTypes({ limit: 1000 });
+      const items = response?.data || response?.wasteTypes || response?.items || response || [];
+      setStockItems(Array.isArray(items) ? items : []);
+    } catch (err) {
+      console.error("Erro ao carregar itens do catálogo:", err); // CORREÇÃO APLICADA AQUI
+      setStockItemsError("Erro ao carregar os itens do catálogo.");
+      setStockItems([]);
+    } finally {
+      setLoadingStockItems(false);
+    }
+  }, []);
+
+  useEffect(() => { loadStockItems(); }, [loadStockItems]);
+
   useEffect(() => {
     const entryIdFromUrl = searchParams.get("entryId") || "";
     setFilters((c) => c.entryId === entryIdFromUrl ? c : { ...c, entryId: entryIdFromUrl, page: 1 });
@@ -126,12 +181,7 @@ const WasteDestinationHistory = () => {
     try {
       if (showPageLoader) setLoading(true); else setRefreshing(true);
       setError("");
-      
-      // Usa o endpoint correto dependendo se há um ID de entrada filtrado
-      const response = appliedFilters.entryId 
-        ? await getWasteDestinationsByEntry(appliedFilters.entryId, appliedFilters)
-        : await getWasteDestinations(appliedFilters);
-        
+      const response = await getWasteDestinations(appliedFilters);
       setDestinations(extractWasteDestinations(response));
       setPagination(extractWasteDestinationPagination(response));
     } catch (requestError) {
@@ -195,6 +245,35 @@ const WasteDestinationHistory = () => {
     navigate(`/collected-waste/${entryId}`);
   };
 
+  const handleEditDestination = (destination) => {
+    setDestinationToEdit(destination);
+    setShowEditModal(true);
+  };
+
+  const handleCancelDestination = (destination) => {
+    setDestinationToCancel(destination);
+    setCancelReason("");
+    setShowCancelModal(true);
+  };
+
+  const confirmCancelDestination = async () => {
+    if (!cancelReason.trim()) return;
+    try {
+      setIsCancelling(true);
+      const destId = getDestinationId(destinationToCancel);
+      await cancelWasteDestination(destId, { reason: cancelReason });
+      
+      setShowCancelModal(false);
+      setDestinationToCancel(null);
+      loadDestinations({ showPageLoader: false });
+    } catch (err) {
+      setError(getErrorMessage(err, "Erro ao cancelar destinação."));
+      setShowCancelModal(false);
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
   return (
     <div className="container-fluid py-4">
       <div className="d-flex flex-column flex-xl-row align-items-xl-start justify-content-between gap-3 mb-4">
@@ -225,7 +304,7 @@ const WasteDestinationHistory = () => {
         <div className="col-sm-6 col-xl-3"><SummaryCard icon={History} title="Registros encontrados" value={formatNumber(pagination.total || summary.total)} subtitle="Conforme os filtros aplicados" loading={loading} /></div>
         <div className="col-sm-6 col-xl-3"><SummaryCard icon={CheckCircle2} title="Destinações ativas" value={formatNumber(summary.active)} subtitle="Movimentações não canceladas" loading={loading} /></div>
         <div className="col-sm-6 col-xl-3"><SummaryCard icon={Warehouse} title="Movimentações para estoque" value={formatNumber(summary.stock)} subtitle="Destinações que geraram estoque" loading={loading} /></div>
-        <div className="col-sm-6 col-xl-3"><SummaryCard title="Destinações canceladas" value={formatNumber(summary.cancelled)} subtitle="Movimentações anuladas" loading={loading} /></div>
+        <div className="col-sm-6 col-xl-3"><SummaryCard icon={Ban} title="Destinações canceladas" value={formatNumber(summary.cancelled)} subtitle="Movimentações anuladas" loading={loading} /></div>
       </div>
 
       <div className="card border-0 shadow-sm mb-4">
@@ -340,7 +419,7 @@ const WasteDestinationHistory = () => {
                     <th scope="col" style={{ minWidth: 150 }}>Data</th>
                     <th scope="col" style={{ minWidth: 130 }}>Status</th>
                     <th scope="col" style={{ minWidth: 190 }}>Documentos</th>
-                    <th scope="col" className="text-end" style={{ minWidth: 100 }}>Ações</th>
+                    <th scope="col" className="text-end" style={{ minWidth: 150 }}>Ações</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -350,6 +429,7 @@ const WasteDestinationHistory = () => {
                     const lotCode = getStockLotCode(destination);
                     const transportDocument = getTransportDocument(destination);
                     const environmentalDocument = getEnvironmentalDocument(destination);
+                    const isCancelled = getDestinationStatus(destination) === "CANCELLED";
 
                     return (
                       <tr key={destinationId || `${entryId}-${index}`}>
@@ -398,9 +478,22 @@ const WasteDestinationHistory = () => {
                           {destination?.notes && <div className="text-muted small mt-2"><FileText size={13} className="me-1" aria-hidden="true" />{destination.notes}</div>}
                         </td>
                         <td className="text-end">
-                          <button type="button" className="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1" disabled={!entryId} onClick={() => handleViewEntry(destination)}>
-                            <Eye size={15} aria-hidden="true" /> Ver
-                          </button>
+                          <div className="d-flex justify-content-end gap-2">
+                            <button type="button" className="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1" disabled={!entryId} onClick={() => handleViewEntry(destination)}>
+                              <Eye size={15} aria-hidden="true" /> Ver
+                            </button>
+                            
+                            {!isCancelled && (
+                              <>
+                                <button type="button" className="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1" title="Editar destinação" onClick={() => handleEditDestination(destination)}>
+                                  <Edit size={15} aria-hidden="true" />
+                                </button>
+                                <button type="button" className="btn btn-sm btn-outline-danger d-inline-flex align-items-center gap-1" title="Cancelar destinação" onClick={() => handleCancelDestination(destination)}>
+                                  <Ban size={15} aria-hidden="true" />
+                                </button>
+                              </>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     );
@@ -446,6 +539,91 @@ const WasteDestinationHistory = () => {
           </div>
         </div>
       </div>
+
+      {/* ========================================== */}
+      {/* MODAL DE EDIÇÃO (Usando o seu componente oficial) */}
+      {/* ========================================== */}
+      {showEditModal && destinationToEdit && (
+        <WasteDestinationModal
+          open={showEditModal}
+          mode="edit"
+          destinationToEdit={destinationToEdit}
+          entry={getDestinationEntry(destinationToEdit)}
+          
+          // PASSANDO OS ITENS DO CATÁLOGO AQUI:
+          stockItems={stockItems}
+          loadingStockItems={loadingStockItems}
+          stockItemsError={stockItemsError}
+          onReloadStockItems={loadStockItems}
+
+          onClose={() => {
+            setShowEditModal(false);
+            setDestinationToEdit(null);
+          }}
+          onSuccess={() => {
+            setShowEditModal(false);
+            setDestinationToEdit(null);
+            loadDestinations({ showPageLoader: false });
+          }}
+        />
+      )}
+
+      {/* ========================================== */}
+      {/* MODAL DE CANCELAMENTO (Nativo e Direto) */}
+      {/* ========================================== */}
+      {showCancelModal && destinationToCancel && (
+        <>
+          <div className="modal-backdrop fade show" style={{ zIndex: 1040 }}></div>
+          <div className="modal fade show d-block" tabIndex="-1" style={{ zIndex: 1050 }} role="dialog">
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title text-danger d-flex align-items-center gap-2">
+                    <Ban size={20} />
+                    Cancelar Destinação
+                  </h5>
+                  <button type="button" className="btn-close" aria-label="Close" onClick={() => setShowCancelModal(false)} disabled={isCancelling}></button>
+                </div>
+                <div className="modal-body">
+                  <p>Tem certeza que deseja cancelar a destinação de <strong>{getWasteName(destinationToCancel)}</strong>?</p>
+                  
+                  <div className="alert alert-warning py-2 small mb-3">
+                    A quantidade de <strong>{formatNumber(getDestinationQuantity(destinationToCancel))} {getCollectionEntryUnitShortLabel(getDestinationUnit(destinationToCancel))}</strong> retornará para o saldo da entrada de resíduo.
+                    {getDestinationType(destinationToCancel) === "STOCK" && (
+                      <div className="mt-1 border-top border-warning pt-1">O lote no estoque (se não possuir movimentações) será cancelado e o saldo zerado.</div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label htmlFor="cancelReasonInput" className="form-label fw-medium text-dark small">
+                      Motivo do cancelamento <span className="text-danger">*</span>
+                    </label>
+                    <textarea
+                      id="cancelReasonInput"
+                      className="form-control"
+                      rows="3"
+                      placeholder="Informe brevemente o porquê desta destinação estar sendo anulada..."
+                      value={cancelReason}
+                      onChange={(e) => setCancelReason(e.target.value)}
+                      disabled={isCancelling}
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="modal-footer bg-light">
+                  <button type="button" className="btn btn-outline-secondary" onClick={() => setShowCancelModal(false)} disabled={isCancelling}>
+                    Voltar
+                  </button>
+                  <button type="button" className="btn btn-danger d-inline-flex align-items-center gap-2" onClick={confirmCancelDestination} disabled={isCancelling || cancelReason.trim().length < 3}>
+                    {isCancelling ? <Loader2 size={16} className="spinner-border spinner-border-sm" /> : <CheckCircle2 size={16} />}
+                    Confirmar Cancelamento
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };
