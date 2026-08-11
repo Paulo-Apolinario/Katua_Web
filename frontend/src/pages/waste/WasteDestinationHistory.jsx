@@ -629,3 +629,5 @@ const WasteDestinationHistory = () => {
 };
 
 export default WasteDestinationHistory;
+
+//ATUALIZAÇÃO FEITAS.
