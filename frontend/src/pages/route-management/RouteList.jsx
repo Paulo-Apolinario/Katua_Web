@@ -7,6 +7,7 @@ import {
   Search,
   Pencil,
 } from "lucide-react";
+import RouteAssignmentSummary from "../../components/RouteAssignmentSummary";
 import DataTable from "../../components/DataTable";
 import { getAllRoutes } from "../../services/routeService";
 import toast from "react-hot-toast";
@@ -96,30 +97,12 @@ const RouteList = () => {
     {
       key: "name",
       label: "Rota",
-      render: (value) => value || "N/A",
+      render: (value, row) => <div><strong>{value || "N/A"}</strong><RouteAssignmentSummary route={row} /></div>,
     },
     {
       key: "scheduledDate",
       label: "Data Programada",
       render: (value) => formatDate(value),
-    },
-    {
-      key: "vehicleId",
-      label: "Veículo",
-      render: (value, row) => {
-        if (!row.vehicle) return "Não vinculado";
-
-        const brand = row.vehicle.brand ? `${row.vehicle.brand} ` : "";
-        const model = row.vehicle.model || "";
-        const plate = row.vehicle.plate ? ` • ${row.vehicle.plate}` : "";
-
-        return `${brand}${model}${plate}`;
-      },
-    },
-    {
-      key: "driverId",
-      label: "Motorista",
-      render: (value, row) => row.driver?.name || "Não vinculado",
     },
     {
       key: "stops",
@@ -212,10 +195,11 @@ const RouteList = () => {
     
                      <Link
                       to={`/edit-route/${row.id}`}
-                      className="action-icon-btn"
-                          title="Editar rota"
+                      className="d-inline-flex align-items-center gap-2"
+                          title="Editar rota, motorista e veículo"
+                          aria-label="Editar rota, motorista e veículo"
                           >
-                     <Pencil size={16} />
+                     <Pencil size={16} /> <span className="small">Editar equipe e rota</span>
                     </Link>
 
                     </div>

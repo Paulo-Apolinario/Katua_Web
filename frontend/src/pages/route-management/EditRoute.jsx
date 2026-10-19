@@ -19,6 +19,7 @@ import {
   addCollectionToRoute,
   removeCollectionFromRoute,
 } from "../../services/routeService";
+import RouteAssignmentSummary from "../../components/RouteAssignmentSummary";
 import HeadTags from "../../components/HeadTags";
 import TopProgressBar from "../../components/TopProgressBar";
 
@@ -68,6 +69,9 @@ const getStatusLabel = (status) => {
   const labels = {
     PENDING: "Pendente",
     IN_PROGRESS: "Em andamento",
+    COLLECTED: "Finalizada em campo",
+    RECEIVED: "Recebida",
+    SORTING: "Em triagem",
     COMPLETED: "Concluída",
     CANCELLED: "Cancelada",
     SCHEDULED: "Agendada",
@@ -80,6 +84,7 @@ const EditRoute = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
+  const [currentRoute, setCurrentRoute] = useState(null);
   const [formData, setFormData] = useState(initialFormState);
   const [errors, setErrors] = useState({});
   const [vehicles, setVehicles] = useState([]);
@@ -102,6 +107,7 @@ const EditRoute = () => {
         ]);
 
       const route = getObject(routeResponse);
+      setCurrentRoute(route);
 
       setVehicles(getArray(vehicleResponse));
       setDrivers(getArray(driverResponse));
@@ -162,6 +168,10 @@ const EditRoute = () => {
       newErrors.scheduledDate = ["Use o formato DD/MM/AAAA."];
     }
 
+    const selectedVehicle = vehicles.find((vehicle) => vehicle.id === formData.vehicleId);
+    if (formData.driverId && selectedVehicle?.driverId && selectedVehicle.driverId !== formData.driverId) {
+      newErrors.driverId = ["O veículo está vinculado a outro motorista. Escolha um par compatível ou ajuste o cadastro do veículo."];
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -274,6 +284,13 @@ const EditRoute = () => {
           <div className="card p-25 mb-4">
             <h3 className="fw-600 fs-18 mb-4">Informações da Rota</h3>
 
+            {!loading && currentRoute && (
+              <div className="border rounded p-3 mb-4">
+                <strong>Equipe atual da rota</strong>
+                <RouteAssignmentSummary route={currentRoute} />
+                <p className="small text-muted mb-0 mt-2">Altere o motorista e o veículo nos campos abaixo e salve. O histórico das coletas já finalizadas será preservado.</p>
+              </div>
+            )}
             <form className="form" onSubmit={handleSubmit}>
               <div className="mb-4">
                 <label htmlFor="name" className="form-label">
@@ -341,7 +358,7 @@ const EditRoute = () => {
                       <option key={vehicle.id} value={vehicle.id}>
                         {vehicle.plate} -{" "}
                         {vehicle.brand ? `${vehicle.brand} ` : ""}
-                        {vehicle.model}
+                        {vehicle.model}{vehicle.driver?.name ? ` • Motorista: ${vehicle.driver.name}` : ""}
                       </option>
                     ))}
                   </select>
@@ -375,6 +392,7 @@ const EditRoute = () => {
                     ))}
                   </select>
                 </div>
+                {errors.driverId && <div className="text-danger small mt-1">{errors.driverId[0]}</div>}
               </div>
 
               <div className="mb-4">
@@ -417,6 +435,7 @@ const EditRoute = () => {
 
               <div className="mb-4">
                 <label className="form-label">Status</label>
+                <p className="small text-muted">Conclua a rota após finalizar as coletas em campo, sem aguardar recebimento ou triagem. Coletas pendentes ou em andamento precisam ser finalizadas ou canceladas.</p>
 
                 <div className="d-flex gap-4 align-items-center flex-wrap custom-radio">
                   {[
@@ -488,6 +507,8 @@ const EditRoute = () => {
                     <button
                       type="button"
                       className="outline-btn btn-sm border-0"
+                      disabled={!["PENDING", "IN_PROGRESS"].includes(collection.status) || ["COMPLETED", "CANCELLED"].includes(currentRoute?.status)}
+                      title="Coletas finalizadas preservam o vínculo histórico"
                       onClick={() => handleRemoveCollection(collection.id)}
                     >
                       <Trash2 size={16} /> Remover
@@ -528,6 +549,7 @@ const EditRoute = () => {
                     <button
                       type="button"
                       className="primary-btn btn-sm border-0"
+                      disabled={["COMPLETED", "CANCELLED"].includes(currentRoute?.status)}
                       onClick={() => handleAddCollection(collection.id)}
                     >
                       <Plus size={16} /> Adicionar
