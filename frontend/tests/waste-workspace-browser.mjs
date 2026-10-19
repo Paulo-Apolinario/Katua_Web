@@ -612,6 +612,81 @@ try {
     },
   );
   await check(
+    "Busca por lote, filtros e CSV usam os mesmos registros",
+    async () => {
+      const created = await api(
+        "/waste-stock/items/" + paper.id + "/lots",
+        "POST",
+        {
+          lotCode: "CONFERENCIA-CSV",
+          quantity: 3,
+          unit: "KG",
+          status: "AVAILABLE",
+          processingStage: "PRENSADO",
+          origin: "Ajuste de conferência",
+          storageLocation: "Galpão B",
+        },
+      );
+      assert.equal(created.status, 201);
+      await page.goto("http://127.0.0.1:5179/waste-stock");
+      await page.locator("tbody tr").first().waitFor();
+      await page.locator("#inventory-search").fill("CONFERENCIA-CSV");
+      await page
+        .getByRole("button", { name: "Ver lotes (1)", exact: true })
+        .click();
+      await page.getByText("CONFERENCIA-CSV", { exact: true }).waitFor();
+      assert.equal(
+        await page.getByText("MANUAL-01", { exact: true }).count(),
+        0,
+      );
+      await page.locator("#inventory-processing").selectOption("PRENSADO");
+      await page.locator("#inventory-origin").selectOption("MANUAL");
+      async function exported(label) {
+        const downloading = page.waitForEvent("download");
+        await page.getByRole("button", { name: label, exact: true }).click();
+        return readFile(await (await downloading).path(), "utf8");
+      }
+      const csv = await exported("Exportar filtrados (CSV)");
+      assert.ok(csv.includes("CONFERENCIA-CSV"));
+      assert.ok(!csv.includes("MANUAL-01"));
+      assert.equal(csv.split("\r\n").length, 2);
+      await page.locator("#inventory-origin").selectOption("COLLECTION");
+      await page
+        .getByText(
+          "Nenhum registro corresponde aos filtros. Limpe ou ajuste os critérios de busca.",
+          { exact: true },
+        )
+        .waitFor();
+      assert.equal(
+        await page
+          .getByRole("button", {
+            name: "Exportar filtrados (CSV)",
+            exact: true,
+          })
+          .isDisabled(),
+        true,
+      );
+      await page.goto("http://127.0.0.1:5179/collected-waste");
+      await page.locator("tbody tr").first().waitFor();
+      await page.locator(".waste-freshness").waitFor();
+      assert.equal(
+        (await exported("Exportar página (CSV)")).split("\r\n").length,
+        21,
+      );
+      await page.goto("http://127.0.0.1:5179/waste-destinations");
+      await page.locator("tbody tr").first().waitFor();
+      const destinationCsv = await exported("Exportar página (CSV)");
+      assert.ok(destinationCsv.includes("ID destinação"));
+      assert.ok(destinationCsv.includes("ID entrada"));
+      await page.goto("http://127.0.0.1:5179/waste-type-list");
+      await page.locator("tbody tr").first().waitFor();
+      await page.locator("#inventory-search").fill("Papel rastreável");
+      const catalogCsv = await exported("Exportar filtrados (CSV)");
+      assert.ok(catalogCsv.includes("Papel rastreável"));
+      assert.ok(!catalogCsv.includes("Óleo rastreável"));
+    },
+  );
+  await check(
     "Estoque não soma vendidos e descartados no disponível; navegação móvel",
     async () => {
       await api("/waste-stock/lots/" + manualLot.id, "PATCH", {
@@ -636,6 +711,12 @@ try {
       await page.waitForFunction(
         () =>
           document.querySelector(".sidebar").getBoundingClientRect().right <= 0,
+      );
+      assert.equal(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth + 1,
+        ),
+        true,
       );
       await page.screenshot({ path: join(outputDir, "estoque-mobile.png") });
       await page.goto("http://127.0.0.1:5179/collected-waste/wg-entry-3");
@@ -726,7 +807,7 @@ try {
       await p.goto("http://127.0.0.1:5179/waste-stock");
       await p
         .getByText(
-          "Nenhum registro corresponde aos filtros. Cadastre um tipo de resíduo para começar.",
+          "Nenhum estoque registrado. Consulte as entradas coletadas ou adicione um lote manual.",
           { exact: true },
         )
         .waitFor();

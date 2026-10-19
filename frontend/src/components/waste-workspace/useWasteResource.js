@@ -1,18 +1,29 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { errorMessage } from "../../utils/wasteWorkspace";
 export function useWasteResource(loader) {
-  const [state, setState] = useState({ data: null, loading: true, error: "" });
+  const [state, setState] = useState({
+    data: null,
+    loading: true,
+    error: "",
+    updatedAt: null,
+  });
   const request = useRef({ id: 0 });
   const refresh = useCallback(async () => {
     const ref = request.current,
       id = ++ref.id;
-    setState({ data: null, loading: true, error: "" });
+    setState({ data: null, loading: true, error: "", updatedAt: null });
     try {
       const data = await loader();
-      if (id === ref.id) setState({ data, loading: false, error: "" });
+      if (id === ref.id)
+        setState({ data, loading: false, error: "", updatedAt: new Date() });
     } catch (e) {
       if (id === ref.id)
-        setState({ data: null, loading: false, error: errorMessage(e) });
+        setState({
+          data: null,
+          loading: false,
+          error: errorMessage(e),
+          updatedAt: null,
+        });
     }
   }, [loader]);
   useEffect(() => {

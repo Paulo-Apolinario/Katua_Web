@@ -18,7 +18,13 @@ import {
   getWasteCatalog,
   WASTE_UNIT_OPTIONS,
 } from "../../services/wasteTypeService";
-import { WasteScope, WastePage, ResourceState } from "./WastePage";
+import {
+  WasteScope,
+  WastePage,
+  ResourceState,
+  WasteGuide,
+  ExportButton,
+} from "./WastePage";
 import { useWasteOperation, useWasteResource } from "./useWasteResource";
 import CollectionDialog from "../collections/CollectionDialog";
 import { Summary, WorkspacePagination } from "../collections/WorkspaceParts";
@@ -32,6 +38,7 @@ import {
   COLLECTION_STAGES,
 } from "../../utils/collectionWorkspace";
 import { numeric, unitSummary, validPeriod } from "../../utils/wasteWorkspace";
+import { downloadCsv } from "../../utils/wasteReports";
 const defaults = {
   search: "",
   status: "",
@@ -311,15 +318,58 @@ function EntryList() {
       title="Resíduos Coletados"
       description="Entradas de materiais geradas pela finalização em campo. Destinar uma entrada não significa concluir recebimento, triagem ou estoque."
       actions={
-        <button
-          className="btn btn-outline-success"
-          onClick={resource.refresh}
-          disabled={resource.loading}
-        >
-          Atualizar entradas
-        </button>
+        <>
+          <ExportButton
+            page
+            disabled={resource.loading || !!resource.error || !rows.length}
+            onClick={() =>
+              downloadCsv(
+                "katua-entradas-pagina.csv",
+                [
+                  "ID entrada",
+                  "ID coleta",
+                  "Material",
+                  "Gerador",
+                  "Coletado",
+                  "Destinado",
+                  "Saldo a destinar",
+                  "Unidade",
+                  "Situação",
+                  "Data da coleta",
+                ],
+                rows.map((e) => [
+                  e.id,
+                  e.collectionId,
+                  entryName(e),
+                  generatorName(e),
+                  e.collectedQuantity,
+                  e.destinedQuantity,
+                  e.remainingQuantity,
+                  e.unit,
+                  getCollectionEntryStatusLabel(e.status),
+                  e.collectedAt,
+                ]),
+              )
+            }
+          />
+          <button
+            className="btn btn-outline-success"
+            onClick={resource.refresh}
+            disabled={resource.loading}
+          >
+            Atualizar entradas
+          </button>
+        </>
       }
     >
+      <WasteGuide
+        title="Próximo passo: conferir e destinar"
+        to="/waste-stock"
+        label="Consultar estoque"
+      >
+        Abra a entrada para conferir a coleta e registrar a destinação do saldo.
+        Quantidades de unidades diferentes são acompanhadas separadamente.
+      </WasteGuide>
       <Summary
         cards={[
           ["Entradas encontradas", r?.pagination.total ?? "—"],
@@ -353,6 +403,11 @@ function EntryList() {
         </p>
       )}
       <section className="card p-3">
+        <h2 className="fs-18">Entradas coletadas</h2>
+        <p className="small text-muted">
+          A exportação inclui somente a página consultada, com os filtros
+          aplicados. Os cartões consideram todas as páginas.
+        </p>
         <ResourceState resource={resource}>
           {!rows.length ? (
             <p>
@@ -393,8 +448,12 @@ function EntryList() {
                         </strong>
                       </td>
                       <td>
-                        {getCollectionEntryStatusLabel(e.status)}
-                        <div>{dateLabel(e.collectedAt)}</div>
+                        <span
+                          className={`badge text-bg-${e.status === "CANCELLED" ? "secondary" : numeric(e.remainingQuantity) > 0 ? "warning" : "success"}`}
+                        >
+                          {getCollectionEntryStatusLabel(e.status)}
+                        </span>
+                        <div className="mt-1">{dateLabel(e.collectedAt)}</div>
                       </td>
                       <td>
                         <div className="d-flex gap-2 flex-wrap">
@@ -407,6 +466,11 @@ function EntryList() {
                           <button
                             className="btn btn-sm btn-success"
                             disabled={!allowed(e) || editor.busy}
+                            title={
+                              !allowed(e)
+                                ? "Entrada sem saldo disponível ou vinculada a uma coleta cancelada"
+                                : "Registrar a destinação do saldo desta entrada"
+                            }
                             onClick={() => editor.open(e)}
                           >
                             Destinar
@@ -457,6 +521,10 @@ function DestinationList({ entryId }) {
     const r = await op.run(() =>
       cancelWasteDestination(cancel.id, { reason: reason.trim() }),
     );
+    if (r && !r.destination?.id)
+      op.setError(
+        "O servidor não confirmou o cancelamento. Atualize antes de repetir.",
+      );
     if (r?.destination?.id) {
       setCancel(null);
       setNotice(
@@ -470,15 +538,69 @@ function DestinationList({ entryId }) {
       title="Gestão de Destinações"
       description="Consulte, revise e cancele movimentações mantendo o vínculo com a entrada, o responsável e o lote gerado."
       actions={
-        <button
-          className="btn btn-outline-success"
-          onClick={resource.refresh}
-          disabled={resource.loading}
-        >
-          Atualizar destinações
-        </button>
+        <>
+          <ExportButton
+            page
+            disabled={resource.loading || !!resource.error || !rows.length}
+            onClick={() =>
+              downloadCsv(
+                "katua-destinacoes-pagina.csv",
+                [
+                  "ID destinação",
+                  "ID entrada",
+                  "Material",
+                  "Tipo",
+                  "Quantidade",
+                  "Unidade",
+                  "Destino",
+                  "Documento destino",
+                  "Documento transporte",
+                  "Documento ambiental",
+                  "Situação",
+                  "Data destinação",
+                  "Responsável",
+                  "ID lote",
+                  "Motivo cancelamento",
+                ],
+                rows.map((d) => [
+                  d.id,
+                  d.collectionWasteEntryId,
+                  entryName(getEntry(d)),
+                  getWasteDestinationTypeLabel(d.type),
+                  d.quantity,
+                  d.unit,
+                  d.destinationName || d.stockItem?.name,
+                  d.destinationDocument,
+                  d.transportDocument,
+                  d.environmentalDocument,
+                  d.status === "CANCELLED" ? "Cancelada" : "Ativa",
+                  d.destinationDate,
+                  personName(d.createdBy),
+                  d.stockLotId,
+                  d.cancelledReason,
+                ]),
+              )
+            }
+          />
+          <button
+            className="btn btn-outline-success"
+            onClick={resource.refresh}
+            disabled={resource.loading}
+          >
+            Atualizar destinações
+          </button>
+        </>
       }
     >
+      <WasteGuide
+        title="Histórico de movimentações e documentos"
+        to="/collected-waste"
+        label="Registrar pela entrada"
+      >
+        Registre novas destinações a partir da entrada coletada. Confira o
+        destinatário, os documentos informados e o lote vinculado; cancelamentos
+        mantêm o registro no histórico.
+      </WasteGuide>
       {entryId && (
         <div className="alert alert-light">
           Histórico da entrada #{shortId(entryId)}.{" "}
@@ -525,6 +647,11 @@ function DestinationList({ entryId }) {
         </p>
       )}
       <section className="card p-3">
+        <h2 className="fs-18">Destinações registradas</h2>
+        <p className="small text-muted">
+          A exportação inclui a página consultada e respeita os filtros de
+          situação, período e entrada.
+        </p>
         <ResourceState resource={resource}>
           {!rows.length ? (
             <p>Nenhuma destinação corresponde aos filtros.</p>

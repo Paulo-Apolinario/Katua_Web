@@ -1,4 +1,4 @@
-import { NavLink } from "react-router";
+import { Link, NavLink } from "react-router";
 import HeadTags from "../HeadTags";
 import { useAdminAuth } from "../../context/AdminAuthContext";
 import "./wasteWorkspace.css";
@@ -10,6 +10,7 @@ export function WastePage({ title, description, children, actions }) {
   return (
     <div className="container-fluid py-4 waste-workspace">
       <HeadTags title={`${title} | KATUÁ`} />
+      <div className="waste-eyebrow mb-2">KATUÁ · GESTÃO DE RESÍDUOS</div>
       <header className="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
         <div>
           <h1 className="h3">{title}</h1>
@@ -47,9 +48,13 @@ export function WastePage({ title, description, children, actions }) {
 }
 export function ResourceState({ resource, children }) {
   return resource.loading ? (
-    <p role="status" className="py-4">
-      Carregando dados...
-    </p>
+    <div role="status" className="waste-loading py-4">
+      <span
+        className="spinner-border spinner-border-sm me-2"
+        aria-hidden="true"
+      />
+      Consultando os registros da cooperativa...
+    </div>
   ) : resource.error ? (
     <div role="alert" className="alert alert-danger">
       {resource.error}
@@ -61,7 +66,19 @@ export function ResourceState({ resource, children }) {
       </button>
     </div>
   ) : (
-    children
+    <>
+      {resource.updatedAt && (
+        <p className="waste-freshness small text-muted">
+          Dados consultados em{" "}
+          {new Intl.DateTimeFormat("pt-BR", {
+            dateStyle: "short",
+            timeStyle: "medium",
+          }).format(resource.updatedAt)}
+          .
+        </p>
+      )}
+      {children}
+    </>
   );
 }
 export function Field({
@@ -75,6 +92,7 @@ export function Field({
   type = "text",
   maxLength,
   help,
+  min,
 }) {
   return (
     <div className={type === "textarea" ? "col-12" : "col-md-6"}>
@@ -86,6 +104,7 @@ export function Field({
         <select
           id={`waste-${name}`}
           name={name}
+          aria-describedby={help ? `waste-${name}-help` : undefined}
           value={form[name] ?? ""}
           onChange={(e) => setForm((f) => ({ ...f, [name]: e.target.value }))}
           className="form-select"
@@ -104,6 +123,8 @@ export function Field({
           name={name}
           className="form-control"
           rows={3}
+          required={required}
+          aria-describedby={help ? `waste-${name}-help` : undefined}
           value={form[name] ?? ""}
           maxLength={maxLength}
           onChange={(e) => setForm((f) => ({ ...f, [name]: e.target.value }))}
@@ -116,7 +137,8 @@ export function Field({
           className="form-control"
           type={type}
           step={type === "number" ? "0.001" : undefined}
-          min={type === "number" ? "0.001" : undefined}
+          min={min ?? (type === "number" ? "0.001" : undefined)}
+          aria-describedby={help ? `waste-${name}-help` : undefined}
           value={form[name] ?? ""}
           maxLength={maxLength}
           required={required}
@@ -124,7 +146,39 @@ export function Field({
           onChange={(e) => setForm((f) => ({ ...f, [name]: e.target.value }))}
         />
       )}{" "}
-      {help && <small className="text-muted">{help}</small>}
+      {help && (
+        <small id={`waste-${name}-help`} className="text-muted">
+          {help}
+        </small>
+      )}
     </div>
+  );
+}
+
+export function WasteGuide({ title, children, to, label }) {
+  return (
+    <aside className="waste-guide mb-4">
+      <div>
+        <strong>{title}</strong>
+        <p className="small mb-0 mt-1">{children}</p>
+      </div>
+      {to && (
+        <Link to={to} className="btn btn-sm btn-outline-success">
+          {label}
+        </Link>
+      )}
+    </aside>
+  );
+}
+export function ExportButton({ disabled, onClick, page = false }) {
+  return (
+    <button
+      type="button"
+      className="btn btn-outline-secondary"
+      disabled={disabled}
+      onClick={onClick}
+    >
+      {page ? "Exportar página (CSV)" : "Exportar filtrados (CSV)"}
+    </button>
   );
 }

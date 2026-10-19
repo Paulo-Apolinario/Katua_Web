@@ -25,21 +25,25 @@ import {
   getWasteLotStatusLabel,
   getProcessingStageLabel,
 } from "../../services/wasteStockService";
-import { WastePage, WasteScope, ResourceState, Field } from "./WastePage";
+import {
+  WastePage,
+  WasteScope,
+  ResourceState,
+  Field,
+  WasteGuide,
+  ExportButton,
+} from "./WastePage";
 import CollectionDialog from "../collections/CollectionDialog";
 import { Summary, WorkspacePagination } from "../collections/WorkspaceParts";
-import {
-  searchText,
-  quantity,
-  shortId,
-  dateLabel,
-} from "../../utils/collectionWorkspace";
+import { quantity, shortId, dateLabel } from "../../utils/collectionWorkspace";
 import {
   stockBalances,
   unitSummary,
   lotQuantity,
   traceableLot,
+  numeric,
 } from "../../utils/wasteWorkspace";
+import { filterInventory, downloadCsv } from "../../utils/wasteReports";
 const catalogLoader = async () => {
   const r = await getWasteStockOverview();
   if (!Array.isArray(r?.items)) throw Error("Resposta do catálogo inválida.");
@@ -60,50 +64,104 @@ function InventoryList({ catalog }) {
     [category, setCategory] = useState(""),
     [unit, setUnit] = useState(""),
     [status, setStatus] = useState(""),
-    [lotStatus, setLotStatus] = useState("");
+    [lotStatus, setLotStatus] = useState(""),
+    [processingStage, setProcessingStage] = useState(""),
+    [origin, setOrigin] = useState("");
   const [page, setPage] = useState(1),
     [size, setSize] = useState(10),
     [expanded, setExpanded] = useState({}),
     [target, setTarget] = useState(null);
   const rows = useMemo(
     () =>
-      (resource.data || [])
-        .filter(
-          (i) =>
-            (!q ||
-              searchText(
-                [
-                  i.name,
-                  i.category,
-                  i.internalCode,
-                  i.ncm,
-                  i.description,
-                  ...(i.lots || []).map((l) =>
-                    [l.lotCode, l.code, l.storageLocation, l.origin].join(" "),
-                  ),
-                ].join(" "),
-              ).includes(searchText(q))) &&
-            (!category || i.category === category) &&
-            (!unit ||
-              i.unit === unit ||
-              (!catalog && i.lots?.some((l) => l.unit === unit))) &&
-            (!status || i.status === status),
-        )
-        .map((i) =>
-          catalog
-            ? i
-            : {
-                ...i,
-                lots: (i.lots || []).filter(
-                  (l) =>
-                    (!lotStatus || l.status === lotStatus) &&
-                    (!unit || l.unit === unit),
-                ),
-              },
-        )
-        .filter((i) => catalog || !lotStatus || i.lots.length),
-    [resource.data, q, category, unit, status, lotStatus, catalog],
+      filterInventory(resource.data || [], {
+        search: q,
+        category,
+        unit,
+        status,
+        lotStatus,
+        processingStage,
+        origin,
+        catalog,
+      }),
+    [
+      resource.data,
+      q,
+      category,
+      unit,
+      status,
+      lotStatus,
+      processingStage,
+      origin,
+      catalog,
+    ],
   );
+  function exportRows() {
+    if (catalog) {
+      downloadCsv(
+        "katua-catalogo-filtrado.csv",
+        [
+          "ID",
+          "Material",
+          "Código interno",
+          "Categoria",
+          "Subcategoria",
+          "Unidade",
+          "Classificação",
+          "NCM",
+          "Situação",
+          "Descrição",
+        ],
+        rows.map((i) => [
+          i.id,
+          i.name,
+          i.internalCode,
+          i.category,
+          i.subcategory,
+          i.unit,
+          getWasteClassLabel(i.wasteClass),
+          i.ncm,
+          i.status,
+          i.description,
+        ]),
+      );
+    } else {
+      downloadCsv(
+        "katua-estoque-filtrado.csv",
+        [
+          "ID material",
+          "Material",
+          "ID lote",
+          "Código lote",
+          "Quantidade registrada",
+          "Saldo controlado",
+          "Unidade",
+          "Situação",
+          "Processamento",
+          "Local",
+          "Origem",
+          "ID entrada",
+          "Recebido em",
+        ],
+        rows.flatMap((i) =>
+          (i.lots || []).map((l) => [
+            i.id,
+            i.name,
+            l.id,
+            l.lotCode || l.code,
+            lotQuantity(l),
+            l.availableQuantity,
+            l.unit,
+            getWasteLotStatusLabel(l.status),
+            getProcessingStageLabel(l.processingStage),
+            l.storageLocation,
+            l.origin,
+            l.originCollectionWasteEntryId,
+            l.receivedAt || l.createdAt,
+          ]),
+        ),
+      );
+    }
+  }
   const balances = stockBalances(rows),
     current = Math.min(page, Math.max(1, Math.ceil(rows.length / size))),
     visible = rows.slice((current - 1) * size, current * size);
@@ -117,7 +175,11 @@ function InventoryList({ catalog }) {
         status: target.status === "ACTIVE" ? "INACTIVE" : "ACTIVE",
       }),
     );
-    if (res?.item) {
+    if (res && !res.item?.id)
+      operation.setError(
+        "O servidor não confirmou a alteração. Atualize antes de repetir.",
+      );
+    if (res?.item?.id) {
       setTarget(null);
       await resource.refresh();
     }
@@ -132,6 +194,14 @@ function InventoryList({ catalog }) {
       }
       actions={
         <>
+          <ExportButton
+            disabled={
+              resource.loading ||
+              !!resource.error ||
+              !(catalog ? rows.length : rows.some((i) => i.lots?.length))
+            }
+            onClick={exportRows}
+          />
           <button
             className="btn btn-outline-success"
             onClick={resource.refresh}
@@ -148,6 +218,19 @@ function InventoryList({ catalog }) {
         </>
       }
     >
+      <WasteGuide
+        title={
+          catalog
+            ? "Um catálogo consistente começa na identificação"
+            : "Do recebimento ao estoque disponível"
+        }
+        to={catalog ? "/create-type" : "/collected-waste"}
+        label={catalog ? "Cadastrar material" : "Consultar entradas"}
+      >
+        {catalog
+          ? "Use nomes, categorias e unidades padronizados. Inative materiais sem uso para manter o histórico e evitar novos registros incorretos."
+          : "Confira o material, a etapa de processamento e o local antes de movimentar um lote. Use a entrada coletada para gerar lotes com vínculo de origem."}
+      </WasteGuide>
       {location.state?.notice && (
         <p role="status" className="alert alert-success">
           {location.state.notice}
@@ -211,7 +294,9 @@ function InventoryList({ catalog }) {
         <div className="row g-3">
           <div className="col-md-4">
             <label htmlFor="inventory-search" className="form-label">
-              Buscar material, código ou lote
+              {catalog
+                ? "Buscar material ou código"
+                : "Buscar material, código ou lote"}
             </label>
             <input
               id="inventory-search"
@@ -242,6 +327,23 @@ function InventoryList({ catalog }) {
             ],
             ...(!catalog
               ? [
+                  [
+                    "inventory-processing",
+                    "Processamento",
+                    processingStage,
+                    setProcessingStage,
+                    WASTE_PROCESSING_STAGE_OPTIONS,
+                  ],
+                  [
+                    "inventory-origin",
+                    "Vínculo de origem",
+                    origin,
+                    setOrigin,
+                    [
+                      { value: "COLLECTION", label: "Vinculado à coleta" },
+                      { value: "MANUAL", label: "Sem vínculo de coleta" },
+                    ],
+                  ],
                   [
                     "inventory-lot-status",
                     "Situação do lote",
@@ -283,6 +385,8 @@ function InventoryList({ catalog }) {
             setUnit("");
             setStatus("");
             setLotStatus("");
+            setProcessingStage("");
+            setOrigin("");
             setPage(1);
           }}
         >
@@ -290,11 +394,24 @@ function InventoryList({ catalog }) {
         </button>
       </section>
       <section className="card p-3">
+        <div className="d-flex justify-content-between flex-wrap gap-2 mb-2">
+          <h2 className="fs-18 mb-0">
+            {catalog ? "Materiais do catálogo" : "Materiais e lotes"}
+          </h2>
+          <small className="text-muted">
+            {catalog
+              ? "Exportação inclui todos os materiais filtrados"
+              : "Filtros e exportação consideram somente os lotes correspondentes"}
+          </small>
+        </div>
         <ResourceState resource={resource}>
           {!rows.length ? (
             <p>
-              Nenhum registro corresponde aos filtros. Cadastre um tipo de
-              resíduo para começar.
+              {resource.data?.length
+                ? "Nenhum registro corresponde aos filtros. Limpe ou ajuste os critérios de busca."
+                : catalog
+                  ? "Nenhum material cadastrado. Cadastre o primeiro tipo de resíduo."
+                  : "Nenhum estoque registrado. Consulte as entradas coletadas ou adicione um lote manual."}
             </p>
           ) : (
             <div className="table-responsive">
@@ -454,6 +571,7 @@ function InventoryRow({ item: i, catalog, expanded, onExpand, onStatus }) {
               <button
                 className="btn btn-sm btn-outline-success"
                 onClick={onExpand}
+                aria-controls={`lots-${i.id}`}
                 aria-expanded={!!expanded}
               >
                 {expanded
@@ -466,7 +584,7 @@ function InventoryRow({ item: i, catalog, expanded, onExpand, onStatus }) {
       </tr>
       {!catalog && expanded && (
         <tr>
-          <td colSpan={4}>
+          <td colSpan={4} id={`lots-${i.id}`}>
             {!i.lots?.length ? (
               <p>Sem lotes registrados.</p>
             ) : (
@@ -488,13 +606,32 @@ function InventoryRow({ item: i, catalog, expanded, onExpand, onStatus }) {
                       </td>
                       <td>
                         {quantity(lotQuantity(l), l.unit)}
-                        <div>{getWasteLotStatusLabel(l.status)}</div>
+                        <div>
+                          <span
+                            className={`badge text-bg-${{ AVAILABLE: "success", RESERVED: "warning", SOLD: "primary", DISCARDED: "secondary" }[l.status] || "secondary"}`}
+                          >
+                            {getWasteLotStatusLabel(l.status)}
+                          </span>
+                        </div>
+                        {traceableLot(l) &&
+                          ["AVAILABLE", "RESERVED"].includes(l.status) &&
+                          numeric(l.availableQuantity) !== null && (
+                            <small>
+                              Saldo controlado:{" "}
+                              {quantity(l.availableQuantity, l.unit)}
+                            </small>
+                          )}
                       </td>
                       <td>
                         {l.storageLocation || "Local não informado"}
                         <div>{getProcessingStageLabel(l.processingStage)}</div>
                       </td>
                       <td>
+                        <div className="small text-muted">
+                          {traceableLot(l)
+                            ? "Vinculado à coleta"
+                            : "Sem vínculo de coleta"}
+                        </div>
                         {l.origin ||
                           (traceableLot(l)
                             ? "Gerado a partir de coleta"
@@ -605,6 +742,13 @@ function TypeForm({ id }) {
       <ResourceState resource={resource}>
         {loaded && (
           <form className="card p-4" onSubmit={submit}>
+            <div className="waste-form-heading mb-4">
+              <h2 className="fs-18">Identificação do material</h2>
+              <p className="small text-muted mb-0">
+                Campos com * são obrigatórios. Confira a unidade padrão antes de
+                salvar.
+              </p>
+            </div>
             <fieldset disabled={op.busy}>
               <div className="row g-3">
                 {[
@@ -744,8 +888,19 @@ function LotForm({ lotId }) {
       op.setError("Selecione um material ativo.");
       return;
     }
-    if (!form.lotCode.trim() || !(Number(form.quantity) > 0) || !form.unit) {
+    if (
+      !form.lotCode.trim() ||
+      !Number.isFinite(Number(form.quantity)) ||
+      !(Number(form.quantity) > 0) ||
+      !form.unit
+    ) {
       op.setError("Informe código, quantidade positiva e unidade do lote.");
+      return;
+    }
+    if (!lotId && !form.origin.trim()) {
+      op.setError(
+        "Informe a origem do lote para manter o registro identificável.",
+      );
       return;
     }
     const { itemId, ...payload } = form;
@@ -788,6 +943,13 @@ function LotForm({ lotId }) {
         ) : (
           loaded && (
             <form onSubmit={submit} className="card p-4">
+              <div className="waste-form-heading mb-4">
+                <h2 className="fs-18">Registro operacional do lote</h2>
+                <p className="small text-muted mb-0">
+                  Campos com * são obrigatórios. Identifique o material, o local
+                  e a origem para facilitar a conferência física.
+                </p>
+              </div>
               {linked && (
                 <div className="alert alert-info">
                   Lote originado de coleta. Quantidade, unidade, código e origem
@@ -903,6 +1065,33 @@ function LotForm({ lotId }) {
                   />
                 </div>
               </fieldset>
+              <div className="waste-guide mt-4 mb-3" aria-live="polite">
+                <div>
+                  <strong>Conferência do lote</strong>
+                  <p className="small mb-0 mt-1">
+                    {selected?.name || "Selecione um material"} ·{" "}
+                    {quantity(form.quantity, form.unit)} ·{" "}
+                    {getWasteLotStatusLabel(form.status)}
+                    <br />
+                    {getProcessingStageLabel(form.processingStage)} ·{" "}
+                    {form.storageLocation.trim() || "Local ainda não informado"}
+                  </p>
+                  <p className="small mb-0 mt-2">
+                    {
+                      {
+                        AVAILABLE:
+                          "A quantidade participará do saldo disponível conforme o controle do lote.",
+                        RESERVED:
+                          "O lote ficará reservado e não comporá o saldo disponível.",
+                        SOLD: "O lote ficará registrado como vendido e sairá do saldo disponível.",
+                        DISCARDED:
+                          "O lote ficará registrado como descartado e sairá do saldo disponível.",
+                        CANCELLED: "Registro mantido para consulta.",
+                      }[form.status]
+                    }
+                  </p>
+                </div>
+              </div>
               <p className="small text-muted mt-3">
                 Reservado não é disponível; vendido e descartado não compõem
                 estoque disponível. A situação do lote não emite documento

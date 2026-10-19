@@ -16,3 +16,97 @@
 .waste-workspace .btn {
   white-space: normal;
 }
+.waste-workspace {
+  --waste-accent: #156849;
+  --waste-border: #dce8e1;
+  color: #243d32;
+}
+.waste-workspace .waste-eyebrow {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  color: var(--waste-accent);
+}
+.waste-workspace > header h1 {
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+.waste-workspace > header p {
+  max-width: 780px;
+  line-height: 1.6;
+}
+.waste-workspace > nav {
+  padding-bottom: 1.1rem;
+  border-bottom: 1px solid var(--waste-border);
+}
+.waste-workspace .card {
+  border: 1px solid var(--waste-border);
+  border-radius: 12px;
+  box-shadow: 0 3px 14px #1e473508;
+}
+.waste-workspace .table thead th {
+  background: #f3f7f4;
+  color: #425b4f;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 0.9rem 0.75rem;
+}
+.waste-workspace .table td {
+  padding: 0.9rem 0.75rem;
+}
+.waste-workspace .table tbody > tr:hover > td {
+  background-color: #f8fbf9;
+}
+.waste-workspace .badge {
+  font-weight: 600;
+  padding: 0.45em 0.65em;
+}
+.waste-workspace .btn {
+  border-radius: 7px;
+}
+.waste-workspace .btn:focus-visible,
+.waste-workspace a:focus-visible,
+.waste-workspace input:focus-visible,
+.waste-workspace select:focus-visible,
+.waste-workspace textarea:focus-visible {
+  outline: 3px solid #227951;
+  outline-offset: 3px;
+}
+.waste-guide {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: #edf6f0;
+  border: 1px solid #cee3d5;
+  border-left: 4px solid var(--waste-accent);
+  border-radius: 10px;
+}
+.waste-guide > div {
+  flex: 1 1 320px;
+}
+.waste-workspace .waste-guide p {
+  color: #496154;
+  line-height: 1.6;
+}
+.waste-freshness {
+  border-bottom: 1px solid var(--waste-border);
+  padding-bottom: 0.75rem;
+}
+.waste-form-heading {
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--waste-border);
+}
+@media (max-width: 575px) {
+  .waste-workspace > header > div:last-child {
+    width: 100%;
+  }
+  .waste-workspace > header .btn {
+    flex: 1 1 150px;
+  }
+  .waste-workspace .waste-guide {
+    padding: 1rem;
+  }
+}
