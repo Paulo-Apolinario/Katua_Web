@@ -1,485 +1,522 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { ChevronRight, House, Package, RefreshCcw, Search, Scale, Users } from "lucide-react";
-import { Link } from "react-router";
-import toast from "react-hot-toast";
-
-import DataTable from "../../components/DataTable";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Link, useSearchParams } from "react-router";
 import HeadTags from "../../components/HeadTags";
-import TopProgressBar from "../../components/TopProgressBar";
-import { apiRequest } from "../../services/apiClient";
+import { useAdminAuth } from "../../context/AdminAuthContext";
+import {
+  getAllCollections,
+  getCollectionById,
+} from "../../services/collectionService";
+import CollectionDialog from "../../components/collections/CollectionDialog";
+import {
+  CollectionBadge,
+  MaterialTable,
+  Summary,
+  WorkspacePagination,
+} from "../../components/collections/WorkspaceParts";
+import {
+  COLLECTION_STAGES,
+  personName,
+  generatorName,
+  location,
+  scheduledDate,
+  dateLabel,
+  materials,
+  searchText,
+  shortId,
+  inPeriod,
+  unitTotals,
+} from "../../utils/collectionWorkspace";
 
-const UNIT_LABELS = {
-  KG: "kg",
-  TON: "t",
-  UNIT: "un.",
-  LITER: "L",
-  CUBIC_METER: "m³",
+const defaults = {
+  q: "",
+  status: "",
+  generator: "",
+  route: "",
+  driver: "",
+  vehicle: "",
+  collector: "",
+  start: "",
+  end: "",
+  dateField: "scheduled",
 };
-
-const getArray = (response) => {
-  if (Array.isArray(response)) return response;
-  if (Array.isArray(response?.data)) return response.data;
-  if (Array.isArray(response?.entries)) return response.entries;
-  if (Array.isArray(response?.data?.entries)) return response.data.entries;
-  if (Array.isArray(response?.items)) return response.items;
-  if (Array.isArray(response?.data?.items)) return response.data.items;
-  return [];
-};
-
-const normalizeText = (value) => String(value ?? "").trim();
-
-const normalizeSearch = (value) => normalizeText(value).toLocaleLowerCase("pt-BR");
-
-const normalizeNumber = (value) => {
-  const number = Number(value);
-  return Number.isFinite(number) ? number : 0;
-};
-
-const formatNumber = (value, maximumFractionDigits = 3) =>
-  new Intl.NumberFormat("pt-BR", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits,
-  }).format(normalizeNumber(value));
-
-const formatQuantity = (quantity, unit) => {
-  const normalizedUnit = normalizeText(unit).toUpperCase() || "KG";
-  return `${formatNumber(quantity)} ${UNIT_LABELS[normalizedUnit] || normalizedUnit.toLowerCase()}`;
-};
-
-const formatDate = (value) => {
-  if (!value) return "Não informada";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Não informada";
-  return new Intl.DateTimeFormat("pt-BR").format(date);
-};
-
-const getMaterialName = (entry) =>
-  normalizeText(
-    entry?.materialNameSnapshot ||
-      entry?.wasteType?.name ||
-      entry?.collectionMaterial?.nameSnapshot ||
-      entry?.collectionMaterial?.wasteType?.name ||
-      entry?.materialName ||
-      entry?.wasteName
-  ) || "Resíduo não informado";
-
-const getUnit = (entry) =>
-  normalizeText(
-    entry?.unit ||
-      entry?.collectionMaterial?.unit ||
-      entry?.wasteType?.defaultUnit ||
-      entry?.wasteType?.unit
-  ).toUpperCase() || "KG";
-
-const getQuantity = (entry) =>
-  normalizeNumber(
-    entry?.collectedQuantity ??
-      entry?.quantity ??
-      entry?.totalQuantity ??
-      entry?.collectionMaterial?.quantity ??
-      entry?.collectionMaterial?.quantityKg
-  );
-
-const getCollection = (entry) =>
-  entry?.collection || entry?.collectionMaterial?.collection || {};
-
-const getGeneratorName = (entry) => {
-  const collection = getCollection(entry);
-  const generator =
-    entry?.generator ||
-    collection?.generator ||
-    collection?.schedule?.generator ||
-    {};
-
-  return (
-    normalizeText(generator?.companyName) ||
-    normalizeText(generator?.tradeName) ||
-    normalizeText(generator?.name) ||
-    "Não informado"
-  );
-};
-
-const getCollectorName = (entry) => {
-  const collection = getCollection(entry);
-  const collector = entry?.collector || collection?.collector || {};
-
-  return (
-    normalizeText(collector?.name) ||
-    normalizeText(collector?.user?.displayName) ||
-    normalizeText(collector?.user?.name) ||
-    "Não informado"
-  );
-};
-
-const getEntryDate = (entry) => {
-  const collection = getCollection(entry);
-
-  return (
-    entry?.collectedAt ||
-    collection?.collectedAt ||
-    entry?.createdAt ||
-    collection?.createdAt
-  );
-};
-
-const WasteList = () => {
-  const [entries, setEntries] = useState([]);
-  const [search, setSearch] = useState("");
-  const [materialFilter, setMaterialFilter] = useState("");
-  const [generatorFilter, setGeneratorFilter] = useState("");
-  const [collectorFilter, setCollectorFilter] = useState("");
-  const [loading, setLoading] = useState(true);
-
-  const loadEntries = useCallback(async () => {
+const errorText = (err) =>
+  err?.error || err?.message || "Não foi possível carregar as coletas.";
+export default function WasteList() {
+  const { admin } = useAdminAuth();
+  return admin?.id ? <CollectionList key={admin.id} /> : null;
+}
+function CollectionList() {
+  const [params] = useSearchParams();
+  const [items, setItems] = useState([]),
+    [loading, setLoading] = useState(true),
+    [error, setError] = useState("");
+  const [filters, setFilters] = useState(defaults),
+    [page, setPage] = useState(1),
+    [size, setSize] = useState(10);
+  const [selected, setSelected] = useState(null),
+    [detailLoading, setDetailLoading] = useState(false),
+    [detailError, setDetailError] = useState(""),
+    [dialog, setDialog] = useState(false);
+  const guard = useRef({ list: 0, detail: 0 });
+  const load = useCallback(async () => {
+    const request = ++guard.current.list;
+    setLoading(true);
+    setError("");
+    setItems([]);
+    setPage(1);
     try {
-      setLoading(true);
-
-      const response = await apiRequest("/collection-entries", {
-        method: "GET",
-      });
-
-      setEntries(getArray(response));
-    } catch (error) {
-      toast.error(
-        error?.response?.data?.error ||
-          error?.data?.error ||
-          error?.error ||
-          error?.message ||
-          "Erro ao carregar os resíduos coletados."
-      );
+      const res = await getAllCollections();
+      if (!Array.isArray(res?.collections))
+        throw Error("Resposta de coletas inválida.");
+      if (request === guard.current.list) setItems(res.collections);
+    } catch (e) {
+      if (request === guard.current.list) setError(errorText(e));
     } finally {
-      setLoading(false);
+      if (request === guard.current.list) setLoading(false);
     }
   }, []);
-
+  const openDetail = useCallback(async (id) => {
+    const request = ++guard.current.detail;
+    setDialog(true);
+    setSelected(null);
+    setDetailError("");
+    setDetailLoading(true);
+    try {
+      const res = await getCollectionById(id);
+      if (!res?.collection?.id) throw Error("Detalhes indisponíveis.");
+      if (request === guard.current.detail) setSelected(res.collection);
+    } catch (e) {
+      if (request === guard.current.detail) setDetailError(errorText(e));
+    } finally {
+      if (request === guard.current.detail) setDetailLoading(false);
+    }
+  }, []);
   useEffect(() => {
-    void loadEntries();
-  }, [loadEntries]);
-
-  const rows = useMemo(
+    const g = guard.current;
+    void load();
+    return () => {
+      g.list++;
+      g.detail++;
+    };
+  }, [load]);
+  const queryId = params.get("coleta");
+  useEffect(() => {
+    if (queryId) void openDetail(queryId);
+  }, [queryId, openDetail]);
+  const invalid = filters.start && filters.end && filters.start > filters.end;
+  const filtered = useMemo(
     () =>
-      entries
-        .map((entry, index) => {
-          const collection = getCollection(entry);
-
-          return {
-            id: entry?.id || `entry-${index}`,
-            sn: index + 1,
-            material: getMaterialName(entry),
-            quantity: getQuantity(entry),
-            unit: getUnit(entry),
-            generator: getGeneratorName(entry),
-            collector: getCollectorName(entry),
-            route:
-              normalizeText(entry?.route?.name) ||
-              normalizeText(collection?.route?.name) ||
-              "Não informada",
-            date: getEntryDate(entry),
-            status: normalizeText(entry?.status) || "PENDING_DESTINATION",
-            collectionStatus: normalizeText(collection?.status),
-            raw: entry,
-          };
+      items
+        .filter((c) => {
+          if (invalid) return false;
+          const term = searchText(filters.q);
+          if (
+            term &&
+            !searchText(
+              [
+                c.id,
+                generatorName(c),
+                location(c),
+                c.route?.name,
+                personName(c.collector),
+                personName(c.driver),
+                c.vehicle?.plate,
+                COLLECTION_STAGES[c.status],
+                ...materials(c).map((m) => m.name),
+              ].join(" "),
+            ).includes(term)
+          )
+            return false;
+          if (filters.status && c.status !== filters.status) return false;
+          if (
+            (filters.generator && c.generatorId !== filters.generator) ||
+            (filters.route && c.routeId !== filters.route) ||
+            (filters.driver && c.driverId !== filters.driver) ||
+            (filters.vehicle && c.vehicleId !== filters.vehicle) ||
+            (filters.collector && c.collectorId !== filters.collector)
+          )
+            return false;
+          return inPeriod(
+            filters.dateField === "scheduled"
+              ? scheduledDate(c)
+              : filters.dateField === "collected"
+                ? c.collectedAt
+                : c.createdAt,
+            filters.start,
+            filters.end,
+          );
         })
-        .filter((row) => row.quantity > 0),
-    [entries]
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
+    [items, filters, invalid],
   );
-
-  const summaryByMaterial = useMemo(() => {
-    const map = new Map();
-
-    rows.forEach((row) => {
-      const key = `${row.material}::${row.unit}`;
-      const current = map.get(key) || {
-        material: row.material,
-        unit: row.unit,
-        quantity: 0,
-      };
-
-      current.quantity += row.quantity;
-      map.set(key, current);
-    });
-
-    return Array.from(map.values()).sort((a, b) => b.quantity - a.quantity);
-  }, [rows]);
-
-  const totalByUnit = useMemo(() => {
-    const totals = new Map();
-
-    rows.forEach((row) => {
-      totals.set(row.unit, (totals.get(row.unit) || 0) + row.quantity);
-    });
-
-    return Array.from(totals.entries()).map(([unit, quantity]) => ({
-      unit,
-      quantity,
-    }));
-  }, [rows]);
-
-  const materialOptions = useMemo(
-    () => [...new Set(rows.map((row) => row.material))].sort(),
-    [rows]
+  const currentPage = Math.min(
+    page,
+    Math.max(1, Math.ceil(filtered.length / size)),
   );
-
-  const generatorOptions = useMemo(
-    () => [...new Set(rows.map((row) => row.generator))].sort(),
-    [rows]
-  );
-
-  const collectorOptions = useMemo(
-    () => [...new Set(rows.map((row) => row.collector))].sort(),
-    [rows]
-  );
-
-  const filteredRows = useMemo(() => {
-    const term = normalizeSearch(search);
-
-    return rows.filter((row) => {
-      const matchesSearch =
-        !term ||
-        [
-          row.material,
-          row.generator,
-          row.collector,
-          row.route,
-          formatDate(row.date),
-          row.status,
-        ].some((value) => normalizeSearch(value).includes(term));
-
-      return (
-        matchesSearch &&
-        (!materialFilter || row.material === materialFilter) &&
-        (!generatorFilter || row.generator === generatorFilter) &&
-        (!collectorFilter || row.collector === collectorFilter)
-      );
-    });
-  }, [rows, search, materialFilter, generatorFilter, collectorFilter]);
-
-  const columns = [
-    { key: "sn", label: "SN" },
-    {
-      key: "material",
-      label: "Resíduo",
-      render: (value) => <strong>{value}</strong>,
-    },
-    {
-      key: "quantity",
-      label: "Quantidade",
-      render: (value, row) => <strong>{formatQuantity(value, row.unit)}</strong>,
-    },
-    { key: "generator", label: "Gerador" },
-    { key: "collector", label: "Catador" },
-    {
-      key: "date",
-      label: "Data",
-      render: (value) => formatDate(value),
-    },
-    {
-      key: "status",
-      label: "Situação",
-      render: (value) => (
-        <span className="badge text-bg-light border">
-          {value === "PENDING_DESTINATION"
-            ? "Aguardando destinação"
-            : value === "PARTIALLY_DESTINED"
-              ? "Parcialmente destinado"
-              : value === "FULLY_DESTINED"
-                ? "Destinado"
-                : value}
-        </span>
-      ),
-    },
+  const visible = filtered.slice((currentPage - 1) * size, currentPage * size);
+  const options = (field) => [
+    ...new Map(
+      items.filter((c) => c[field]?.id).map((c) => [c[field].id, c[field]]),
+    ).values(),
   ];
-
+  function change(e) {
+    setFilters((f) => ({ ...f, [e.target.name]: e.target.value }));
+    setPage(1);
+  }
+  function close() {
+    guard.current.detail++;
+    setDialog(false);
+    setSelected(null);
+  }
+  const timeline = selected
+    ? [
+        ["Criada", selected.createdAt],
+        ["Iniciada", selected.startedAt, selected.startedBy],
+        [
+          "Finalizada em campo",
+          selected.collectedAt,
+          selected.fieldCompletedBy,
+        ],
+        ["Recebida", selected.receivedAt, selected.receivedBy],
+        [
+          "Triagem iniciada",
+          selected.sortingStartedAt,
+          selected.sortingStartedBy,
+        ],
+        ["Concluída", selected.completedAt, selected.completedBy],
+        ["Cancelada", selected.cancelledAt, selected.cancelledBy],
+      ].filter(([, date]) => date)
+    : [];
   return (
-    <>
-      <HeadTags title="Resíduos coletados | KATUÁ" />
-      <TopProgressBar loading={loading} />
-
-      <main className="container-fluid py-4">
-        <div className="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
-          <div>
-            <h1 className="h3 fw-bold mb-2">Lista de Resíduos Coletados</h1>
-
-            <nav aria-label="breadcrumb">
-              <ol className="breadcrumb mb-0">
-                <li className="breadcrumb-item">
-                  <Link to="/" className="text-decoration-none">
-                    <House size={15} className="me-1" />
-                    Painel
-                  </Link>
-                </li>
-                <li className="breadcrumb-item active">
-                  <ChevronRight size={14} className="me-1" />
-                  Resíduos coletados
-                </li>
-              </ol>
-            </nav>
+    <main className="container-fluid py-4 collection-workspace">
+      <HeadTags title="Lista de Coletas | KATUÁ" />
+      <div className="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
+        <div>
+          <h1 className="h3">Lista de Coletas</h1>
+          <p className="text-muted">
+            Acompanhe cada coleta, da atribuição à conclusão. Os materiais e
+            suas destinações permanecem vinculados à operação.
+          </p>
+          <Link to="/collection-requests">Coletas solicitadas</Link>
+          <span className="mx-2">·</span>
+          <Link to="/collected-waste">Gestão dos materiais coletados</Link>
+        </div>
+        <button
+          className="btn btn-outline-success"
+          onClick={load}
+          disabled={loading}
+        >
+          Atualizar coletas
+        </button>
+      </div>
+      <Summary
+        cards={
+          loading || error
+            ? [
+                ["Coletas encontradas", "—"],
+                ["Pendentes / em andamento", "—"],
+                ["Aguardando recebimento", "—"],
+                ["Quantidades registradas", "—"],
+              ]
+            : [
+                ["Coletas encontradas", filtered.length],
+                [
+                  "Pendentes / em andamento",
+                  filtered.filter((c) =>
+                    ["PENDING", "IN_PROGRESS"].includes(c.status),
+                  ).length,
+                ],
+                [
+                  "Aguardando recebimento",
+                  filtered.filter((c) => c.status === "COLLECTED").length,
+                ],
+                [
+                  "Quantidades registradas",
+                  unitTotals(filtered).join(" · ") || "Não informadas",
+                ],
+              ]
+        }
+      />
+      <section className="card p-3 mb-4" aria-label="Filtros de coletas">
+        <div className="row g-3">
+          <div className="col-md-6">
+            <label htmlFor="collection-search" className="form-label">
+              Buscar protocolo, gerador, material ou equipe
+            </label>
+            <input
+              id="collection-search"
+              className="form-control"
+              name="q"
+              value={filters.q}
+              onChange={change}
+              type="search"
+            />
           </div>
-
+          <div className="col-md-3">
+            <label htmlFor="collection-status" className="form-label">
+              Etapa da coleta
+            </label>
+            <select
+              id="collection-status"
+              className="form-select"
+              name="status"
+              value={filters.status}
+              onChange={change}
+            >
+              <option value="">Todas</option>
+              {Object.entries(COLLECTION_STAGES).map(([id, label]) => (
+                <option value={id} key={id}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </div>
+          {[
+            ["generator", "Gerador"],
+            ["route", "Rota"],
+            ["collector", "Catador"],
+            ["driver", "Motorista"],
+            ["vehicle", "Veículo"],
+          ].map(([field, label]) => (
+            <div className="col-md-3" key={field}>
+              <label htmlFor={`collection-${field}`} className="form-label">
+                {label}
+              </label>
+              <select
+                id={`collection-${field}`}
+                name={field}
+                className="form-select"
+                value={filters[field]}
+                onChange={change}
+              >
+                <option value="">Todos</option>
+                {options(field).map((o) => (
+                  <option key={o.id} value={o.id}>
+                    {field === "vehicle" ? o.plate : personName(o)}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ))}
+          <div className="col-md-3">
+            <label htmlFor="collection-date-field" className="form-label">
+              Período por
+            </label>
+            <select
+              id="collection-date-field"
+              name="dateField"
+              className="form-select"
+              value={filters.dateField}
+              onChange={change}
+            >
+              <option value="scheduled">Data programada</option>
+              <option value="collected">Finalização em campo</option>
+              <option value="created">Criação da coleta</option>
+            </select>
+          </div>
+          {[
+            ["start", "Data inicial"],
+            ["end", "Data final"],
+          ].map(([field, label]) => (
+            <div className="col-md-3" key={field}>
+              <label htmlFor={`collection-${field}`} className="form-label">
+                {label}
+              </label>
+              <input
+                id={`collection-${field}`}
+                name={field}
+                type="date"
+                className="form-control"
+                value={filters[field]}
+                onChange={change}
+              />
+            </div>
+          ))}
+        </div>
+        <div className="mt-3">
           <button
-            type="button"
-            className="btn btn-outline-success"
-            onClick={() => void loadEntries()}
-            disabled={loading}
+            className="btn btn-outline-secondary"
+            onClick={() => {
+              setFilters(defaults);
+              setPage(1);
+            }}
           >
-            <RefreshCcw size={17} className="me-2" />
-            Atualizar
+            Limpar filtros
           </button>
         </div>
-
-        <div className="row g-3 mb-4">
-          <div className="col-12 col-md-3">
-            <div className="card h-100 shadow-sm border-0">
-              <div className="card-body d-flex justify-content-between">
-                <div>
-                  <div className="text-secondary mb-1">Entradas registradas</div>
-                  <div className="fs-4 fw-bold">{rows.length}</div>
-                </div>
-                <Package className="text-success" />
-              </div>
-            </div>
+        <p className="small text-muted mt-3 mb-0">
+          Cartões e quantidades seguem os filtros. Totais excluem coletas
+          canceladas e mantêm cada unidade separada. Registros sem a data
+          escolhida ficam fora do período.
+        </p>
+        {invalid && (
+          <p role="alert" className="text-danger mt-2">
+            A data inicial deve ser anterior ou igual à final.
+          </p>
+        )}
+      </section>
+      <section className="card p-3" aria-label="Resultados das coletas">
+        {loading ? (
+          <p role="status">Carregando coletas...</p>
+        ) : error ? (
+          <div role="alert" className="alert alert-danger">
+            {error}{" "}
+            <button className="btn btn-outline-danger" onClick={load}>
+              Tentar novamente
+            </button>
           </div>
-
-          <div className="col-12 col-md-3">
-            <div className="card h-100 shadow-sm border-0">
-              <div className="card-body d-flex justify-content-between">
-                <div>
-                  <div className="text-secondary mb-1">Tipos de resíduos</div>
-                  <div className="fs-4 fw-bold">{materialOptions.length}</div>
-                </div>
-                <Scale className="text-success" />
+        ) : (
+          <>
+            {!filtered.length ? (
+              <p className="text-center py-4">
+                {items.length
+                  ? "Nenhuma coleta corresponde aos filtros."
+                  : "Nenhuma coleta operacional cadastrada. Aceite uma solicitação para começar."}
+              </p>
+            ) : (
+              <div className="table-responsive">
+                <table className="table align-middle">
+                  <thead>
+                    <tr>
+                      <th>Coleta / Gerador</th>
+                      <th>Programação / Rota</th>
+                      <th>Equipe vinculada</th>
+                      <th>Etapa</th>
+                      <th>Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {visible.map((c) => (
+                      <tr key={c.id}>
+                        <td>
+                          <strong>#{shortId(c.id)}</strong>
+                          <div>{generatorName(c)}</div>
+                          <small className="text-muted">{location(c)}</small>
+                        </td>
+                        <td>
+                          {dateLabel(scheduledDate(c))}
+                          <div className="small text-muted">
+                            {c.route?.name || "Sem rota"}
+                          </div>
+                        </td>
+                        <td>
+                          <div>Catador: {personName(c.collector)}</div>
+                          <div className="small">
+                            Motorista: {personName(c.driver)}
+                          </div>
+                          <div className="small">
+                            Veículo: {c.vehicle?.plate || "Não informado"}
+                          </div>
+                        </td>
+                        <td>
+                          <CollectionBadge status={c.status} />
+                        </td>
+                        <td>
+                          <button
+                            className="btn btn-sm btn-outline-success"
+                            onClick={() => openDetail(c.id)}
+                          >
+                            Ver detalhes
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            </div>
-          </div>
-
-          <div className="col-12 col-md-3">
-            <div className="card h-100 shadow-sm border-0">
-              <div className="card-body d-flex justify-content-between">
-                <div>
-                  <div className="text-secondary mb-1">Geradores atendidos</div>
-                  <div className="fs-4 fw-bold">{generatorOptions.length}</div>
-                </div>
-                <Users className="text-success" />
-              </div>
-            </div>
-          </div>
-
-          <div className="col-12 col-md-3">
-            <div className="card h-100 shadow-sm border-0">
-              <div className="card-body">
-                <div className="text-secondary mb-2">Totais por unidade</div>
-                {totalByUnit.length === 0 ? (
-                  <span className="text-secondary">Nenhum registro</span>
-                ) : (
-                  totalByUnit.map((item) => (
-                    <div key={item.unit} className="fw-bold">
-                      {formatQuantity(item.quantity, item.unit)}
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="row g-3">
-          <div className="col-12 col-xl-4">
-            <div className="card shadow-sm border-0 h-100">
-              <div className="card-body">
-                <h2 className="h5 fw-bold mb-4">Visão por tipo de resíduo</h2>
-
-                {summaryByMaterial.map((item) => (
-                  <div key={`${item.material}-${item.unit}`} className="mb-3">
-                    <div className="d-flex justify-content-between gap-3">
-                      <strong>{item.material}</strong>
-                      <span>{formatQuantity(item.quantity, item.unit)}</span>
-                    </div>
-                    <div className="progress mt-2" style={{ height: 6 }}>
-                      <div
-                        className="progress-bar bg-success"
-                        style={{ width: "100%" }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="col-12 col-xl-8">
-            <div className="card shadow-sm border-0">
-              <div className="card-body">
-                <div className="row g-2 mb-3">
-                  <div className="col-12 col-md-3">
-                    <select
-                      className="form-select"
-                      value={materialFilter}
-                      onChange={(event) => setMaterialFilter(event.target.value)}
-                    >
-                      <option value="">Todos os resíduos</option>
-                      {materialOptions.map((item) => (
-                        <option key={item} value={item}>{item}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="col-12 col-md-3">
-                    <select
-                      className="form-select"
-                      value={generatorFilter}
-                      onChange={(event) => setGeneratorFilter(event.target.value)}
-                    >
-                      <option value="">Todos os geradores</option>
-                      {generatorOptions.map((item) => (
-                        <option key={item} value={item}>{item}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="col-12 col-md-3">
-                    <select
-                      className="form-select"
-                      value={collectorFilter}
-                      onChange={(event) => setCollectorFilter(event.target.value)}
-                    >
-                      <option value="">Todos os catadores</option>
-                      {collectorOptions.map((item) => (
-                        <option key={item} value={item}>{item}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="col-12 col-md-3">
-                    <div className="input-group">
-                      <span className="input-group-text bg-white">
-                        <Search size={17} />
-                      </span>
-                      <input
-                        className="form-control"
-                        value={search}
-                        onChange={(event) => setSearch(event.target.value)}
-                        placeholder="Buscar..."
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <p className="text-secondary">
-                  Exibindo <strong>{filteredRows.length}</strong> entrada(s) de resíduos coletados.
+            )}
+            <WorkspacePagination
+              page={currentPage}
+              size={size}
+              total={filtered.length}
+              onPage={setPage}
+              onSize={(n) => {
+                setSize(n);
+                setPage(1);
+              }}
+            />
+          </>
+        )}
+      </section>
+      {dialog && (
+        <CollectionDialog
+          title={
+            selected ? `Coleta #${shortId(selected.id)}` : "Detalhes da coleta"
+          }
+          onClose={close}
+        >
+          {detailLoading ? (
+            <p role="status">Carregando detalhes...</p>
+          ) : detailError ? (
+            <p role="alert" className="text-danger">
+              {detailError}
+            </p>
+          ) : (
+            selected && (
+              <>
+                <CollectionBadge status={selected.status} />
+                <h3 className="fs-18 mt-3">{generatorName(selected)}</h3>
+                <p>{location(selected)}</p>
+                <p className="small text-muted text-break">
+                  Identificador completo: {selected.id}
                 </p>
-
-                <DataTable
-                  columns={columns}
-                  data={filteredRows}
-                  loading={loading}
+                <dl className="row">
+                  <dt className="col-sm-4">Data programada</dt>
+                  <dd className="col-sm-8">
+                    {dateLabel(scheduledDate(selected))}
+                  </dd>
+                  <dt className="col-sm-4">Rota</dt>
+                  <dd className="col-sm-8">
+                    {selected.route?.name || "Sem rota"}
+                  </dd>
+                  <dt className="col-sm-4">Catador</dt>
+                  <dd className="col-sm-8">{personName(selected.collector)}</dd>
+                  <dt className="col-sm-4">Motorista</dt>
+                  <dd className="col-sm-8">{personName(selected.driver)}</dd>
+                  <dt className="col-sm-4">Veículo</dt>
+                  <dd className="col-sm-8">
+                    {selected.vehicle?.plate || "Não informado"}
+                  </dd>
+                </dl>
+                <h3 className="fs-18">Materiais registrados em campo</h3>
+                <MaterialTable items={materials(selected)} />
+                <p className="small">
+                  Os vínculos exibidos são os da coleta; a equipe atual da rota
+                  não substitui o histórico.
+                </p>
+                <h3 className="fs-18">Previsão da solicitação</h3>
+                <MaterialTable
+                  estimated
+                  items={materials(selected.schedule || {}, true)}
                 />
-              </div>
-            </div>
-          </div>
-        </div>
-      </main>
-    </>
+                <h3 className="fs-18">Histórico registrado</h3>
+                <ol>
+                  {timeline.map(([label, date, actor]) => (
+                    <li key={label}>
+                      <strong>{label}</strong> — {dateLabel(date, true)}
+                      {actor ? ` · ${personName(actor)}` : ""}
+                    </li>
+                  ))}
+                </ol>
+                {selected.cancellationReason && (
+                  <p>Motivo do cancelamento: {selected.cancellationReason}</p>
+                )}
+                <p>
+                  Observações da coleta: {selected.notes || "Não informadas"}
+                </p>
+                <div className="alert alert-light">
+                  Finalização em campo, recebimento e destinação são etapas
+                  diferentes. As quantidades exibidas não representam saldo de
+                  estoque.
+                </div>
+                <Link to="/collected-waste">
+                  Consultar materiais e destinações
+                </Link>
+              </>
+            )
+          )}
+        </CollectionDialog>
+      )}
+    </main>
   );
-};
-
-export default WasteList;
+}

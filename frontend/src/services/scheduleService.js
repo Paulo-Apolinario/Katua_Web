@@ -7,7 +7,7 @@ export const getAllSchedules = async () => {
 };
 
 export const getScheduleById = async (id) => {
-  return apiRequest(`/schedules/${id}`, {
+  return apiRequest(`/schedules/${encodeURIComponent(id)}`, {
     method: "GET",
   });
 };

@@ -1,1989 +1,736 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-import { createPortal } from "react-dom";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
-import {
-  CalendarDays,
-  CheckCircle,
-  ChevronRight,
-  ClipboardList,
-  House,
-  Layers3,
-  LoaderCircle,
-  Mail,
-  MapPin,
-  PackageCheck,
-  RefreshCw,
-  Scale,
-  Tag,
-  Truck,
-  User,
-  Users,
-  X,
-} from "lucide-react";
-import moment from "moment";
 import toast from "react-hot-toast";
-import SimpleBar from "simplebar-react";
-import "simplebar-react/dist/simplebar.min.css";
-
 import HeadTags from "../../components/HeadTags";
-import TopProgressBar from "../../components/TopProgressBar";
+import { useAdminAuth } from "../../context/AdminAuthContext";
 import {
   getAllSchedules,
+  getScheduleById,
 } from "../../services/scheduleService";
+import { createCollectionFromSchedule } from "../../services/collectionService";
+import { getAllCollectors } from "../../services/collectorService";
+import { getAllDrivers } from "../../services/driverService";
+import { getAllVehicles } from "../../services/vehicleService";
+import { getAllRoutes } from "../../services/routeService";
+import CollectionDialog from "../../components/collections/CollectionDialog";
 import {
-  createCollectionFromSchedule,
-} from "../../services/collectionService";
+  MaterialTable,
+  Summary,
+  WorkspacePagination,
+} from "../../components/collections/WorkspaceParts";
 import {
-  getAllCollectors,
-} from "../../services/collectorService";
-import {
-  getAllDrivers,
-} from "../../services/driverService";
-import {
-  getAllVehicles,
-} from "../../services/vehicleService";
-import {
-  getAllRoutes,
-} from "../../services/routeService";
-
-/*
- * ============================================================
- * CONSTANTES
- * ============================================================
- */
-
-const OPEN_SCHEDULE_STATUSES = [
-  "REQUESTED",
-  "SCHEDULED",
-];
-
-const ACTIVE_ROUTE_STATUSES = [
-  "SCHEDULED",
-  "IN_PROGRESS",
-];
-
-const WASTE_UNIT_LABELS = {
-  KG: "kg",
-  TON: "t",
-  LITER: "L",
-  UNIT: "un.",
-  CUBIC_METER: "m³",
+  REQUEST_LABELS,
+  requestGroup,
+  generatorName,
+  personName,
+  location,
+  city,
+  neighborhood,
+  dateLabel,
+  materials,
+  searchText,
+  shortId,
+  inPeriod,
+  assignmentProblem,
+} from "../../utils/collectionWorkspace";
+const defaults = {
+  q: "",
+  group: "REQUESTED",
+  city: "",
+  neighborhood: "",
+  start: "",
+  end: "",
+  dateField: "createdAt",
 };
-
-const initialDelegationForm = {
+const emptyForm = {
   collectorId: "",
+  routeId: "",
   driverId: "",
   vehicleId: "",
-  routeId: "",
   notes: "",
 };
-
-/*
- * ============================================================
- * HELPERS GERAIS
- * ============================================================
- */
-
-const getArray = (response) => {
-  if (Array.isArray(response)) {
-    return response;
-  }
-
-  if (Array.isArray(response?.schedules)) {
-    return response.schedules;
-  }
-
-  if (Array.isArray(response?.collections)) {
-    return response.collections;
-  }
-
-  if (Array.isArray(response?.collectors)) {
-    return response.collectors;
-  }
-
-  if (Array.isArray(response?.drivers)) {
-    return response.drivers;
-  }
-
-  if (Array.isArray(response?.vehicles)) {
-    return response.vehicles;
-  }
-
-  if (Array.isArray(response?.routes)) {
-    return response.routes;
-  }
-
-  if (Array.isArray(response?.data)) {
-    return response.data;
-  }
-
-  if (Array.isArray(response?.items)) {
-    return response.items;
-  }
-
-  return [];
-};
-
-const normalizeText = (value) => {
-  if (
-    value === null ||
-    value === undefined
-  ) {
-    return "";
-  }
-
-  return String(value).trim();
-};
-
-const normalizeNumber = (value) => {
-  if (
-    value === null ||
-    value === undefined ||
-    value === ""
-  ) {
-    return null;
-  }
-
-  const normalized =
-    typeof value === "string"
-      ? value.replace(",", ".")
-      : value;
-
-  const numeric = Number(normalized);
-
-  return Number.isFinite(numeric)
-    ? numeric
-    : null;
-};
-
-const normalizeStatus = (value) =>
-  normalizeText(value).toUpperCase();
-
-const getErrorMessage = (
-  error,
-  fallback
-) =>
-  error?.response?.data?.error ||
-  error?.response?.data?.message ||
-  error?.error ||
-  error?.message ||
-  fallback;
-
-const getStatusLabel = (status) => {
-  const labels = {
-    REQUESTED: "Solicitada",
-    SCHEDULED: "Agendada",
-    IN_PROGRESS: "Em andamento",
-    COMPLETED: "Concluída",
-    CANCELLED: "Cancelada",
-  };
-
-  return (
-    labels[normalizeStatus(status)] ||
-    normalizeText(status) ||
-    "N/A"
-  );
-};
-
-const getStatusClass = (status) => {
-  const classes = {
-    REQUESTED: "warning",
-    SCHEDULED: "primary",
-    IN_PROGRESS: "info",
-    COMPLETED: "success",
-    CANCELLED: "danger",
-  };
-
-  return (
-    classes[normalizeStatus(status)] ||
-    "secondary"
-  );
-};
-
-const getGeneratorName = (schedule) =>
-  normalizeText(
-    schedule?.generator?.companyName
-  ) ||
-  normalizeText(
-    schedule?.generator?.name
-  ) ||
-  normalizeText(
-    schedule?.requestedBy?.displayName
-  ) ||
-  normalizeText(
-    schedule?.requestedBy?.name
-  ) ||
-  "Solicitante não informado";
-
-const getGeneratorContact = (schedule) =>
-  normalizeText(
-    schedule?.generator?.email
-  ) ||
-  normalizeText(
-    schedule?.requestedBy?.email
-  ) ||
-  "E-mail não informado";
-
-const getGeneratorLocation = (schedule) => {
-  const generator = schedule?.generator;
-
-  const city =
-    normalizeText(generator?.city);
-
-  const state =
-    normalizeText(generator?.state);
-
-  const address =
-    normalizeText(generator?.address) ||
-    [
-      normalizeText(generator?.street),
-      normalizeText(generator?.number),
-      normalizeText(generator?.neighborhood),
-    ]
-      .filter(Boolean)
-      .join(", ");
-
-  const cityState =
-    [city, state]
-      .filter(Boolean)
-      .join("/");
-
-  return (
-    [address, cityState]
-      .filter(Boolean)
-      .join(" - ") ||
-    "Local não informado"
-  );
-};
-
-const getScheduleDate = (schedule) =>
-  schedule?.scheduledDate ||
-  schedule?.preferredDate ||
-  schedule?.createdAt ||
-  null;
-
-const formatDate = (value) => {
-  if (!value) {
-    return "Sem data";
-  }
-
-  const parsed = moment(value);
-
-  return parsed.isValid()
-    ? parsed.format("DD/MM/YYYY")
-    : "Sem data";
-};
-
-const formatDateTime = (value) => {
-  if (!value) {
-    return "Não informado";
-  }
-
-  const parsed = moment(value);
-
-  return parsed.isValid()
-    ? parsed.format("DD/MM/YYYY [às] HH:mm")
-    : "Não informado";
-};
-
-const formatQuantity = (value) => {
-  const numeric = normalizeNumber(value);
-
-  if (numeric === null) {
-    return null;
-  }
-
-  return new Intl.NumberFormat(
-    "pt-BR",
-    {
-      maximumFractionDigits: 3,
+const emptyOptions = { collectors: [], drivers: [], vehicles: [], routes: [] };
+const errorText = (e) =>
+  e?.error || e?.message || "Não foi possível concluir a operação.";
+export default function CollectionRequests() {
+  const { admin } = useAdminAuth();
+  return admin?.id ? <RequestWorkspace key={admin.id} /> : null;
+}
+function RequestWorkspace() {
+  const [schedules, setSchedules] = useState([]),
+    [loading, setLoading] = useState(true),
+    [error, setError] = useState("");
+  const [filters, setFilters] = useState(defaults),
+    [page, setPage] = useState(1),
+    [size, setSize] = useState(10);
+  const [selected, setSelected] = useState(null),
+    [dialog, setDialog] = useState(false),
+    [detailLoading, setDetailLoading] = useState(false),
+    [detailError, setDetailError] = useState("");
+  const [options, setOptions] = useState(emptyOptions),
+    [optionsLoading, setOptionsLoading] = useState(false),
+    [optionsError, setOptionsError] = useState("");
+  const [form, setForm] = useState(emptyForm),
+    [busy, setBusy] = useState(false),
+    [submitError, setSubmitError] = useState(""),
+    [created, setCreated] = useState(null);
+  const guard = useRef({
+    list: 0,
+    detail: 0,
+    options: 0,
+    submitting: false,
+    alive: true,
+  });
+  const load = useCallback(async () => {
+    const g = guard.current,
+      n = ++g.list;
+    setLoading(true);
+    setError("");
+    setSchedules([]);
+    try {
+      const r = await getAllSchedules();
+      if (!Array.isArray(r?.schedules))
+        throw Error("Resposta de solicitações inválida.");
+      if (n === g.list) setSchedules(r.schedules);
+    } catch (e) {
+      if (n === g.list) setError(errorText(e));
+    } finally {
+      if (n === g.list) setLoading(false);
     }
-  ).format(numeric);
-};
-
-const getUnitLabel = (unit) => {
-  const normalized =
-    normalizeStatus(unit) || "KG";
-
-  return (
-    WASTE_UNIT_LABELS[normalized] ||
-    normalizeText(unit) ||
-    "kg"
-  );
-};
-
-/*
- * ============================================================
- * MATERIAIS SOLICITADOS
- * ============================================================
- */
-
-const normalizeRequestedMaterial = (
-  material,
-  index
-) => {
-  const wasteType =
-    material?.wasteType ||
-    material?.catalogItem ||
-    material?.item ||
-    null;
-
-  const catalogSuggestion =
-    material?.catalogSuggestion ||
-    material?.suggestedWasteType ||
-    null;
-
-  const proposedMaterial =
-    material?.proposedMaterial &&
-    typeof material.proposedMaterial ===
-      "object"
-      ? material.proposedMaterial
-      : null;
-
-  const name =
-    normalizeText(
-      material?.nameSnapshot
-    ) ||
-    normalizeText(
-      wasteType?.name
-    ) ||
-    normalizeText(
-      catalogSuggestion?.name
-    ) ||
-    normalizeText(
-      proposedMaterial?.name
-    ) ||
-    normalizeText(material?.name) ||
-    normalizeText(material?.type) ||
-    "Material não informado";
-
-  const category =
-    normalizeText(
-      material?.categorySnapshot
-    ) ||
-    normalizeText(
-      wasteType?.category
-    ) ||
-    normalizeText(
-      catalogSuggestion?.category
-    ) ||
-    normalizeText(
-      proposedMaterial?.category
-    ) ||
-    normalizeText(
-      material?.category
+  }, []);
+  const loadOptions = useCallback(async () => {
+    const g = guard.current,
+      n = ++g.options;
+    setOptionsLoading(true);
+    setOptionsError("");
+    setOptions(emptyOptions);
+    const sources = [
+      ["collectors", getAllCollectors],
+      ["drivers", getAllDrivers],
+      ["vehicles", getAllVehicles],
+      ["routes", getAllRoutes],
+    ];
+    const results = await Promise.allSettled(
+      sources.map(async ([key, fetch]) => {
+        const r = await fetch();
+        if (!Array.isArray(r?.[key]))
+          throw Error("Resposta operacional inválida.");
+        return [key, r[key]];
+      }),
     );
-
-  const subcategory =
-    normalizeText(
-      material?.subcategorySnapshot
-    ) ||
-    normalizeText(
-      wasteType?.subcategory
-    ) ||
-    normalizeText(
-      catalogSuggestion?.subcategory
-    ) ||
-    normalizeText(
-      proposedMaterial?.subcategory
-    ) ||
-    normalizeText(
-      material?.subcategory
-    );
-
-  const unit =
-    normalizeText(material?.unit) ||
-    normalizeText(
-      proposedMaterial?.unit
-    ) ||
-    normalizeText(
-      wasteType?.defaultUnit
-    ) ||
-    normalizeText(
-      wasteType?.unit
-    ) ||
-    "KG";
-
-  const estimatedQuantity =
-    material?.estimatedQuantity ??
-    material?.quantity ??
-    material?.quantityKg ??
-    null;
-
-  const wasteTypeId =
-    normalizeText(
-      material?.wasteTypeId
-    ) ||
-    normalizeText(
-      wasteType?.id
-    );
-
-  const isProposed =
-    !wasteTypeId ||
-    Boolean(proposedMaterial) ||
-    Boolean(
-      normalizeText(
-        material?.proposedMaterialName
-      )
-    );
-
-  return {
-    id:
-      normalizeText(material?.id) ||
-      `${name}-${index}`,
-
-    name,
-    category,
-    subcategory,
-    unit,
-    estimatedQuantity,
-    notes:
-      normalizeText(material?.notes),
-    isProposed,
-  };
-};
-
-const getRequestedMaterials = (
-  schedule
-) => {
-  const requestedMaterials =
-    Array.isArray(
-      schedule?.requestedMaterials
-    )
-      ? schedule.requestedMaterials
-      : [];
-
-  return requestedMaterials.map(
-    normalizeRequestedMaterial
-  );
-};
-
-/*
- * ============================================================
- * COMPONENTES AUXILIARES
- * ============================================================
- */
-
-const StatusBadge = ({ status }) => (
-  <span
-    className={`badge text-bg-${getStatusClass(
-      status
-    )}`}
-  >
-    {getStatusLabel(status)}
-  </span>
-);
-
-const RequestedMaterialList = ({
-  schedule,
-  compact = false,
-}) => {
-  const materials =
-    getRequestedMaterials(schedule);
-
-  if (materials.length === 0) {
-    return (
-      <div className="text-muted small">
-        Material não informado
-      </div>
-    );
+    if (n !== g.options) return;
+    if (results.some((r) => r.status === "rejected"))
+      setOptionsError(
+        "Não foi possível consultar todas as opções de equipe e rotas. Atualize as opções antes de confirmar.",
+      );
+    else setOptions(Object.fromEntries(results.map((r) => r.value)));
+    setOptionsLoading(false);
+  }, []);
+  useEffect(() => {
+    const g = guard.current;
+    g.alive = true;
+    void load();
+    return () => {
+      g.alive = false;
+      g.list++;
+      g.detail++;
+      g.options++;
+    };
+  }, [load]);
+  async function open(s) {
+    const g = guard.current,
+      n = ++g.detail;
+    setDialog(true);
+    setSelected(null);
+    setDetailLoading(true);
+    setDetailError("");
+    setForm(emptyForm);
+    setSubmitError("");
+    void loadOptions();
+    try {
+      const r = await getScheduleById(s.id);
+      if (!r?.schedule?.id) throw Error("Solicitação indisponível.");
+      if (n === g.detail) setSelected(r.schedule);
+    } catch (e) {
+      if (n === g.detail) setDetailError(errorText(e));
+    } finally {
+      if (n === g.detail) setDetailLoading(false);
+    }
   }
-
-  if (compact) {
-    return (
-      <div
-        className="d-flex flex-wrap gap-1"
-        style={{
-          minWidth: 220,
-          maxWidth: 420,
-        }}
-      >
-        {materials.map((material) => (
-          <span
-            key={material.id}
-            className="badge text-bg-light border text-dark"
-            title={[
-              material.category,
-              material.subcategory,
-            ]
-              .filter(Boolean)
-              .join(" • ")}
-          >
-            {material.name}
-
-            {material.estimatedQuantity !==
-              null &&
-              material.estimatedQuantity !==
-                undefined && (
-                <>
-                  {" "}
-                  ·{" "}
-                  {formatQuantity(
-                    material.estimatedQuantity
-                  )}{" "}
-                  {getUnitLabel(
-                    material.unit
-                  )}
-                </>
-              )}
-          </span>
-        ))}
-      </div>
-    );
+  function close() {
+    if (busy) return;
+    guard.current.detail++;
+    guard.current.options++;
+    setDialog(false);
+    setSelected(null);
+    setSubmitError("");
   }
-
-  return (
-    <div className="d-flex flex-column gap-3">
-      {materials.map((material) => (
-        <div
-          key={material.id}
-          className="border rounded-3 p-3 bg-white"
-        >
-          <div className="d-flex justify-content-between align-items-start gap-3 flex-wrap">
-            <div className="flex-grow-1">
-              <div className="d-flex align-items-center gap-2 flex-wrap">
-                <strong>
-                  {material.name}
-                </strong>
-
-                <span
-                  className={`badge ${
-                    material.isProposed
-                      ? "text-bg-warning"
-                      : "text-bg-success"
-                  }`}
-                >
-                  {material.isProposed
-                    ? "Material proposto"
-                    : "Catálogo"}
-                </span>
-              </div>
-
-              {(material.category ||
-                material.subcategory) && (
-                <div className="text-muted small mt-2 d-flex align-items-center gap-2 flex-wrap">
-                  <Tag size={14} />
-
-                  {material.category && (
-                    <span>
-                      {material.category}
-                    </span>
-                  )}
-
-                  {material.category &&
-                    material.subcategory && (
-                      <span>•</span>
-                    )}
-
-                  {material.subcategory && (
-                    <span>
-                      {material.subcategory}
-                    </span>
-                  )}
-                </div>
-              )}
-
-              {material.notes && (
-                <div className="text-muted small mt-2">
-                  {material.notes}
-                </div>
-              )}
-            </div>
-
-            <div
-              className="text-end"
-              style={{
-                minWidth: 120,
-              }}
-            >
-              <div className="text-muted small">
-                Quantidade estimada
-              </div>
-
-              <div className="fw-semibold mt-1">
-                {material.estimatedQuantity !==
-                  null &&
-                material.estimatedQuantity !==
-                  undefined
-                  ? `${formatQuantity(
-                      material.estimatedQuantity
-                    )} ${getUnitLabel(
-                      material.unit
-                    )}`
-                  : `Não informada (${getUnitLabel(
-                      material.unit
-                    )})`}
-              </div>
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
+  const invalid = !!(
+    filters.start &&
+    filters.end &&
+    filters.start > filters.end
   );
-};
-
-const MetricCard = ({
-  icon,
-  label,
-  value,
-}) => (
-  <div className="col-md-4">
-    <div className="card p-25 h-100">
-      <div className="d-flex align-items-center gap-3">
-        {icon}
-
+  const baseFiltered = useMemo(
+    () =>
+      schedules.filter(
+        (s) =>
+          !invalid &&
+          (!filters.q ||
+            searchText(
+              [
+                s.id,
+                generatorName(s),
+                location(s),
+                s.generator?.email,
+                s.requestedBy?.email,
+                ...materials(s, true).map((m) => m.name),
+              ].join(" "),
+            ).includes(searchText(filters.q))) &&
+          (!filters.city || city(s) === filters.city) &&
+          (!filters.neighborhood || neighborhood(s) === filters.neighborhood) &&
+          inPeriod(s[filters.dateField], filters.start, filters.end),
+      ),
+    [schedules, filters, invalid],
+  );
+  const filtered = baseFiltered
+    .filter((s) => !filters.group || requestGroup(s) === filters.group)
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  const currentPage = Math.min(
+      page,
+      Math.max(1, Math.ceil(filtered.length / size)),
+    ),
+    visible = filtered.slice((currentPage - 1) * size, currentPage * size);
+  const route = options.routes.find((r) => r.id === form.routeId),
+    problem = assignmentProblem(form, options);
+  const canDelegate =
+    selected &&
+    ["REQUESTED", "SCHEDULED"].includes(selected.status) &&
+    !selected.collections?.length;
+  const drivers = options.drivers.filter(
+      (d) =>
+        d.status === "AVAILABLE" ||
+        (d.status === "ON_ROUTE" && route?.driverId === d.id),
+    ),
+    vehicles = options.vehicles.filter((v) => v.status === "ACTIVE"),
+    collectors = options.collectors.filter((c) => c.status === "AVAILABLE"),
+    routes = options.routes.filter((r) =>
+      ["SCHEDULED", "IN_PROGRESS"].includes(r.status),
+    );
+  function change(e) {
+    setFilters((f) => ({ ...f, [e.target.name]: e.target.value }));
+    setPage(1);
+  }
+  function changeForm(e) {
+    const { name, value } = e.target;
+    setSubmitError("");
+    setForm((f) => {
+      if (name !== "routeId") return { ...f, [name]: value };
+      const r = options.routes.find((r) => r.id === value);
+      return {
+        ...f,
+        routeId: value,
+        driverId: r?.driverId || "",
+        vehicleId: r?.vehicleId || "",
+      };
+    });
+  }
+  async function submit(e) {
+    e.preventDefault();
+    const g = guard.current;
+    if (g.submitting || !canDelegate) return;
+    if (!form.collectorId || problem || optionsError || optionsLoading) {
+      setSubmitError(
+        problem || "Selecione um catador disponível e confira as opções.",
+      );
+      return;
+    }
+    g.submitting = true;
+    setBusy(true);
+    setSubmitError("");
+    try {
+      const r = await createCollectionFromSchedule({
+        scheduleId: selected.id,
+        ...form,
+      });
+      if (!r?.collection?.id)
+        throw Error(
+          "O servidor não confirmou a coleta criada. Atualize a lista antes de tentar novamente.",
+        );
+      if (!g.alive) return;
+      setCreated(r.collection);
+      setDialog(false);
+      setSelected(null);
+      toast.success("Coleta aceita e atribuída.");
+      await load();
+    } catch (e) {
+      if (g.alive) setSubmitError(errorText(e));
+    } finally {
+      g.submitting = false;
+      if (g.alive) setBusy(false);
+    }
+  }
+  return (
+    <main className="container-fluid py-4 collection-workspace">
+      <HeadTags title="Coletas Solicitadas | KATUÁ" />
+      <div className="d-flex justify-content-between flex-wrap gap-3 mb-4">
         <div>
-          <p className="mb-1 text-muted">
-            {label}
+          <h1 className="h3">Coletas Solicitadas</h1>
+          <p className="text-muted">
+            Analise o pedido do gerador, confira os materiais previstos e
+            atribua a equipe responsável.
           </p>
-
-          <h3 className="mb-0">
-            {value}
-          </h3>
+          <Link to="/waste-list">Acompanhar coletas operacionais</Link>
         </div>
+        <button
+          className="btn btn-outline-success"
+          disabled={loading || busy}
+          onClick={load}
+        >
+          Atualizar solicitações
+        </button>
       </div>
-    </div>
-  </div>
-);
-
-/*
- * ============================================================
- * MODAL DE DELEGAÇÃO
- * ============================================================
- */
-
-const DelegationModal = ({
-  schedule,
-  form,
-  collectors,
-  drivers,
-  vehicles,
-  routes,
-  loadingOptions,
-  delegating,
-  onChange,
-  onClose,
-  onSubmit,
-}) => {
-  if (
-    !schedule ||
-    typeof document === "undefined"
-  ) {
-    return null;
-  }
-
-  const date =
-    getScheduleDate(schedule);
-
-  return createPortal(
-    <>
-      <style>
-        {`
-          @media (max-width: 1199.98px) {
-            .katua-delegation-dialog {
-              width: min(920px, calc(100vw - 32px)) !important;
-              max-width: calc(100vw - 32px) !important;
-              margin: 0 auto !important;
-            }
-          }
-
-          @media (max-width: 767.98px) {
-            .katua-delegation-dialog {
-              width: calc(100vw - 20px) !important;
-              max-width: calc(100vw - 20px) !important;
-              max-height: calc(100dvh - 20px) !important;
-            }
-
-            .katua-delegation-content {
-              max-height: calc(100dvh - 20px) !important;
-              border-radius: 12px !important;
-            }
-
-            .katua-delegation-header,
-            .katua-delegation-body,
-            .katua-delegation-footer {
-              padding-left: 16px !important;
-              padding-right: 16px !important;
-            }
-
-            .katua-delegation-footer {
-              flex-wrap: nowrap !important;
-            }
-
-            .katua-delegation-footer button {
-              flex: 1 1 0;
-              white-space: nowrap;
-            }
-          }
-
-          @media (max-height: 720px) {
-            .katua-delegation-dialog,
-            .katua-delegation-content {
-              max-height: calc(100dvh - 16px) !important;
-            }
-
-            .katua-delegation-header {
-              padding-top: 12px !important;
-              padding-bottom: 12px !important;
-            }
-
-            .katua-delegation-footer {
-              padding-top: 10px !important;
-              padding-bottom: 10px !important;
-            }
-          }
-        `}
-      </style>
-
-      <div
-      className="modal fade show"
-      style={{
-        display: "flex",
-        position: "fixed",
-        inset: 0,
-        zIndex: 1080,
-        alignItems: "center",
-        justifyContent: "center",
-        overflow: "hidden",
-        boxSizing: "border-box",
-        backgroundColor:
-          "rgba(15, 23, 42, 0.62)",
-        padding:
-          "clamp(10px, 2vw, 20px)",
-      }}
-      tabIndex="-1"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="collection-delegation-title"
-      onMouseDown={(event) => {
-        if (
-          event.target ===
-            event.currentTarget &&
-          !delegating
-        ) {
-          onClose();
-        }
-      }}
-    >
-      <div
-        className="modal-dialog modal-lg katua-delegation-dialog"
-        role="document"
-        style={{
-          width:
-            "min(920px, calc(100vw - 300px))",
-          maxWidth: "920px",
-          height: "auto",
-          maxHeight:
-            "calc(100dvh - 24px)",
-          margin:
-            "0 12px 0 clamp(250px, 19vw, 280px)",
-          display: "flex",
-          alignItems: "stretch",
-          boxSizing: "border-box",
-        }}
-      >
-        <form
-          className="modal-content border-0 shadow-lg katua-delegation-content"
-          onSubmit={onSubmit}
-          style={{
-            width: "100%",
-            maxWidth: "100%",
-            maxHeight:
-              "calc(100dvh - 24px)",
-            display: "flex",
-            flexDirection: "column",
-            overflow: "hidden",
-            borderRadius: 18,
-            boxSizing: "border-box",
+      {created && (
+        <div role="status" className="alert alert-success">
+          Coleta #{shortId(created.id)} criada e confirmada pelo servidor.{" "}
+          <Link to={`/waste-list?coleta=${encodeURIComponent(created.id)}`}>
+            Ver coleta criada
+          </Link>
+        </div>
+      )}
+      <Summary
+        cards={Object.entries(REQUEST_LABELS)
+          .filter(([key]) => key !== "IN_PROGRESS")
+          .map(([key, label]) => [
+            label,
+            loading || error
+              ? "—"
+              : baseFiltered.filter((s) => requestGroup(s) === key).length,
+          ])}
+      />
+      <section className="card p-3 mb-4" aria-label="Filtros das solicitações">
+        <div className="row g-3">
+          <div className="col-md-6">
+            <label htmlFor="request-search" className="form-label">
+              Buscar protocolo, gerador, endereço ou material
+            </label>
+            <input
+              id="request-search"
+              type="search"
+              className="form-control"
+              name="q"
+              value={filters.q}
+              onChange={change}
+            />
+          </div>
+          <div className="col-md-3">
+            <label htmlFor="request-group" className="form-label">
+              Fila de atendimento
+            </label>
+            <select
+              id="request-group"
+              name="group"
+              className="form-select"
+              value={filters.group}
+              onChange={change}
+            >
+              <option value="">Todas</option>
+              {Object.entries(REQUEST_LABELS).map(([key, label]) => (
+                <option key={key} value={key}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </div>
+          {[
+            ["city", "Município", city],
+            ["neighborhood", "Bairro", neighborhood],
+          ].map(([field, label, get]) => (
+            <div className="col-md-3" key={field}>
+              <label htmlFor={`request-${field}`} className="form-label">
+                {label}
+              </label>
+              <select
+                id={`request-${field}`}
+                name={field}
+                value={filters[field]}
+                onChange={change}
+                className="form-select"
+              >
+                <option value="">Todos</option>
+                {[...new Set(schedules.map(get).filter(Boolean))]
+                  .sort()
+                  .map((v) => (
+                    <option key={v}>{v}</option>
+                  ))}
+              </select>
+            </div>
+          ))}
+          <div className="col-md-3">
+            <label htmlFor="request-date-field" className="form-label">
+              Período por
+            </label>
+            <select
+              id="request-date-field"
+              name="dateField"
+              className="form-select"
+              value={filters.dateField}
+              onChange={change}
+            >
+              <option value="createdAt">Solicitada em</option>
+              <option value="preferredDate">Data desejada</option>
+              <option value="scheduledDate">Data programada</option>
+            </select>
+          </div>
+          {[
+            ["start", "Data inicial"],
+            ["end", "Data final"],
+          ].map(([field, label]) => (
+            <div className="col-md-3" key={field}>
+              <label htmlFor={`request-${field}`} className="form-label">
+                {label}
+              </label>
+              <input
+                type="date"
+                id={`request-${field}`}
+                name={field}
+                value={filters[field]}
+                onChange={change}
+                className="form-control"
+              />
+            </div>
+          ))}
+        </div>
+        <button
+          className="btn btn-outline-secondary mt-3"
+          onClick={() => {
+            setFilters({ ...defaults, group: "" });
+            setPage(1);
           }}
         >
-          <div
-            className="modal-header katua-delegation-header"
-            style={{
-              flex: "0 0 auto",
-              position: "relative",
-              zIndex: 2,
-              backgroundColor: "#fff",
-            }}
-          >
-            <div>
-              <h5
-                id="collection-delegation-title"
-                className="modal-title mb-1"
-              >
-                Aceitar e delegar coleta
-              </h5>
-
-              <p className="text-muted mb-0 small">
-                Transforme esta solicitação em
-                uma coleta operacional.
-              </p>
-            </div>
-
-            <button
-              type="button"
-              className="btn border-0"
-              onClick={onClose}
-              disabled={delegating}
-              aria-label="Fechar modal"
-            >
-              <X size={20} />
-            </button>
-          </div>
-
-          <div
-            className="modal-body katua-delegation-body"
-            style={{
-              flex: "1 1 auto",
-              minHeight: 0,
-              overflowX: "hidden",
-              overflowY: "auto",
-              overscrollBehavior:
-                "contain",
-              WebkitOverflowScrolling:
-                "touch",
-            }}
-          >
-            <div className="alert alert-light border mb-4">
-              <div className="d-flex justify-content-between align-items-start gap-3 flex-wrap">
-                <div>
-                  <strong>
-                    {getGeneratorName(
-                      schedule
-                    )}
-                  </strong>
-
-                  <div className="text-muted small mt-2 d-flex align-items-center gap-2">
-                    <Mail size={14} />
-                    {getGeneratorContact(
-                      schedule
-                    )}
-                  </div>
-
-                  <div className="text-muted small mt-2 d-flex align-items-start gap-2">
-                    <MapPin
-                      size={14}
-                      style={{
-                        marginTop: 2,
-                      }}
-                    />
-
-                    <span>
-                      {getGeneratorLocation(
-                        schedule
-                      )}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="text-md-end">
-                  <div className="text-muted small">
-                    Data programada
-                  </div>
-
-                  <div className="fw-semibold mt-1">
-                    {formatDate(date)}
-                  </div>
-
-                  <div className="mt-2">
-                    <StatusBadge
-                      status={
-                        schedule.status
-                      }
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="mb-4">
-              <div className="d-flex align-items-center gap-2 mb-3">
-                <Layers3
-                  size={19}
-                  color="#028C56"
-                />
-
-                <h6 className="mb-0">
-                  Materiais solicitados
-                </h6>
-              </div>
-
-              <RequestedMaterialList
-                schedule={schedule}
-              />
-            </div>
-
-            {schedule.notes && (
-              <div className="mb-4">
-                <label className="form-label fw-semibold">
-                  Observações do solicitante
-                </label>
-
-                <div className="border rounded-3 p-3 bg-light">
-                  {schedule.notes}
-                </div>
-              </div>
-            )}
-
-            <hr className="my-4" />
-
-            <div className="d-flex align-items-center gap-2 mb-3">
-              <ClipboardList
-                size={19}
-                color="#028C56"
-              />
-
-              <h6 className="mb-0">
-                Definição operacional
-              </h6>
-            </div>
-
-            <div className="row gy-3">
-              <div className="col-md-6">
-                <label className="form-label">
-                  Catador responsável{" "}
-                  <span className="text-danger">
-                    *
-                  </span>
-                </label>
-
-                <select
-                  name="collectorId"
-                  className="form-select"
-                  value={form.collectorId}
-                  onChange={onChange}
-                  disabled={
-                    delegating ||
-                    loadingOptions
-                  }
-                  required
-                >
-                  <option value="">
-                    Selecione um catador
-                  </option>
-
-                  {collectors.map(
-                    (collector) => (
-                      <option
-                        key={collector.id}
-                        value={collector.id}
-                      >
-                        {collector.name ||
-                          collector.fullName ||
-                          collector.user
-                            ?.name ||
-                          "Catador sem nome"}
-                      </option>
-                    )
-                  )}
-                </select>
-              </div>
-
-              <div className="col-md-6">
-                <label className="form-label">
-                  Motorista
-                </label>
-
-                <select
-                  name="driverId"
-                  className="form-select"
-                  value={form.driverId}
-                  onChange={onChange}
-                  disabled={
-                    delegating ||
-                    loadingOptions
-                  }
-                >
-                  <option value="">
-                    Sem motorista no momento
-                  </option>
-
-                  {drivers.map(
-                    (driver) => (
-                      <option
-                        key={driver.id}
-                        value={driver.id}
-                      >
-                        {driver.name ||
-                          driver.fullName ||
-                          driver.user
-                            ?.name ||
-                          "Motorista sem nome"}
-                      </option>
-                    )
-                  )}
-                </select>
-              </div>
-
-              <div className="col-md-6">
-                <label className="form-label">
-                  Veículo
-                </label>
-
-                <select
-                  name="vehicleId"
-                  className="form-select"
-                  value={form.vehicleId}
-                  onChange={onChange}
-                  disabled={
-                    delegating ||
-                    loadingOptions
-                  }
-                >
-                  <option value="">
-                    Sem veículo no momento
-                  </option>
-
-                  {vehicles.map(
-                    (vehicle) => {
-                      const plate =
-                        normalizeText(
-                          vehicle.plate
-                        );
-
-                      const model =
-                        normalizeText(
-                          vehicle.model
-                        ) ||
-                        normalizeText(
-                          vehicle.name
-                        );
-
-                      return (
-                        <option
-                          key={vehicle.id}
-                          value={vehicle.id}
-                        >
-                          {[plate, model]
-                            .filter(Boolean)
-                            .join(" - ") ||
-                            "Veículo sem identificação"}
-                        </option>
-                      );
-                    }
-                  )}
-                </select>
-              </div>
-
-              <div className="col-md-6">
-                <label className="form-label">
-                  Rota
-                </label>
-
-                <select
-                  name="routeId"
-                  className="form-select"
-                  value={form.routeId}
-                  onChange={onChange}
-                  disabled={
-                    delegating ||
-                    loadingOptions
-                  }
-                >
-                  <option value="">
-                    Sem rota vinculada
-                  </option>
-
-                  {routes.map((route) => (
-                    <option
-                      key={route.id}
-                      value={route.id}
-                    >
-                      {route.name ||
-                        "Rota sem nome"}
-
-                      {route.scheduledDate
-                        ? ` - ${formatDate(
-                            route.scheduledDate
-                          )}`
-                        : ""}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="col-12">
-                <label className="form-label">
-                  Observações operacionais
-                </label>
-
-                <textarea
-                  name="notes"
-                  className="form-control"
-                  rows="4"
-                  value={form.notes}
-                  onChange={onChange}
-                  disabled={delegating}
-                  placeholder="Inclua orientações para o catador, motorista ou equipe operacional."
-                />
-              </div>
-            </div>
-
-            {collectors.length === 0 &&
-              !loadingOptions && (
-                <div className="alert alert-warning mt-4 mb-0">
-                  Nenhum catador disponível foi
-                  encontrado. Cadastre ou ative
-                  um catador antes de aceitar a
-                  coleta.
-                </div>
-              )}
-          </div>
-
-          <div
-            className="modal-footer katua-delegation-footer"
-            style={{
-              flex: "0 0 auto",
-              position: "relative",
-              zIndex: 2,
-              backgroundColor: "#fff",
-            }}
-          >
-            <button
-              type="button"
-              className="btn btn-light"
-              onClick={onClose}
-              disabled={delegating}
-            >
-              Cancelar
-            </button>
-
-            <button
-              type="submit"
-              className="primary-btn border-0"
-              disabled={
-                delegating ||
-                loadingOptions ||
-                !form.collectorId
-              }
-            >
-              {delegating ? (
-                <>
-                  <LoaderCircle
-                    size={17}
-                    className="me-2"
-                  />
-                  Delegando...
-                </>
-              ) : (
-                <>
-                  <CheckCircle
-                    size={17}
-                    className="me-2"
-                  />
-                  Confirmar delegação
-                </>
-              )}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-    </>,
-    document.body
-  );
-};
-
-/*
- * ============================================================
- * PÁGINA
- * ============================================================
- */
-
-const CollectionRequests = () => {
-  const [schedules, setSchedules] =
-    useState([]);
-
-  const [collectors, setCollectors] =
-    useState([]);
-
-  const [drivers, setDrivers] =
-    useState([]);
-
-  const [vehicles, setVehicles] =
-    useState([]);
-
-  const [routes, setRoutes] =
-    useState([]);
-
-  const [loading, setLoading] =
-    useState(true);
-
-  const [
-    loadingOptions,
-    setLoadingOptions,
-  ] = useState(false);
-
-  const [delegating, setDelegating] =
-    useState(false);
-
-  const [
-    selectedSchedule,
-    setSelectedSchedule,
-  ] = useState(null);
-
-  const [
-    delegationForm,
-    setDelegationForm,
-  ] = useState(
-    initialDelegationForm
-  );
-
-  /*
-   * ==========================================================
-   * CARREGAMENTO
-   * ==========================================================
-   */
-
-  const loadSchedules =
-    useCallback(async () => {
-      try {
-        setLoading(true);
-
-        const response =
-          await getAllSchedules();
-
-        setSchedules(
-          getArray(response)
-        );
-      } catch (error) {
-        console.error(
-          "Erro ao carregar solicitações:",
-          error
-        );
-
-        toast.error(
-          getErrorMessage(
-            error,
-            "Não foi possível carregar as coletas solicitadas."
-          )
-        );
-      } finally {
-        setLoading(false);
-      }
-    }, []);
-
-  const loadOperationalOptions =
-    useCallback(async () => {
-      try {
-        setLoadingOptions(true);
-
-        const [
-          collectorsResponse,
-          driversResponse,
-          vehiclesResponse,
-          routesResponse,
-        ] = await Promise.all([
-          getAllCollectors(),
-          getAllDrivers(),
-          getAllVehicles(),
-          getAllRoutes(),
-        ]);
-
-        setCollectors(
-          getArray(
-            collectorsResponse
-          )
-        );
-
-        setDrivers(
-          getArray(
-            driversResponse
-          )
-        );
-
-        setVehicles(
-          getArray(
-            vehiclesResponse
-          )
-        );
-
-        setRoutes(
-          getArray(routesResponse)
-        );
-      } catch (error) {
-        console.error(
-          "Erro ao carregar dados operacionais:",
-          error
-        );
-
-        toast.error(
-          getErrorMessage(
-            error,
-            "Não foi possível carregar catadores, motoristas, veículos e rotas."
-          )
-        );
-      } finally {
-        setLoadingOptions(false);
-      }
-    }, []);
-
-  useEffect(() => {
-    void loadSchedules();
-    void loadOperationalOptions();
-  }, [
-    loadSchedules,
-    loadOperationalOptions,
-  ]);
-
-  /*
-   * Trava a rolagem da página enquanto o modal estiver aberto.
-   * O conteúdo interno do modal permanece rolável.
-   */
-  useEffect(() => {
-    if (
-      !selectedSchedule ||
-      typeof document === "undefined"
-    ) {
-      return undefined;
-    }
-
-    const previousOverflow =
-      document.body.style.overflow;
-
-    document.body.style.overflow =
-      "hidden";
-
-    return () => {
-      document.body.style.overflow =
-        previousOverflow;
-    };
-  }, [selectedSchedule]);
-
-  /*
-   * Fecha o modal pela tecla ESC.
-   */
-  useEffect(() => {
-    if (!selectedSchedule) {
-      return undefined;
-    }
-
-    const handleKeyDown = (event) => {
-      if (
-        event.key === "Escape" &&
-        !delegating
-      ) {
-        setSelectedSchedule(null);
-        setDelegationForm(
-          initialDelegationForm
-        );
-      }
-    };
-
-    window.addEventListener(
-      "keydown",
-      handleKeyDown
-    );
-
-    return () => {
-      window.removeEventListener(
-        "keydown",
-        handleKeyDown
-      );
-    };
-  }, [
-    selectedSchedule,
-    delegating,
-  ]);
-
-  /*
-   * ==========================================================
-   * FILTROS OPERACIONAIS
-   * ==========================================================
-   */
-
-  const requestedSchedules =
-    useMemo(
-      () =>
-        schedules.filter(
-          (schedule) =>
-            OPEN_SCHEDULE_STATUSES.includes(
-              normalizeStatus(
-                schedule.status
-              )
-            )
-        ),
-      [schedules]
-    );
-
-  const availableCollectors =
-    useMemo(
-      () =>
-        collectors.filter(
-          (collector) => {
-            const status =
-              normalizeStatus(
-                collector.status
-              );
-
-            return (
-              !status ||
-              status === "AVAILABLE" ||
-              status === "ACTIVE"
-            );
-          }
-        ),
-      [collectors]
-    );
-
-  const availableDrivers =
-    useMemo(
-      () =>
-        drivers.filter(
-          (driver) =>
-            normalizeStatus(
-              driver.status
-            ) !== "INACTIVE"
-        ),
-      [drivers]
-    );
-
-  const availableVehicles =
-    useMemo(
-      () =>
-        vehicles.filter(
-          (vehicle) =>
-            normalizeStatus(
-              vehicle.status
-            ) !== "INACTIVE"
-        ),
-      [vehicles]
-    );
-
-  const availableRoutes =
-    useMemo(
-      () =>
-        routes.filter((route) =>
-          ACTIVE_ROUTE_STATUSES.includes(
-            normalizeStatus(
-              route.status
-            )
-          )
-        ),
-      [routes]
-    );
-
-  const scheduledCount =
-    useMemo(
-      () =>
-        requestedSchedules.filter(
-          (schedule) =>
-            normalizeStatus(
-              schedule.status
-            ) === "SCHEDULED"
-        ).length,
-      [requestedSchedules]
-    );
-
-  const requestedCount =
-    useMemo(
-      () =>
-        requestedSchedules.filter(
-          (schedule) =>
-            normalizeStatus(
-              schedule.status
-            ) === "REQUESTED"
-        ).length,
-      [requestedSchedules]
-    );
-
-  /*
-   * ==========================================================
-   * MODAL E FORMULÁRIO
-   * ==========================================================
-   */
-
-  const closeDelegationModal =
-    useCallback(() => {
-      if (delegating) {
-        return;
-      }
-
-      setSelectedSchedule(null);
-      setDelegationForm(
-        initialDelegationForm
-      );
-    }, [delegating]);
-
-  const openDelegationModal =
-    useCallback((schedule) => {
-      setSelectedSchedule(schedule);
-
-      /*
-       * As observações originais do gerador permanecem no
-       * schedule.notes e são exibidas separadamente.
-       * O campo abaixo começa vazio para receber somente
-       * orientações operacionais da cooperativa.
-       */
-      setDelegationForm(
-        initialDelegationForm
-      );
-    }, []);
-
-  const handleDelegationChange =
-    useCallback((event) => {
-      const { name, value } =
-        event.target;
-
-      setDelegationForm(
-        (current) => ({
-          ...current,
-          [name]: value,
-        })
-      );
-    }, []);
-
-  const handleDelegateCollection =
-    useCallback(
-      async (event) => {
-        event.preventDefault();
-
-        if (!selectedSchedule?.id) {
-          toast.error(
-            "Solicitação inválida."
-          );
-
-          return;
-        }
-
-        if (
-          !delegationForm.collectorId
-        ) {
-          toast.error(
-            "Selecione um catador para delegar a coleta."
-          );
-
-          return;
-        }
-
-        try {
-          setDelegating(true);
-
-          /*
-           * NOVA ARQUITETURA:
-           *
-           * A delegação cria apenas a coleta operacional.
-           * Os materiais efetivamente coletados e o peso real
-           * serão informados posteriormente pelo catador.
-           *
-           * Não enviamos:
-           * - materials;
-           * - totalWeightKg.
-           */
-          await createCollectionFromSchedule(
-            {
-              scheduleId:
-                selectedSchedule.id,
-
-              collectorId:
-                delegationForm.collectorId,
-
-              driverId:
-                delegationForm.driverId ||
-                undefined,
-
-              vehicleId:
-                delegationForm.vehicleId ||
-                undefined,
-
-              routeId:
-                delegationForm.routeId ||
-                undefined,
-
-              notes:
-                normalizeText(
-                  delegationForm.notes
-                ) ||
-                undefined,
-            }
-          );
-
-          toast.success(
-            "Coleta aceita e delegada com sucesso."
-          );
-
-          setSelectedSchedule(null);
-          setDelegationForm(
-            initialDelegationForm
-          );
-
-          await loadSchedules();
-        } catch (error) {
-          console.error(
-            "Erro ao aceitar coleta:",
-            error
-          );
-
-          toast.error(
-            getErrorMessage(
-              error,
-              "Não foi possível aceitar e delegar a coleta."
-            )
-          );
-        } finally {
-          setDelegating(false);
-        }
-      },
-      [
-        selectedSchedule,
-        delegationForm,
-        loadSchedules,
-      ]
-    );
-
-  const handleRefresh =
-    useCallback(() => {
-      void Promise.all([
-        loadSchedules(),
-        loadOperationalOptions(),
-      ]);
-    }, [
-      loadSchedules,
-      loadOperationalOptions,
-    ]);
-
-  /*
-   * ==========================================================
-   * RENDERIZAÇÃO
-   * ==========================================================
-   */
-
-  return (
-    <>
-      <HeadTags title="Coletas Solicitadas" />
-
-      <TopProgressBar
-        loading={
-          loading ||
-          loadingOptions ||
-          delegating
-        }
-      />
-
-      <div className="page-header mb-30 px-2">
-        <div className="page-title mb-3">
-          <h3 className="fs-30">
-            Coletas Solicitadas
-          </h3>
-
-          <p className="text-muted mb-0">
-            Solicitações de coleta criadas pelos
-            geradores e vinculadas à
-            cooperativa.
+          Limpar filtros
+        </button>
+        <p className="small text-muted mt-3 mb-0">
+          Cartões mostram a distribuição das filas conforme busca, local e
+          período. A tabela mostra a fila selecionada. Delegada significa que já
+          existe coleta vinculada, inclusive se depois cancelada.
+        </p>
+        {invalid && (
+          <p role="alert" className="text-danger mt-2">
+            A data inicial deve ser anterior ou igual à final.
           </p>
-        </div>
-
-        <div className="page-tool d-flex justify-content-between align-items-center flex-wrap gap-3">
-          <div className="breadcrumb-wrap">
-            <nav aria-label="breadcrumb">
-              <ol className="breadcrumb pb-0 mb-0">
-                <li className="breadcrumb-item">
-                  <Link
-                    to="/"
-                    className="d-flex align-items-center gap-8"
-                  >
-                    <House />
-                    Painel
-                  </Link>
-                </li>
-
-                <li className="breadcrumb-item">
-                  <ChevronRight />
-                </li>
-
-                <li
-                  className="breadcrumb-item active"
-                  aria-current="page"
-                >
-                  Coletas Solicitadas
-                </li>
-              </ol>
-            </nav>
+        )}
+      </section>
+      <section className="card p-3" aria-label="Resultados das solicitações">
+        {loading ? (
+          <p role="status">Carregando solicitações...</p>
+        ) : error ? (
+          <div role="alert" className="alert alert-danger">
+            {error}{" "}
+            <button className="btn btn-outline-danger" onClick={load}>
+              Tentar novamente
+            </button>
           </div>
-
-          <button
-            type="button"
-            className="primary-btn btn-sm border-0"
-            onClick={handleRefresh}
-            disabled={
-              loading ||
-              loadingOptions ||
-              delegating
-            }
-          >
-            <RefreshCw size={16} />
-            Atualizar
-          </button>
-        </div>
-      </div>
-
-      <div className="row gy-4 mb-4">
-        <MetricCard
-          icon={
-            <PackageCheck
-              color="#028C56"
-              size={32}
-            />
-          }
-          label="Solicitações abertas"
-          value={
-            requestedSchedules.length
-          }
-        />
-
-        <MetricCard
-          icon={
-            <CalendarDays
-              color="#028C56"
-              size={32}
-            />
-          }
-          label="Agendadas"
-          value={scheduledCount}
-        />
-
-        <MetricCard
-          icon={
-            <User
-              color="#028C56"
-              size={32}
-            />
-          }
-          label="Pendentes"
-          value={requestedCount}
-        />
-      </div>
-
-      <div className="card p-25">
-        <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
-          <div>
-            <h3 className="fw-600 mb-1">
-              Lista de Solicitações
-            </h3>
-
-            <p className="text-muted mb-0">
-              Aceite uma solicitação para
-              transformá-la em coleta
-              operacional.
-            </p>
-          </div>
-        </div>
-
-        <SimpleBar
-          forceVisible="x"
-          autoHide
-        >
-          <table className="table nowrap w-100 align-middle">
-            <thead>
-              <tr>
-                <th>
-                  Solicitante / Gerador
-                </th>
-                <th>Contato</th>
-                <th>
-                  Materiais solicitados
-                </th>
-                <th>Data programada</th>
-                <th>Status</th>
-                <th>Observações</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {requestedSchedules.length ===
-              0 ? (
-                <tr>
-                  <td colSpan="7">
-                    {loading
-                      ? "Carregando solicitações..."
-                      : "Nenhuma coleta solicitada encontrada."}
-                  </td>
-                </tr>
-              ) : (
-                requestedSchedules.map(
-                  (schedule) => {
-                    const date =
-                      getScheduleDate(
-                        schedule
-                      );
-
-                    const alreadyDelegated =
-                      Array.isArray(
-                        schedule.collections
-                      ) &&
-                      schedule.collections
-                        .length > 0;
-
-                    return (
-                      <tr key={schedule.id}>
+        ) : (
+          <>
+            {!filtered.length ? (
+              <p className="text-center py-4">
+                {schedules.length
+                  ? "Nenhuma solicitação corresponde aos filtros."
+                  : "Nenhuma solicitação cadastrada."}
+              </p>
+            ) : (
+              <div className="table-responsive">
+                <table className="table align-middle">
+                  <thead>
+                    <tr>
+                      <th>Solicitação / Gerador</th>
+                      <th>Datas</th>
+                      <th>Materiais previstos</th>
+                      <th>Situação</th>
+                      <th>Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {visible.map((s) => (
+                      <tr key={s.id}>
                         <td>
-                          <strong>
-                            {getGeneratorName(
-                              schedule
-                            )}
-                          </strong>
-
-                          <div className="text-muted small mt-1">
-                            {getGeneratorLocation(
-                              schedule
-                            )}
+                          <strong>#{shortId(s.id)}</strong>
+                          <div>{generatorName(s)}</div>
+                          <small className="text-muted">{location(s)}</small>
+                        </td>
+                        <td>
+                          <div>Solicitada: {dateLabel(s.createdAt)}</div>
+                          <div className="small">
+                            Desejada: {dateLabel(s.preferredDate)}
+                          </div>
+                          <div className="small">
+                            Programada: {dateLabel(s.scheduledDate)}
                           </div>
                         </td>
-
                         <td>
-                          <div className="d-flex align-items-center gap-2">
-                            <Mail size={15} />
-                            {getGeneratorContact(
-                              schedule
-                            )}
-                          </div>
-                        </td>
-
-                        <td>
-                          <RequestedMaterialList
-                            schedule={
-                              schedule
-                            }
-                            compact
-                          />
-                        </td>
-
-                        <td>
-                          <div className="d-flex align-items-center gap-2">
-                            <CalendarDays
-                              size={15}
-                            />
-
-                            {formatDate(date)}
-                          </div>
-
-                          {schedule.createdAt && (
-                            <div className="text-muted small mt-1">
-                              Solicitada em{" "}
-                              {formatDateTime(
-                                schedule.createdAt
-                              )}
-                            </div>
+                          {materials(s, true)
+                            .slice(0, 2)
+                            .map((m, i) => (
+                              <div key={m.id || i}>{m.name}</div>
+                            ))}
+                          {materials(s, true).length > 2 && (
+                            <small>
+                              +{materials(s, true).length - 2} nos detalhes
+                            </small>
                           )}
+                          {!materials(s, true).length && "Não informados"}
                         </td>
-
                         <td>
-                          <StatusBadge
-                            status={
-                              schedule.status
-                            }
-                          />
-                        </td>
-
-                        <td>
-                          <div
-                            style={{
-                              minWidth: 180,
-                              maxWidth: 300,
-                              whiteSpace:
-                                "normal",
-                            }}
+                          <span
+                            className={`badge text-bg-${requestGroup(s) === "DELEGATED" ? "success" : requestGroup(s) === "CLOSED" ? "secondary" : "warning"}`}
                           >
-                            {schedule.notes ||
-                              "Sem observações"}
-                          </div>
+                            {REQUEST_LABELS[requestGroup(s)]}
+                          </span>
                         </td>
-
                         <td>
-                          {alreadyDelegated ? (
-                            <span className="badge text-bg-success">
-                              Delegada
-                            </span>
-                          ) : (
-                            <button
-                              type="button"
-                              className="primary-btn btn-sm border-0"
-                              onClick={() =>
-                                openDelegationModal(
-                                  schedule
-                                )
-                              }
-                              disabled={
-                                loadingOptions ||
-                                delegating
-                              }
-                            >
-                              <CheckCircle
-                                size={16}
-                              />
-                              Aceitar coleta
-                            </button>
-                          )}
+                          <button
+                            className="btn btn-sm btn-outline-success"
+                            onClick={() => open(s)}
+                          >
+                            {["REQUESTED", "SCHEDULED"].includes(
+                              requestGroup(s),
+                            )
+                              ? "Analisar solicitação"
+                              : "Ver detalhes"}
+                          </button>
                         </td>
                       </tr>
-                    );
-                  }
-                )
-              )}
-            </tbody>
-          </table>
-        </SimpleBar>
-
-        {!loading &&
-          requestedSchedules.length >
-            0 && (
-            <div className="d-flex flex-wrap gap-3 mt-4 pt-3 border-top text-muted small">
-              <div className="d-flex align-items-center gap-2">
-                <Users size={15} />
-                {
-                  availableCollectors.length
-                }{" "}
-                catador(es) disponível(is)
+                    ))}
+                  </tbody>
+                </table>
               </div>
-
-              <div className="d-flex align-items-center gap-2">
-                <Truck size={15} />
-                {
-                  availableVehicles.length
-                }{" "}
-                veículo(s) ativo(s)
-              </div>
-
-              <div className="d-flex align-items-center gap-2">
-                <Scale size={15} />
-                Peso real informado durante a
-                execução da coleta
-              </div>
-            </div>
+            )}
+            <WorkspacePagination
+              page={currentPage}
+              size={size}
+              total={filtered.length}
+              onPage={setPage}
+              onSize={(n) => {
+                setSize(n);
+                setPage(1);
+              }}
+            />
+          </>
+        )}
+      </section>
+      {dialog && (
+        <CollectionDialog
+          title={
+            selected
+              ? `Solicitação #${shortId(selected.id)}`
+              : "Analisar solicitação"
+          }
+          onClose={close}
+          busy={busy}
+        >
+          {detailLoading ? (
+            <p role="status">Carregando solicitação...</p>
+          ) : detailError ? (
+            <p role="alert" className="text-danger">
+              {detailError}
+            </p>
+          ) : (
+            selected && (
+              <>
+                <h3 className="fs-18">{generatorName(selected)}</h3>
+                <p>{location(selected)}</p>
+                <p className="text-break">
+                  Contato:{" "}
+                  {selected.generator?.email ||
+                    selected.requestedBy?.email ||
+                    "Não informado"}
+                </p>
+                <p className="small">
+                  Solicitada em: {dateLabel(selected.createdAt, true)}
+                  <br />
+                  Data desejada: {dateLabel(selected.preferredDate)}
+                  <br />
+                  Data programada: {dateLabel(selected.scheduledDate)}
+                </p>
+                <h3 className="fs-18">Materiais solicitados</h3>
+                <MaterialTable estimated items={materials(selected, true)} />
+                <p>
+                  Observações do gerador: {selected.notes || "Não informadas"}
+                </p>
+                {selected.collections?.map((c) => (
+                  <p key={c.id}>
+                    <Link to={`/waste-list?coleta=${encodeURIComponent(c.id)}`}>
+                      Ver coleta vinculada #{shortId(c.id)}
+                    </Link>
+                  </p>
+                ))}
+                {!canDelegate ? (
+                  <div className="alert alert-light">
+                    Esta solicitação já possui coleta vinculada ou está
+                    encerrada. Não é possível delegá-la novamente.
+                  </div>
+                ) : (
+                  <form onSubmit={submit}>
+                    <hr />
+                    <h3 className="fs-18">Atribuir equipe</h3>
+                    <p className="small text-muted">
+                      Escolher uma rota preenche sua equipe. A quantidade real
+                      será informada na execução da coleta.
+                    </p>
+                    {optionsLoading && (
+                      <p role="status">Consultando disponibilidade...</p>
+                    )}
+                    {optionsError && (
+                      <div role="alert" className="alert alert-danger">
+                        {optionsError}
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      className="btn btn-outline-secondary mb-3"
+                      onClick={loadOptions}
+                      disabled={optionsLoading || busy}
+                    >
+                      Atualizar opções de equipe
+                    </button>
+                    <fieldset
+                      disabled={busy || optionsLoading || !!optionsError}
+                    >
+                      <div className="row g-3">
+                        {[
+                          [
+                            "collectorId",
+                            "Catador responsável",
+                            collectors,
+                            (c) => personName(c),
+                          ],
+                          ["routeId", "Rota", routes, (r) => r.name],
+                          [
+                            "driverId",
+                            "Motorista",
+                            drivers,
+                            (d) => personName(d),
+                          ],
+                          [
+                            "vehicleId",
+                            "Veículo",
+                            vehicles,
+                            (v) =>
+                              [v.plate, v.model].filter(Boolean).join(" · "),
+                          ],
+                        ].map(([field, label, list, describe]) => (
+                          <div className="col-md-6" key={field}>
+                            <label
+                              htmlFor={`delegate-${field}`}
+                              className="form-label"
+                            >
+                              {label}
+                              {field === "collectorId" ? " *" : ""}
+                            </label>
+                            <select
+                              id={`delegate-${field}`}
+                              name={field}
+                              value={form[field]}
+                              onChange={changeForm}
+                              className="form-select"
+                              required={field === "collectorId"}
+                              disabled={
+                                (field === "driverId" && !!route?.driverId) ||
+                                (field === "vehicleId" && !!route?.vehicleId)
+                              }
+                            >
+                              <option value="">
+                                {field === "collectorId"
+                                  ? "Selecione um catador"
+                                  : "Sem vínculo no momento"}
+                              </option>
+                              {form[field] &&
+                                !list.some((o) => o.id === form[field]) && (
+                                  <option value={form[field]} disabled>
+                                    Vínculo indisponível — atualize a rota ou a
+                                    equipe
+                                  </option>
+                                )}
+                              {list.map((o) => (
+                                <option key={o.id} value={o.id}>
+                                  {describe(o)}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        ))}
+                        <div className="col-12">
+                          <label
+                            htmlFor="delegate-notes"
+                            className="form-label"
+                          >
+                            Orientações operacionais
+                          </label>
+                          <textarea
+                            id="delegate-notes"
+                            name="notes"
+                            className="form-control"
+                            rows={3}
+                            value={form.notes}
+                            onChange={changeForm}
+                          />
+                        </div>
+                      </div>
+                    </fieldset>
+                    {route && (
+                      <p className="small mt-3">
+                        Rota: {route.name} · Motorista:{" "}
+                        {personName(route.driver)} · Veículo:{" "}
+                        {route.vehicle?.plate || "Não informado"}. Vínculos
+                        existentes da rota são mantidos.
+                      </p>
+                    )}
+                    {problem && (
+                      <p role="alert" className="text-danger mt-3">
+                        {problem}
+                      </p>
+                    )}
+                    {submitError && (
+                      <div role="alert" className="alert alert-danger mt-3">
+                        {submitError} Se houver dúvida sobre o resultado,
+                        atualize a lista antes de repetir.
+                      </div>
+                    )}
+                    <p className="small text-muted mt-3">
+                      Veículos em manutenção/inativos e motoristas ocupados em
+                      outra rota não são oferecidos. Alterações simultâneas
+                      podem fazer o servidor rejeitar a atribuição.
+                    </p>
+                    <div className="d-flex justify-content-end gap-2 mt-3">
+                      <button
+                        type="button"
+                        className="btn btn-outline-secondary"
+                        disabled={busy}
+                        onClick={close}
+                      >
+                        Voltar
+                      </button>
+                      <button
+                        type="submit"
+                        className="btn btn-success"
+                        disabled={
+                          busy ||
+                          optionsLoading ||
+                          !!optionsError ||
+                          !!problem ||
+                          !form.collectorId
+                        }
+                      >
+                        {busy ? "Confirmando..." : "Aceitar e atribuir coleta"}
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </>
+            )
           )}
-      </div>
-
-      <DelegationModal
-        schedule={selectedSchedule}
-        form={delegationForm}
-        collectors={
-          availableCollectors
-        }
-        drivers={availableDrivers}
-        vehicles={availableVehicles}
-        routes={availableRoutes}
-        loadingOptions={
-          loadingOptions
-        }
-        delegating={delegating}
-        onChange={
-          handleDelegationChange
-        }
-        onClose={
-          closeDelegationModal
-        }
-        onSubmit={
-          handleDelegateCollection
-        }
-      />
-    </>
+        </CollectionDialog>
+      )}
+    </main>
   );
-};
-
-export default CollectionRequests;
+}

@@ -1,0 +1,29 @@
+{
+  "environment": "API Fastify/Prisma e banco PGlite locais; Chromium desktop/móvel; dados fictícios; sem produção",
+  "outcomes": [
+    {
+      "name": "Coletas completas (>50), paginação, filtros, unidades e histórico",
+      "status": "PASS"
+    },
+    {
+      "name": "Solicitações: filtros e datas separadas; rejeição preserva formulário e foco",
+      "status": "PASS"
+    },
+    {
+      "name": "Delegação real persiste após recarga, mantém previsão e não duplica solicitação",
+      "status": "PASS"
+    },
+    {
+      "name": "Falhas de listagem/opções não viram lista vazia ou sucesso; modo móvel",
+      "status": "PASS"
+    },
+    {
+      "name": "Reconexão e duas tentativas simultâneas sem duplicar coleta",
+      "status": "PASS"
+    },
+    {
+      "name": "Outra cooperativa não consulta coleta nem solicitação; motorista não acessa painel",
+      "status": "PASS"
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+.collection-workspace .table th,
+.collection-workspace .table td,
+.collection-workspace-dialog .table th,
+.collection-workspace-dialog .table td {
+  white-space: normal;
+  text-wrap: wrap;
+  overflow-wrap: anywhere;
+}
+.collection-workspace .table td:last-child {
+  min-width: 112px;
+}
+.collection-workspace .table .btn {
+  white-space: normal;
+}
+.collection-workspace .table-responsive {
+  max-width: 100%;
+}
+.collection-workspace .table {
+  min-width: 800px;
+}
+.collection-workspace-dialog .table {
+  min-width: 480px;
+}
