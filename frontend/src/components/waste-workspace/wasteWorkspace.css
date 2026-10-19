@@ -1,0 +1,18 @@
+.waste-workspace .table {
+  min-width: 800px;
+}
+.waste-workspace .table td,
+.waste-workspace .table th {
+  white-space: normal;
+  text-wrap: wrap;
+  overflow-wrap: anywhere;
+}
+.waste-workspace .table td:last-child {
+  min-width: 120px;
+}
+.waste-workspace .table-responsive {
+  max-width: 100%;
+}
+.waste-workspace .btn {
+  white-space: normal;
+}

@@ -24,7 +24,7 @@ export function WorkspacePagination({ page, size, total, onPage, onSize }) {
           value={size}
           onChange={(e) => onSize(Number(e.target.value))}
         >
-          {[10, 25, 50].map((n) => (
+          {[10, 20, 25, 50, 100].map((n) => (
             <option key={n}>{n}</option>
           ))}
         </select>

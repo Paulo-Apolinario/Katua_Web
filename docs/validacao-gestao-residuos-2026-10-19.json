@@ -1,0 +1,41 @@
+{
+  "environment": "API Fastify/Prisma e banco PGlite locais; Chromium desktop/móvel; dados fictícios; sem produção",
+  "outcomes": [
+    {
+      "name": "Catálogo: criar, inativar/reativar preserva dados e limpar campos persiste",
+      "status": "PASS"
+    },
+    {
+      "name": "Lote manual: criar, editar, limpar local e origem registrada após recarga",
+      "status": "PASS"
+    },
+    {
+      "name": "Entradas: paginação real, totais por unidade e período inclui fim do dia",
+      "status": "PASS"
+    },
+    {
+      "name": "Destinar para estoque: saldo, lote rastreável e quantidade preservada",
+      "status": "PASS"
+    },
+    {
+      "name": "Histórico: edição nullable, cancelamento rejeitado mantém motivo e cancelamento real restaura saldo",
+      "status": "PASS"
+    },
+    {
+      "name": "Saldo insuficiente/unidade errada e concorrência não criam movimentação parcial",
+      "status": "PASS"
+    },
+    {
+      "name": "Tipos de destinação, histórico paginado e bloqueio de lote vendido",
+      "status": "PASS"
+    },
+    {
+      "name": "Estoque não soma vendidos e descartados no disponível; navegação móvel",
+      "status": "PASS"
+    },
+    {
+      "name": "Erro e reconexão não exibem zeros nem dados antigos; isolamento entre cooperativas e perfis",
+      "status": "PASS"
+    }
+  ]
+}

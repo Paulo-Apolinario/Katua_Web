@@ -1,3 +1,4 @@
+import { optionalFields } from "../utils/wasteWorkspace";
 import { apiRequest } from "./apiClient";
 
 const WASTE_TYPE_ENDPOINT = "/waste-stock/items";
@@ -29,31 +30,23 @@ const normalizeWasteTypePayload = (payload = {}) => {
     category: normalizeText(source.category),
     unit: normalizeText(source.unit || "KG").toUpperCase(),
     wasteClass: normalizeText(
-      source.wasteClass || "NOT_INFORMED"
+      source.wasteClass || "NOT_INFORMED",
     ).toUpperCase(),
     status: normalizeText(source.status || "ACTIVE").toUpperCase(),
   };
 
-  const subcategory = normalizeText(source.subcategory);
-  const ncm = normalizeNcm(source.ncm);
-  const internalCode = normalizeInternalCode(source.internalCode);
-  const description = normalizeText(source.description);
-
-  if (subcategory) {
-    data.subcategory = subcategory;
-  }
-
-  if (ncm) {
-    data.ncm = ncm;
-  }
-
-  if (internalCode) {
-    data.internalCode = internalCode;
-  }
-
-  if (description) {
-    data.description = description;
-  }
+  Object.assign(
+    data,
+    optionalFields(source, [
+      "subcategory",
+      "ncm",
+      "internalCode",
+      "description",
+    ]),
+  );
+  if (data.ncm) data.ncm = normalizeNcm(data.ncm);
+  if (data.internalCode)
+    data.internalCode = normalizeInternalCode(data.internalCode);
 
   return data;
 };
@@ -162,7 +155,22 @@ export const patchWasteType = async (id, payload = {}) => {
     throw new Error("ID do tipo de resíduo não informado.");
   }
 
-  const data = normalizeWasteTypePayload(payload);
+  const source = payload.item || payload;
+  const data = optionalFields(source, [
+    "name",
+    "category",
+    "subcategory",
+    "unit",
+    "ncm",
+    "internalCode",
+    "wasteClass",
+    "description",
+    "status",
+  ]);
+  for (const field of ["unit", "wasteClass", "status", "internalCode"])
+    if (typeof data[field] === "string")
+      data[field] = data[field].toUpperCase();
+  if (data.ncm) data.ncm = normalizeNcm(data.ncm);
 
   return apiRequest(`${WASTE_TYPE_ENDPOINT}/${id}`, {
     method: "PATCH",
@@ -282,8 +290,7 @@ export const getWasteUnitLabel = (unit) => {
 
 export const getWasteUnitShortLabel = (unit) => {
   return (
-    WASTE_UNIT_OPTIONS.find((item) => item.value === unit)
-      ?.shortLabel ||
+    WASTE_UNIT_OPTIONS.find((item) => item.value === unit)?.shortLabel ||
     unit ||
     ""
   );
@@ -291,9 +298,7 @@ export const getWasteUnitShortLabel = (unit) => {
 
 export const getWasteClassLabel = (wasteClass) => {
   return (
-    WASTE_CLASS_OPTIONS.find(
-      (item) => item.value === wasteClass
-    )?.label ||
+    WASTE_CLASS_OPTIONS.find((item) => item.value === wasteClass)?.label ||
     wasteClass ||
     "Não informado"
   );

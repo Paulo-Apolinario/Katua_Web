@@ -1,3 +1,4 @@
+import { optionalFields } from "../utils/wasteWorkspace";
 import { apiRequest } from "./apiClient";
 
 const WASTE_STOCK_ENDPOINT = "/waste-stock";
@@ -11,18 +12,12 @@ const normalizeText = (value) => {
 };
 
 const normalizeQuantity = (value) => {
-  if (
-    value === null ||
-    value === undefined ||
-    value === ""
-  ) {
+  if (value === null || value === undefined || value === "") {
     return null;
   }
 
   const normalized =
-    typeof value === "string"
-      ? value.trim().replace(",", ".")
-      : value;
+    typeof value === "string" ? value.trim().replace(",", ".") : value;
 
   const quantity = Number(normalized);
 
@@ -30,41 +25,27 @@ const normalizeQuantity = (value) => {
 };
 
 const normalizeLotPayload = (payload = {}) => {
-  const quantity = normalizeQuantity(
-    payload.quantity ?? payload.quantityKg
-  );
+  const quantity = normalizeQuantity(payload.quantity ?? payload.quantityKg);
 
   const data = {
     lotCode: normalizeText(payload.lotCode),
     quantity,
     processingStage: normalizeText(
-      payload.processingStage || "TRIADO"
+      payload.processingStage || "TRIADO",
     ).toUpperCase(),
-    status: normalizeText(
-      payload.status || "AVAILABLE"
-    ).toUpperCase(),
+    status: normalizeText(payload.status || "AVAILABLE").toUpperCase(),
   };
 
   const unit = normalizeText(payload.unit);
-  const storageLocation = normalizeText(payload.storageLocation);
-  const origin = normalizeText(payload.origin);
-  const notes = normalizeText(payload.notes);
 
   if (unit) {
     data.unit = unit.toUpperCase();
   }
 
-  if (storageLocation) {
-    data.storageLocation = storageLocation;
-  }
-
-  if (origin) {
-    data.origin = origin;
-  }
-
-  if (notes) {
-    data.notes = notes;
-  }
+  Object.assign(
+    data,
+    optionalFields(payload, ["storageLocation", "origin", "notes"]),
+  );
 
   return data;
 };
@@ -130,12 +111,9 @@ export const getWasteStockItemById = async (itemId) => {
     throw new Error("ID do tipo de resíduo não informado.");
   }
 
-  return apiRequest(
-    `${WASTE_STOCK_ENDPOINT}/items/${itemId}`,
-    {
-      method: "GET",
-    }
-  );
+  return apiRequest(`${WASTE_STOCK_ENDPOINT}/items/${itemId}`, {
+    method: "GET",
+  });
 };
 
 /**
@@ -148,12 +126,9 @@ export const getWasteStockLots = async (itemId) => {
     throw new Error("ID do tipo de resíduo não informado.");
   }
 
-  return apiRequest(
-    `${WASTE_STOCK_ENDPOINT}/items/${itemId}/lots`,
-    {
-      method: "GET",
-    }
-  );
+  return apiRequest(`${WASTE_STOCK_ENDPOINT}/items/${itemId}/lots`, {
+    method: "GET",
+  });
 };
 
 /**
@@ -161,23 +136,17 @@ export const getWasteStockLots = async (itemId) => {
  *
  * POST /waste-stock/items/:itemId/lots
  */
-export const createWasteStockLot = async (
-  itemId,
-  payload = {}
-) => {
+export const createWasteStockLot = async (itemId, payload = {}) => {
   if (!itemId) {
     throw new Error("Selecione o tipo de resíduo do lote.");
   }
 
   const data = normalizeLotPayload(payload);
 
-  return apiRequest(
-    `${WASTE_STOCK_ENDPOINT}/items/${itemId}/lots`,
-    {
-      method: "POST",
-      body: data,
-    }
-  );
+  return apiRequest(`${WASTE_STOCK_ENDPOINT}/items/${itemId}/lots`, {
+    method: "POST",
+    body: data,
+  });
 };
 
 /**
@@ -185,23 +154,17 @@ export const createWasteStockLot = async (
  *
  * PUT /waste-stock/lots/:lotId
  */
-export const updateWasteStockLot = async (
-  lotId,
-  payload = {}
-) => {
+export const updateWasteStockLot = async (lotId, payload = {}) => {
   if (!lotId) {
     throw new Error("ID do lote não informado.");
   }
 
   const data = normalizeLotPayload(payload);
 
-  return apiRequest(
-    `${WASTE_STOCK_ENDPOINT}/lots/${lotId}`,
-    {
-      method: "PUT",
-      body: data,
-    }
-  );
+  return apiRequest(`${WASTE_STOCK_ENDPOINT}/lots/${lotId}`, {
+    method: "PUT",
+    body: data,
+  });
 };
 
 /**
@@ -209,10 +172,7 @@ export const updateWasteStockLot = async (
  *
  * PATCH /waste-stock/lots/:lotId
  */
-export const patchWasteStockLot = async (
-  lotId,
-  payload = {}
-) => {
+export const patchWasteStockLot = async (lotId, payload = {}) => {
   if (!lotId) {
     throw new Error("ID do lote não informado.");
   }
@@ -223,13 +183,8 @@ export const patchWasteStockLot = async (
     data.lotCode = normalizeText(payload.lotCode);
   }
 
-  if (
-    payload.quantity !== undefined ||
-    payload.quantityKg !== undefined
-  ) {
-    data.quantity = normalizeQuantity(
-      payload.quantity ?? payload.quantityKg
-    );
+  if (payload.quantity !== undefined || payload.quantityKg !== undefined) {
+    data.quantity = normalizeQuantity(payload.quantity ?? payload.quantityKg);
   }
 
   if (payload.unit !== undefined) {
@@ -237,15 +192,11 @@ export const patchWasteStockLot = async (
   }
 
   if (payload.storageLocation !== undefined) {
-    data.storageLocation = normalizeText(
-      payload.storageLocation
-    );
+    data.storageLocation = normalizeText(payload.storageLocation);
   }
 
   if (payload.processingStage !== undefined) {
-    data.processingStage = normalizeText(
-      payload.processingStage
-    ).toUpperCase();
+    data.processingStage = normalizeText(payload.processingStage).toUpperCase();
   }
 
   if (payload.origin !== undefined) {
@@ -260,13 +211,10 @@ export const patchWasteStockLot = async (
     data.status = normalizeText(payload.status).toUpperCase();
   }
 
-  return apiRequest(
-    `${WASTE_STOCK_ENDPOINT}/lots/${lotId}`,
-    {
-      method: "PATCH",
-      body: data,
-    }
-  );
+  return apiRequest(`${WASTE_STOCK_ENDPOINT}/lots/${lotId}`, {
+    method: "PATCH",
+    body: data,
+  });
 };
 
 /**
@@ -279,12 +227,9 @@ export const deleteWasteStockLot = async (lotId) => {
     throw new Error("ID do lote não informado.");
   }
 
-  return apiRequest(
-    `${WASTE_STOCK_ENDPOINT}/lots/${lotId}`,
-    {
-      method: "DELETE",
-    }
-  );
+  return apiRequest(`${WASTE_STOCK_ENDPOINT}/lots/${lotId}`, {
+    method: "DELETE",
+  });
 };
 
 /**
@@ -332,7 +277,7 @@ export const WASTE_LOT_STATUS_OPTIONS = [
   },
   {
     value: "SOLD",
-    label: "Vendido/Destinado",
+    label: "Vendido",
   },
   {
     value: "DISCARDED",
@@ -342,19 +287,17 @@ export const WASTE_LOT_STATUS_OPTIONS = [
 
 export const getProcessingStageLabel = (value) => {
   return (
-    WASTE_PROCESSING_STAGE_OPTIONS.find(
-      (item) => item.value === value
-    )?.label ||
+    WASTE_PROCESSING_STAGE_OPTIONS.find((item) => item.value === value)
+      ?.label ||
     value ||
     "Não informado"
   );
 };
 
 export const getWasteLotStatusLabel = (value) => {
+  if (value === "CANCELLED") return "Cancelado";
   return (
-    WASTE_LOT_STATUS_OPTIONS.find(
-      (item) => item.value === value
-    )?.label ||
+    WASTE_LOT_STATUS_OPTIONS.find((item) => item.value === value)?.label ||
     value ||
     "Não informado"
   );

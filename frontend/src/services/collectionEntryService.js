@@ -1,3 +1,4 @@
+import { calendarIso } from "../utils/wasteWorkspace";
 import { apiRequest } from "./apiClient";
 
 /*
@@ -6,8 +7,7 @@ import { apiRequest } from "./apiClient";
  * ============================================================
  */
 
-const COLLECTION_ENTRY_ENDPOINT =
-  "/collection-entries";
+const COLLECTION_ENTRY_ENDPOINT = "/collection-entries";
 
 /*
  * ============================================================
@@ -16,10 +16,7 @@ const COLLECTION_ENTRY_ENDPOINT =
  */
 
 const normalizeText = (value) => {
-  if (
-    value === null ||
-    value === undefined
-  ) {
+  if (value === null || value === undefined) {
     return "";
   }
 
@@ -30,16 +27,10 @@ const normalizeUppercase = (value) => {
   return normalizeText(value).toUpperCase();
 };
 
-const normalizePositiveInteger = (
-  value,
-  fallback
-) => {
+const normalizePositiveInteger = (value, fallback) => {
   const normalized = Number(value);
 
-  if (
-    !Number.isInteger(normalized) ||
-    normalized <= 0
-  ) {
+  if (!Number.isInteger(normalized) || normalized <= 0) {
     return fallback;
   }
 
@@ -47,28 +38,18 @@ const normalizePositiveInteger = (
 };
 
 const normalizeBoolean = (value) => {
-  if (
-    value === true ||
-    value === "true"
-  ) {
+  if (value === true || value === "true") {
     return true;
   }
 
-  if (
-    value === false ||
-    value === "false"
-  ) {
+  if (value === false || value === "false") {
     return false;
   }
 
   return undefined;
 };
 
-const appendTextParam = (
-  params,
-  key,
-  value
-) => {
+const appendTextParam = (params, key, value) => {
   const normalized = normalizeText(value);
 
   if (normalized) {
@@ -76,37 +57,23 @@ const appendTextParam = (
   }
 };
 
-const appendUppercaseParam = (
-  params,
-  key,
-  value
-) => {
-  const normalized =
-    normalizeUppercase(value);
+const appendUppercaseParam = (params, key, value) => {
+  const normalized = normalizeUppercase(value);
 
   if (normalized) {
     params.set(key, normalized);
   }
 };
 
-const appendDateParam = (
-  params,
-  key,
-  value
-) => {
+const appendDateParam = (params, key, value) => {
   const normalized = normalizeText(value);
 
   if (!normalized) {
     return;
   }
 
-  const date = new Date(normalized);
-
-  if (Number.isNaN(date.getTime())) {
-    return;
-  }
-
-  params.set(key, date.toISOString());
+  const iso = calendarIso(normalized, key === "dateTo");
+  if (iso) params.set(key, iso);
 };
 
 /*
@@ -115,134 +82,52 @@ const appendDateParam = (
  * ============================================================
  */
 
-const buildCollectionEntryQueryString = (
-  filters = {},
-  options = {}
-) => {
+const buildCollectionEntryQueryString = (filters = {}, options = {}) => {
   const params = new URLSearchParams();
 
-  const includePagination =
-    options.includePagination !== false;
+  const includePagination = options.includePagination !== false;
 
   if (includePagination) {
-    params.set(
-      "page",
-      String(
-        normalizePositiveInteger(
-          filters.page,
-          1
-        )
-      )
-    );
+    params.set("page", String(normalizePositiveInteger(filters.page, 1)));
 
-    params.set(
-      "limit",
-      String(
-        normalizePositiveInteger(
-          filters.limit,
-          20
-        )
-      )
-    );
+    params.set("limit", String(normalizePositiveInteger(filters.limit, 20)));
   }
 
-  appendTextParam(
-    params,
-    "search",
-    filters.search
-  );
+  appendTextParam(params, "search", filters.search);
 
-  appendUppercaseParam(
-    params,
-    "status",
-    filters.status
-  );
+  appendUppercaseParam(params, "status", filters.status);
 
-  appendUppercaseParam(
-    params,
-    "unit",
-    filters.unit
-  );
+  appendUppercaseParam(params, "unit", filters.unit);
 
-  appendTextParam(
-    params,
-    "wasteTypeId",
-    filters.wasteTypeId
-  );
+  appendTextParam(params, "wasteTypeId", filters.wasteTypeId);
 
-  appendTextParam(
-    params,
-    "collectionId",
-    filters.collectionId
-  );
+  appendTextParam(params, "collectionId", filters.collectionId);
 
-  appendTextParam(
-    params,
-    "collectionMaterialId",
-    filters.collectionMaterialId
-  );
+  appendTextParam(params, "collectionMaterialId", filters.collectionMaterialId);
 
-  appendTextParam(
-    params,
-    "generatorId",
-    filters.generatorId
-  );
+  appendTextParam(params, "generatorId", filters.generatorId);
 
-  appendTextParam(
-    params,
-    "collectorId",
-    filters.collectorId
-  );
+  appendTextParam(params, "collectorId", filters.collectorId);
 
-  appendTextParam(
-    params,
-    "driverId",
-    filters.driverId
-  );
+  appendTextParam(params, "driverId", filters.driverId);
 
-  appendTextParam(
-    params,
-    "vehicleId",
-    filters.vehicleId
-  );
+  appendTextParam(params, "vehicleId", filters.vehicleId);
 
-  appendTextParam(
-    params,
-    "routeId",
-    filters.routeId
-  );
+  appendTextParam(params, "routeId", filters.routeId);
 
-  appendDateParam(
-    params,
-    "dateFrom",
-    filters.dateFrom
-  );
+  appendDateParam(params, "dateFrom", filters.dateFrom);
 
-  appendDateParam(
-    params,
-    "dateTo",
-    filters.dateTo
-  );
+  appendDateParam(params, "dateTo", filters.dateTo);
 
-  const onlyWithBalance =
-    normalizeBoolean(
-      filters.onlyWithBalance
-    );
+  const onlyWithBalance = normalizeBoolean(filters.onlyWithBalance);
 
-  if (
-    onlyWithBalance !== undefined
-  ) {
-    params.set(
-      "onlyWithBalance",
-      String(onlyWithBalance)
-    );
+  if (onlyWithBalance !== undefined) {
+    params.set("onlyWithBalance", String(onlyWithBalance));
   }
 
   const queryString = params.toString();
 
-  return queryString
-    ? `?${queryString}`
-    : "";
+  return queryString ? `?${queryString}` : "";
 };
 
 /*
@@ -251,9 +136,7 @@ const buildCollectionEntryQueryString = (
  * ============================================================
  */
 
-export const extractCollectionEntries = (
-  response
-) => {
+export const extractCollectionEntries = (response) => {
   if (Array.isArray(response)) {
     return response;
   }
@@ -262,9 +145,7 @@ export const extractCollectionEntries = (
     return response.entries;
   }
 
-  if (
-    Array.isArray(response?.data?.entries)
-  ) {
+  if (Array.isArray(response?.data?.entries)) {
     return response.data.entries;
   }
 
@@ -275,9 +156,7 @@ export const extractCollectionEntries = (
   return [];
 };
 
-export const extractCollectionEntry = (
-  response
-) => {
+export const extractCollectionEntry = (response) => {
   if (!response) {
     return null;
   }
@@ -301,18 +180,15 @@ export const extractCollectionEntry = (
     candidates.find((candidate) =>
       Boolean(
         candidate &&
-          typeof candidate === "object" &&
-          !Array.isArray(candidate) &&
-          (candidate.id ||
-            candidate.collectionWasteEntryId)
-      )
+        typeof candidate === "object" &&
+        !Array.isArray(candidate) &&
+        (candidate.id || candidate.collectionWasteEntryId),
+      ),
     ) || null
   );
 };
 
-export const extractCollectionEntrySummary = (
-  response
-) => {
+export const extractCollectionEntrySummary = (response) => {
   if (!response) {
     return null;
   }
@@ -328,48 +204,26 @@ export const extractCollectionEntrySummary = (
   return response.data || response;
 };
 
-export const extractCollectionEntryPagination = (
-  response
-) => {
-  const pagination =
-    response?.pagination ||
-    response?.data?.pagination;
+export const extractCollectionEntryPagination = (response) => {
+  const pagination = response?.pagination || response?.data?.pagination;
 
   return {
-    page: Number(
-      pagination?.page || 1
-    ),
+    page: Number(pagination?.page || 1),
 
-    limit: Number(
-      pagination?.limit || 20
-    ),
+    limit: Number(pagination?.limit || 20),
 
-    total: Number(
-      pagination?.total || 0
-    ),
+    total: Number(pagination?.total || 0),
 
-    totalPages: Number(
-      pagination?.totalPages || 0
-    ),
+    totalPages: Number(pagination?.totalPages || 0),
 
-    hasNextPage: Boolean(
-      pagination?.hasNextPage
-    ),
+    hasNextPage: Boolean(pagination?.hasNextPage),
 
-    hasPreviousPage: Boolean(
-      pagination?.hasPreviousPage
-    ),
+    hasPreviousPage: Boolean(pagination?.hasPreviousPage),
   };
 };
 
-export const extractCollectionEntryTotals = (
-  response
-) => {
-  return (
-    response?.totalsByUnit ||
-    response?.data?.totalsByUnit ||
-    {}
-  );
+export const extractCollectionEntryTotals = (response) => {
+  return response?.totalsByUnit || response?.data?.totalsByUnit || {};
 };
 
 /*
@@ -384,15 +238,11 @@ export const extractCollectionEntryTotals = (
  *
  * GET /collection-entries/ping
  */
-export const pingCollectionEntries =
-  async () => {
-    return apiRequest(
-      `${COLLECTION_ENTRY_ENDPOINT}/ping`,
-      {
-        method: "GET",
-      }
-    );
-  };
+export const pingCollectionEntries = async () => {
+  return apiRequest(`${COLLECTION_ENTRY_ENDPOINT}/ping`, {
+    method: "GET",
+  });
+};
 
 /*
  * ============================================================
@@ -406,20 +256,13 @@ export const pingCollectionEntries =
  *
  * GET /collection-entries
  */
-export const getCollectionEntries =
-  async (filters = {}) => {
-    const queryString =
-      buildCollectionEntryQueryString(
-        filters
-      );
+export const getCollectionEntries = async (filters = {}) => {
+  const queryString = buildCollectionEntryQueryString(filters);
 
-    return apiRequest(
-      `${COLLECTION_ENTRY_ENDPOINT}${queryString}`,
-      {
-        method: "GET",
-      }
-    );
-  };
+  return apiRequest(`${COLLECTION_ENTRY_ENDPOINT}${queryString}`, {
+    method: "GET",
+  });
+};
 
 /*
  * ============================================================
@@ -433,23 +276,16 @@ export const getCollectionEntries =
  *
  * GET /collection-entries/pending
  */
-export const getPendingCollectionEntries =
-  async (filters = {}) => {
-    const queryString =
-      buildCollectionEntryQueryString(
-        {
-          ...filters,
-          onlyWithBalance: true,
-        }
-      );
+export const getPendingCollectionEntries = async (filters = {}) => {
+  const queryString = buildCollectionEntryQueryString({
+    ...filters,
+    onlyWithBalance: true,
+  });
 
-    return apiRequest(
-      `${COLLECTION_ENTRY_ENDPOINT}/pending${queryString}`,
-      {
-        method: "GET",
-      }
-    );
-  };
+  return apiRequest(`${COLLECTION_ENTRY_ENDPOINT}/pending${queryString}`, {
+    method: "GET",
+  });
+};
 
 /*
  * ============================================================
@@ -462,23 +298,15 @@ export const getPendingCollectionEntries =
  *
  * GET /collection-entries/summary
  */
-export const getCollectionEntriesSummary =
-  async (filters = {}) => {
-    const queryString =
-      buildCollectionEntryQueryString(
-        filters,
-        {
-          includePagination: false,
-        }
-      );
+export const getCollectionEntriesSummary = async (filters = {}) => {
+  const queryString = buildCollectionEntryQueryString(filters, {
+    includePagination: false,
+  });
 
-    return apiRequest(
-      `${COLLECTION_ENTRY_ENDPOINT}/summary${queryString}`,
-      {
-        method: "GET",
-      }
-    );
-  };
+  return apiRequest(`${COLLECTION_ENTRY_ENDPOINT}/summary${queryString}`, {
+    method: "GET",
+  });
+};
 
 /*
  * ============================================================
@@ -491,24 +319,20 @@ export const getCollectionEntriesSummary =
  *
  * GET /collection-entries/:id
  */
-export const getCollectionEntryById =
-  async (entryId) => {
-    const normalizedEntryId =
-      normalizeText(entryId);
+export const getCollectionEntryById = async (entryId) => {
+  const normalizedEntryId = normalizeText(entryId);
 
-    if (!normalizedEntryId) {
-      throw new Error(
-        "ID da entrada de resíduo não informado."
-      );
-    }
+  if (!normalizedEntryId) {
+    throw new Error("ID da entrada de resíduo não informado.");
+  }
 
-    return apiRequest(
-      `${COLLECTION_ENTRY_ENDPOINT}/${encodeURIComponent(normalizedEntryId)}`,
-      {
-        method: "GET",
-      }
-    );
-  };
+  return apiRequest(
+    `${COLLECTION_ENTRY_ENDPOINT}/${encodeURIComponent(normalizedEntryId)}`,
+    {
+      method: "GET",
+    },
+  );
+};
 
 /*
  * ============================================================
@@ -563,16 +387,12 @@ export const COLLECTION_ENTRY_STATUS_OPTIONS = [
   },
 ];
 
-export const getCollectionEntryStatusLabel = (
-  status
-) => {
-  const normalizedStatus =
-    normalizeUppercase(status);
+export const getCollectionEntryStatusLabel = (status) => {
+  const normalizedStatus = normalizeUppercase(status);
 
   return (
     COLLECTION_ENTRY_STATUS_OPTIONS.find(
-      (option) =>
-        option.value === normalizedStatus
+      (option) => option.value === normalizedStatus,
     )?.label ||
     status ||
     "Não informado"
@@ -618,32 +438,24 @@ export const COLLECTION_ENTRY_UNIT_OPTIONS = [
   },
 ];
 
-export const getCollectionEntryUnitLabel = (
-  unit
-) => {
-  const normalizedUnit =
-    normalizeUppercase(unit);
+export const getCollectionEntryUnitLabel = (unit) => {
+  const normalizedUnit = normalizeUppercase(unit);
 
   return (
     COLLECTION_ENTRY_UNIT_OPTIONS.find(
-      (option) =>
-        option.value === normalizedUnit
+      (option) => option.value === normalizedUnit,
     )?.label ||
     unit ||
     "Não informado"
   );
 };
 
-export const getCollectionEntryUnitShortLabel = (
-  unit
-) => {
-  const normalizedUnit =
-    normalizeUppercase(unit);
+export const getCollectionEntryUnitShortLabel = (unit) => {
+  const normalizedUnit = normalizeUppercase(unit);
 
   return (
     COLLECTION_ENTRY_UNIT_OPTIONS.find(
-      (option) =>
-        option.value === normalizedUnit
+      (option) => option.value === normalizedUnit,
     )?.shortLabel ||
     unit ||
     ""

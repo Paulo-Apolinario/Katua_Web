@@ -1,3 +1,5 @@
+import { useModalFocus } from "../waste-workspace/useModalFocus";
+import { dateKey } from "../../utils/collectionWorkspace";
 import {
   AlertCircle,
   Boxes,
@@ -14,10 +16,10 @@ import {
   Trash2,
   X,
   Edit,
-  Save
+  Save,
 } from "lucide-react";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 import {
@@ -29,12 +31,42 @@ import {
 import { getCollectionEntryUnitShortLabel } from "../../services/collectionEntryService";
 
 const DESTINATION_TYPE_OPTIONS = [
-  { value: "STOCK", label: "Adicionar ao estoque", description: "O material será destinado ao estoque e poderá gerar ou alimentar um lote." },
-  { value: "TRIAGE", label: "Enviar para triagem", description: "O material será encaminhado para processo de separação, classificação ou preparação." },
-  { value: "REJECT", label: "Registrar como rejeito", description: "O material será classificado como rejeito sem possibilidade de aproveitamento." },
-  { value: "DISPOSAL", label: "Enviar para descarte", description: "O material será destinado para descarte ambientalmente adequado." },
-  { value: "DIRECT_DESTINATION", label: "Destinação direta", description: "O material será encaminhado diretamente a uma empresa, unidade ou receptor." },
-  { value: "RESERVATION", label: "Reservar material", description: "O material ficará reservado para uma operação ou destinação futura." },
+  {
+    value: "STOCK",
+    label: "Adicionar ao estoque",
+    description:
+      "O material será destinado ao estoque e poderá gerar ou alimentar um lote.",
+  },
+  {
+    value: "TRIAGE",
+    label: "Enviar para triagem",
+    description:
+      "O material será encaminhado para processo de separação, classificação ou preparação.",
+  },
+  {
+    value: "REJECT",
+    label: "Registrar como rejeito",
+    description:
+      "O material será classificado como rejeito sem possibilidade de aproveitamento.",
+  },
+  {
+    value: "DISPOSAL",
+    label: "Enviar para descarte",
+    description:
+      "O material será destinado para descarte ambientalmente adequado.",
+  },
+  {
+    value: "DIRECT_DESTINATION",
+    label: "Destinação direta",
+    description:
+      "O material será encaminhado diretamente a uma empresa, unidade ou receptor.",
+  },
+  {
+    value: "RESERVATION",
+    label: "Reservar material",
+    description:
+      "O material ficará reservado para uma operação ou destinação futura.",
+  },
 ];
 
 const INITIAL_FORM = {
@@ -52,7 +84,8 @@ const INITIAL_FORM = {
 
 const normalizeNumber = (value) => {
   if (value === null || value === undefined || value === "") return 0;
-  const normalizedValue = typeof value === "string" ? value.replace(",", ".") : value;
+  const normalizedValue =
+    typeof value === "string" ? value.replace(",", ".") : value;
   const number = Number(normalizedValue);
   if (!Number.isFinite(number)) return 0;
   return number;
@@ -64,7 +97,10 @@ const normalizeText = (value) => {
 };
 
 const formatNumber = (value, maximumFractionDigits = 3) => {
-  return new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 0, maximumFractionDigits }).format(normalizeNumber(value));
+  return new Intl.NumberFormat("pt-BR", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits,
+  }).format(normalizeNumber(value));
 };
 
 const getTodayInputValue = () => {
@@ -76,51 +112,135 @@ const getTodayInputValue = () => {
 };
 
 const getErrorMessage = (error, fallbackMessage) => {
-  const details = error?.response?.data?.details || error?.data?.details || error?.details;
-  const detailMessage = details && typeof details === "object" ? Object.entries(details).map(([key, value]) => `${key}: ${String(value)}`).join(" | ") : "";
-  return error?.response?.data?.error || error?.response?.data?.message || error?.data?.error || error?.data?.message || error?.error || error?.message || detailMessage || fallbackMessage;
+  const details =
+    error?.response?.data?.details || error?.data?.details || error?.details;
+  const detailMessage =
+    details && typeof details === "object"
+      ? Object.entries(details)
+          .map(([key, value]) => `${key}: ${String(value)}`)
+          .join(" | ")
+      : "";
+  return (
+    error?.response?.data?.error ||
+    error?.response?.data?.message ||
+    error?.data?.error ||
+    error?.data?.message ||
+    error?.error ||
+    error?.message ||
+    detailMessage ||
+    fallbackMessage
+  );
 };
 
 const getEntryId = (entry) => entry?.id || entry?.collectionWasteEntryId || "";
-const getWasteName = (entry) => entry?.materialNameSnapshot || entry?.wasteType?.name || entry?.collectionMaterial?.nameSnapshot || entry?.materialName || entry?.wasteName || "Resíduo não identificado";
-const getWasteCode = (entry) => entry?.wasteType?.internalCode || entry?.wasteType?.code || entry?.wasteStockItem?.internalCode || entry?.wasteStockItem?.code || entry?.stockItem?.internalCode || entry?.stockItem?.code || entry?.collectionMaterial?.wasteType?.internalCode || entry?.collectionMaterial?.wasteType?.code || entry?.materialCode || "";
-const getEntryUnit = (entry) => entry?.unit || entry?.collectionMaterial?.unit || entry?.wasteType?.unit || "KG";
-const getTotalQuantity = (entry) => normalizeNumber(entry?.quantity ?? entry?.totalQuantity ?? entry?.collectedQuantity ?? entry?.originalQuantity ?? entry?.collectionMaterial?.quantity ?? entry?.collectionMaterial?.quantityKg ?? 0);
-const getDestinedQuantity = (entry) => normalizeNumber(entry?.destinedQuantity ?? entry?.allocatedQuantity ?? entry?.processedQuantity ?? entry?.totalDestinedQuantity ?? 0);
+const getWasteName = (entry) =>
+  entry?.materialNameSnapshot ||
+  entry?.wasteType?.name ||
+  entry?.collectionMaterial?.nameSnapshot ||
+  entry?.materialName ||
+  entry?.wasteName ||
+  "Resíduo não identificado";
+const getWasteCode = (entry) =>
+  entry?.wasteType?.internalCode ||
+  entry?.wasteType?.code ||
+  entry?.wasteStockItem?.internalCode ||
+  entry?.wasteStockItem?.code ||
+  entry?.stockItem?.internalCode ||
+  entry?.stockItem?.code ||
+  entry?.collectionMaterial?.wasteType?.internalCode ||
+  entry?.collectionMaterial?.wasteType?.code ||
+  entry?.materialCode ||
+  "";
+const getEntryUnit = (entry) =>
+  entry?.unit ||
+  entry?.collectionMaterial?.unit ||
+  entry?.wasteType?.unit ||
+  "";
+const getTotalQuantity = (entry) =>
+  normalizeNumber(
+    entry?.quantity ??
+      entry?.totalQuantity ??
+      entry?.collectedQuantity ??
+      entry?.originalQuantity ??
+      entry?.collectionMaterial?.quantity ??
+      entry?.collectionMaterial?.quantityKg ??
+      0,
+  );
+const getDestinedQuantity = (entry) =>
+  normalizeNumber(
+    entry?.destinedQuantity ??
+      entry?.allocatedQuantity ??
+      entry?.processedQuantity ??
+      entry?.totalDestinedQuantity ??
+      0,
+  );
 const getRemainingQuantity = (entry) => {
-  const explicitValue = entry?.remainingQuantity ?? entry?.availableQuantity ?? entry?.balanceQuantity;
-  if (explicitValue !== undefined && explicitValue !== null) return Math.max(normalizeNumber(explicitValue), 0);
+  const explicitValue =
+    entry?.remainingQuantity ??
+    entry?.availableQuantity ??
+    entry?.balanceQuantity;
+  if (explicitValue !== undefined && explicitValue !== null)
+    return Math.max(normalizeNumber(explicitValue), 0);
   return Math.max(getTotalQuantity(entry) - getDestinedQuantity(entry), 0);
 };
 
-const getStockItemId = (item) => item?.id || item?.wasteStockItemId || item?.wasteTypeId || "";
-const getStockItemName = (item) => item?.name || item?.wasteType?.name || item?.title || "Item não identificado";
-const getStockItemCode = (item) => item?.internalCode || item?.code || item?.wasteType?.internalCode || item?.wasteType?.code || "";
-const getStockItemCategory = (item) => item?.category?.name || item?.category || item?.wasteType?.category?.name || item?.wasteType?.category || "";
+const getStockItemId = (item) =>
+  item?.id || item?.wasteStockItemId || item?.wasteTypeId || "";
+const getStockItemName = (item) =>
+  item?.name || item?.wasteType?.name || item?.title || "Item não identificado";
+const getStockItemCode = (item) =>
+  item?.internalCode ||
+  item?.code ||
+  item?.wasteType?.internalCode ||
+  item?.wasteType?.code ||
+  "";
+const getStockItemCategory = (item) =>
+  item?.category?.name ||
+  item?.category ||
+  item?.wasteType?.category?.name ||
+  item?.wasteType?.category ||
+  "";
 const getStockItemUnits = (item) => {
-  const units = [item?.defaultUnit, item?.unit, item?.wasteType?.defaultUnit, item?.wasteType?.unit].map((value) => normalizeText(value).toUpperCase()).filter(Boolean);
-  return [...new Set(units)];
+  const unit = normalizeText(
+    item?.unit || item?.defaultUnit || item?.wasteType?.unit,
+  ).toUpperCase();
+  return unit ? [unit] : [];
 };
-const isStockItemActive = (item) => item?.isActive !== false && normalizeText(item?.status || "ACTIVE").toUpperCase() === "ACTIVE";
+const isStockItemActive = (item) =>
+  item?.isActive !== false &&
+  normalizeText(item?.status || "ACTIVE").toUpperCase() === "ACTIVE";
 
 const validateForm = ({ form, entry, isEditMode }) => {
   const errors = {};
-  
+
   if (!isEditMode) {
     const remainingQuantity = getRemainingQuantity(entry);
     const quantity = normalizeNumber(form.quantity);
-    if (!form.quantity) errors.quantity = "Informe a quantidade que será destinada.";
-    else if (quantity <= 0) errors.quantity = "A quantidade deve ser maior que zero.";
-    else if (quantity > remainingQuantity) errors.quantity = `A quantidade não pode ultrapassar o saldo disponível de ${formatNumber(remainingQuantity)} ${getCollectionEntryUnitShortLabel(getEntryUnit(entry))}.`;
+    if (!form.quantity)
+      errors.quantity = "Informe a quantidade que será destinada.";
+    else if (quantity <= 0)
+      errors.quantity = "A quantidade deve ser maior que zero.";
+    else if (quantity > remainingQuantity)
+      errors.quantity = `A quantidade não pode ultrapassar o saldo disponível de ${formatNumber(remainingQuantity)} ${getCollectionEntryUnitShortLabel(getEntryUnit(entry))}.`;
   }
 
   if (!form.type) errors.type = "Selecione o tipo de destinação.";
-  if (form.type === "STOCK" && !form.stockItemId) errors.stockItemId = "Selecione o item do catálogo que receberá o material.";
-  if (!form.destinationDate) errors.destinationDate = "Informe a data da destinação.";
-  
-  if (["TRIAGE", "DISPOSAL", "DIRECT_DESTINATION"].includes(form.type) && !normalizeText(form.destinationName)) {
+  if (form.type === "STOCK" && !form.stockItemId)
+    errors.stockItemId =
+      "Selecione o item do catálogo que receberá o material.";
+  if (!form.destinationDate)
+    errors.destinationDate = "Informe a data da destinação.";
+
+  if (
+    ["TRIAGE", "DISPOSAL", "DIRECT_DESTINATION", "RESERVATION"].includes(
+      form.type,
+    ) &&
+    !normalizeText(form.destinationName)
+  ) {
     errors.destinationName = "Informe o nome da empresa, unidade ou destino.";
   }
+  if (["REJECT", "DISPOSAL"].includes(form.type) && !normalizeText(form.notes))
+    errors.notes = "Informe o motivo ou a descrição desta destinação.";
   return errors;
 };
 
@@ -136,6 +256,8 @@ const WasteDestinationModal = ({
   onClose,
   onSuccess,
 }) => {
+  const dialogRef = useRef(null);
+  const submittingRef = useRef(false);
   const [form, setForm] = useState(INITIAL_FORM);
   const [errors, setErrors] = useState({});
   const [requestError, setRequestError] = useState("");
@@ -148,25 +270,43 @@ const WasteDestinationModal = ({
   const totalQuantity = useMemo(() => getTotalQuantity(entry), [entry]);
   const destinedQuantity = useMemo(() => getDestinedQuantity(entry), [entry]);
   const remainingQuantity = useMemo(() => getRemainingQuantity(entry), [entry]);
-  const selectedType = useMemo(() => DESTINATION_TYPE_OPTIONS.find((option) => option.value === form.type) || null, [form.type]);
+  const selectedType = useMemo(
+    () =>
+      DESTINATION_TYPE_OPTIONS.find((option) => option.value === form.type) ||
+      null,
+    [form.type],
+  );
 
   const availableStockItems = useMemo(() => {
     const entryUnit = normalizeText(getEntryUnit(entry)).toUpperCase();
-    return stockItems.filter((item) => {
-      if (!isStockItemActive(item)) return false;
-      const itemUnits = getStockItemUnits(item);
-      return !entryUnit || itemUnits.length === 0 || itemUnits.includes(entryUnit);
-    }).sort((first, second) => getStockItemName(first).localeCompare(getStockItemName(second), "pt-BR"));
+    return stockItems
+      .filter((item) => {
+        if (!isStockItemActive(item)) return false;
+        const itemUnits = getStockItemUnits(item);
+        return !!entryUnit && itemUnits.includes(entryUnit);
+      })
+      .sort((first, second) =>
+        getStockItemName(first).localeCompare(
+          getStockItemName(second),
+          "pt-BR",
+        ),
+      );
   }, [stockItems, entry]);
 
   useEffect(() => {
     if (!open) return;
-    
+
     if (isEditMode) {
       setForm({
         type: destinationToEdit.type || destinationToEdit.destinationType || "",
-        quantity: String(normalizeNumber(destinationToEdit.quantity || destinationToEdit.destinedQuantity)),
-        destinationDate: destinationToEdit.destinationDate ? destinationToEdit.destinationDate.split('T')[0] : getTodayInputValue(),
+        quantity: String(
+          normalizeNumber(
+            destinationToEdit.quantity || destinationToEdit.destinedQuantity,
+          ),
+        ),
+        destinationDate: destinationToEdit.destinationDate
+          ? dateKey(destinationToEdit.destinationDate)
+          : getTodayInputValue(),
         stockItemId: destinationToEdit.stockItemId || "",
         destinationName: destinationToEdit.destinationName || "",
         destinationDocument: destinationToEdit.destinationDocument || "",
@@ -184,17 +324,7 @@ const WasteDestinationModal = ({
     setSubmitting(false);
   }, [open, entryId, isEditMode, destinationToEdit]);
 
-  useEffect(() => {
-    if (!open) return undefined;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    const handleEscape = (event) => { if (event.key === "Escape" && !submitting) onClose?.(); };
-    document.addEventListener("keydown", handleEscape);
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      document.removeEventListener("keydown", handleEscape);
-    };
-  }, [open, submitting, onClose]);
+  useModalFocus(open, dialogRef, onClose, submitting);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -209,23 +339,17 @@ const WasteDestinationModal = ({
   };
 
   const handleTypeChange = (event) => {
-    const type = event.target.value;
-    setForm((current) => ({
-      ...current, type,
-      stockItemId: type === "STOCK" ? current.stockItemId : "",
-      destinationName: type === "RESERVATION" ? "" : current.destinationName,
-      destinationDocument: type === "RESERVATION" ? "" : current.destinationDocument,
-      destinationAddress: type === "RESERVATION" ? "" : current.destinationAddress,
-      transportDocument: ["TRIAGE", "DISPOSAL", "DIRECT_DESTINATION"].includes(type) ? current.transportDocument : "",
-      environmentalDocument: ["TRIAGE", "DISPOSAL", "DIRECT_DESTINATION"].includes(type) ? current.environmentalDocument : "",
-    }));
+    setForm((current) => ({ ...current, type: event.target.value }));
     setErrors({});
     setRequestError("");
   };
 
   const handleUseAllBalance = () => {
     if (isEditMode) return;
-    setForm((current) => ({ ...current, quantity: remainingQuantity > 0 ? String(remainingQuantity) : "" }));
+    setForm((current) => ({
+      ...current,
+      quantity: remainingQuantity > 0 ? String(remainingQuantity) : "",
+    }));
     setErrors((current) => {
       if (!current.quantity) return current;
       const nextErrors = { ...current };
@@ -242,35 +366,41 @@ const WasteDestinationModal = ({
       unit,
       destinationDate: form.destinationDate,
     };
-    if (normalizeText(form.stockItemId)) payload.stockItemId = normalizeText(form.stockItemId);
-    if (normalizeText(form.destinationName)) payload.destinationName = normalizeText(form.destinationName);
-    if (normalizeText(form.destinationDocument)) payload.destinationDocument = normalizeText(form.destinationDocument);
-    if (normalizeText(form.destinationAddress)) payload.destinationAddress = normalizeText(form.destinationAddress);
-    if (normalizeText(form.transportDocument)) payload.transportDocument = normalizeText(form.transportDocument);
-    if (normalizeText(form.environmentalDocument)) payload.environmentalDocument = normalizeText(form.environmentalDocument);
+    if (normalizeText(form.stockItemId))
+      payload.stockItemId = normalizeText(form.stockItemId);
+    if (normalizeText(form.destinationName))
+      payload.destinationName = normalizeText(form.destinationName);
+    if (normalizeText(form.destinationDocument))
+      payload.destinationDocument = normalizeText(form.destinationDocument);
+    if (normalizeText(form.destinationAddress))
+      payload.destinationAddress = normalizeText(form.destinationAddress);
+    if (normalizeText(form.transportDocument))
+      payload.transportDocument = normalizeText(form.transportDocument);
+    if (normalizeText(form.environmentalDocument))
+      payload.environmentalDocument = normalizeText(form.environmentalDocument);
     if (normalizeText(form.notes)) payload.notes = normalizeText(form.notes);
     return payload;
   };
 
-  const buildUpdatePayload = () => {
-    const payload = {
-      type: form.type, // Enviando o tipo alterado para o backend
-      destinationDate: form.destinationDate
-    };
-    
-    if (form.type === "STOCK" && normalizeText(form.stockItemId)) payload.stockItemId = normalizeText(form.stockItemId);
-    if (normalizeText(form.destinationName)) payload.destinationName = normalizeText(form.destinationName);
-    if (normalizeText(form.destinationDocument)) payload.destinationDocument = normalizeText(form.destinationDocument);
-    if (normalizeText(form.destinationAddress)) payload.destinationAddress = normalizeText(form.destinationAddress);
-    if (normalizeText(form.transportDocument)) payload.transportDocument = normalizeText(form.transportDocument);
-    if (normalizeText(form.environmentalDocument)) payload.environmentalDocument = normalizeText(form.environmentalDocument);
-    if (normalizeText(form.notes)) payload.notes = normalizeText(form.notes);
-    return payload;
-  };
+  const buildUpdatePayload = () => ({
+    type: form.type,
+    destinationDate: form.destinationDate,
+    stockItemId: form.type === "STOCK" ? form.stockItemId : null,
+    ...Object.fromEntries(
+      [
+        "destinationName",
+        "destinationDocument",
+        "destinationAddress",
+        "transportDocument",
+        "environmentalDocument",
+        "notes",
+      ].map((key) => [key, normalizeText(form[key]) || null]),
+    ),
+  });
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (submitting) return;
+    if (submittingRef.current) return;
     setRequestError("");
 
     const validationErrors = validateForm({ form, entry, isEditMode });
@@ -281,22 +411,52 @@ const WasteDestinationModal = ({
       return;
     }
 
+    if (
+      form.type === "STOCK" &&
+      !availableStockItems.some((i) => getStockItemId(i) === form.stockItemId)
+    ) {
+      setRequestError(
+        "Selecione um material ativo com a mesma unidade da entrada.",
+      );
+      return;
+    }
+    if (!unit) {
+      setRequestError(
+        "A unidade da entrada não está informada. Não é possível presumir kg.",
+      );
+      return;
+    }
     try {
+      submittingRef.current = true;
       setSubmitting(true);
       let response;
       if (isEditMode) {
-        const destId = destinationToEdit.id || destinationToEdit.collectionWasteDestinationId;
+        const destId =
+          destinationToEdit.id ||
+          destinationToEdit.collectionWasteDestinationId;
         const payload = buildUpdatePayload();
         response = await updateWasteDestination(destId, payload);
       } else {
         const payload = buildCreatePayload();
         response = await createWasteDestination(payload);
       }
+      if (!response?.destination?.id)
+        throw new Error(
+          "O servidor não confirmou a destinação. Atualize a entrada antes de repetir.",
+        );
       await onSuccess?.(response);
       onClose?.();
     } catch (error) {
-      setRequestError(getErrorMessage(error, isEditMode ? "Não foi possível atualizar a destinação." : "Não foi possível registrar a destinação."));
+      setRequestError(
+        getErrorMessage(
+          error,
+          isEditMode
+            ? "Não foi possível atualizar a destinação."
+            : "Não foi possível registrar a destinação.",
+        ),
+      );
     } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
   };
@@ -304,9 +464,22 @@ const WasteDestinationModal = ({
   if (!open) return null;
 
   const showStockFields = form.type === "STOCK";
-  const showExternalDestinationFields = ["TRIAGE", "DISPOSAL", "DIRECT_DESTINATION"].includes(form.type);
-  const showOptionalDestinationFields = ["REJECT", "TRIAGE", "DISPOSAL", "DIRECT_DESTINATION"].includes(form.type);
-  const showDocuments = ["TRIAGE", "DISPOSAL", "DIRECT_DESTINATION"].includes(form.type);
+  const showExternalDestinationFields = [
+    "RESERVATION",
+    "TRIAGE",
+    "DISPOSAL",
+    "DIRECT_DESTINATION",
+  ].includes(form.type);
+  const showOptionalDestinationFields = [
+    "RESERVATION",
+    "REJECT",
+    "TRIAGE",
+    "DISPOSAL",
+    "DIRECT_DESTINATION",
+  ].includes(form.type);
+  const showDocuments = ["TRIAGE", "DISPOSAL", "DIRECT_DESTINATION"].includes(
+    form.type,
+  );
 
   if (typeof document === "undefined") return null;
 
@@ -331,32 +504,123 @@ const WasteDestinationModal = ({
           }
         `}
       </style>
-      <div className="modal fade show" style={{ display: "flex", position: "fixed", inset: 0, zIndex: 1080, alignItems: "center", justifyContent: "center", overflow: "hidden", boxSizing: "border-box", backgroundColor: "rgba(15, 23, 42, 0.62)", padding: "clamp(10px, 2vw, 20px)" }} tabIndex="-1" role="dialog" aria-modal="true" aria-labelledby="waste-destination-modal-title" onMouseDown={(event) => { if (event.target === event.currentTarget && !submitting) onClose?.(); }}>
-        <div className="modal-dialog modal-xl katua-destination-dialog" role="document" style={{ width: "min(1120px, calc(100vw - 300px))", maxWidth: "1120px", height: "auto", maxHeight: "calc(100dvh - 24px)", margin: "0 12px 0 clamp(250px, 19vw, 280px)", display: "flex", alignItems: "stretch", boxSizing: "border-box" }}>
-          <form className="modal-content border-0 shadow-lg katua-destination-content" onSubmit={handleSubmit} style={{ width: "100%", maxWidth: "100%", maxHeight: "calc(100dvh - 24px)", display: "flex", flexDirection: "column", overflow: "hidden", borderRadius: 18, boxSizing: "border-box" }}>
-            <div className="modal-header katua-destination-header" style={{ flex: "0 0 auto", position: "relative", zIndex: 2, backgroundColor: "#fff" }}>
+      <div
+        className="modal fade show"
+        style={{
+          display: "flex",
+          position: "fixed",
+          inset: 0,
+          zIndex: 10050,
+          alignItems: "center",
+          justifyContent: "center",
+          overflow: "hidden",
+          boxSizing: "border-box",
+          backgroundColor: "rgba(15, 23, 42, 0.62)",
+          padding: "clamp(10px, 2vw, 20px)",
+        }}
+        ref={dialogRef}
+        tabIndex="-1"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="waste-destination-modal-title"
+        onMouseDown={(event) => {
+          if (event.target === event.currentTarget && !submitting) onClose?.();
+        }}
+      >
+        <div
+          className="modal-dialog modal-xl katua-destination-dialog"
+          role="document"
+          style={{
+            width: "min(1120px, calc(100vw - 32px))",
+            maxWidth: "1120px",
+            height: "auto",
+            maxHeight: "calc(100dvh - 24px)",
+            margin: "auto",
+            display: "flex",
+            alignItems: "stretch",
+            boxSizing: "border-box",
+          }}
+        >
+          <form
+            className="modal-content border-0 shadow-lg katua-destination-content"
+            onSubmit={handleSubmit}
+            style={{
+              width: "100%",
+              maxWidth: "100%",
+              maxHeight: "calc(100dvh - 24px)",
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
+              borderRadius: 18,
+              boxSizing: "border-box",
+            }}
+          >
+            <div
+              className="modal-header katua-destination-header"
+              style={{
+                flex: "0 0 auto",
+                position: "relative",
+                zIndex: 2,
+                backgroundColor: "#fff",
+              }}
+            >
               <div className="d-flex align-items-center gap-3">
-                <div className="d-flex align-items-center justify-content-center rounded-3 bg-light flex-shrink-0" style={{ width: 44, height: 44 }}>
-                  {isEditMode ? <Edit size={22} aria-hidden="true" /> : <PackagePlus size={22} aria-hidden="true" />}
+                <div
+                  className="d-flex align-items-center justify-content-center rounded-3 bg-light flex-shrink-0"
+                  style={{ width: 44, height: 44 }}
+                >
+                  {isEditMode ? (
+                    <Edit size={22} aria-hidden="true" />
+                  ) : (
+                    <PackagePlus size={22} aria-hidden="true" />
+                  )}
                 </div>
                 <div>
-                  <h5 id="waste-destination-modal-title" className="modal-title">
+                  <h5
+                    id="waste-destination-modal-title"
+                    className="modal-title"
+                  >
                     {isEditMode ? "Editar destinação" : "Registrar destinação"}
                   </h5>
                   <span className="text-muted small">
-                    {isEditMode ? "Atualize os dados e o tipo da destinação." : "Defina o encaminhamento do resíduo coletado."}
+                    {isEditMode
+                      ? "Atualize os dados e o tipo da destinação."
+                      : "Defina o encaminhamento do resíduo coletado."}
                   </span>
                 </div>
               </div>
-              <button type="button" className="btn border-0" aria-label="Fechar janela" disabled={submitting} onClick={() => onClose?.()}>
+              <button
+                type="button"
+                className="btn border-0"
+                aria-label="Fechar janela"
+                disabled={submitting}
+                onClick={() => onClose?.()}
+              >
                 <X size={23} aria-hidden="true" />
               </button>
             </div>
-            
-            <div className="modal-body katua-destination-body" style={{ flex: "1 1 auto", minHeight: 0, overflowX: "hidden", overflowY: "auto", overscrollBehavior: "contain", WebkitOverflowScrolling: "touch" }}>
+
+            <div
+              className="modal-body katua-destination-body"
+              style={{
+                flex: "1 1 auto",
+                minHeight: 0,
+                overflowX: "hidden",
+                overflowY: "auto",
+                overscrollBehavior: "contain",
+                WebkitOverflowScrolling: "touch",
+              }}
+            >
               {requestError && (
-                <div className="alert alert-danger d-flex align-items-start gap-2" role="alert">
-                  <AlertCircle size={20} className="flex-shrink-0 mt-1" aria-hidden="true" />
+                <div
+                  className="alert alert-danger d-flex align-items-start gap-2"
+                  role="alert"
+                >
+                  <AlertCircle
+                    size={20}
+                    className="flex-shrink-0 mt-1"
+                    aria-hidden="true"
+                  />
                   <div>{requestError}</div>
                 </div>
               )}
@@ -366,30 +630,56 @@ const WasteDestinationModal = ({
                   <div className="row g-3 align-items-center">
                     <div className="col-lg-5">
                       <div className="d-flex align-items-start gap-3">
-                        <div className="d-flex align-items-center justify-content-center rounded-3 bg-white flex-shrink-0" style={{ width: 44, height: 44 }}>
+                        <div
+                          className="d-flex align-items-center justify-content-center rounded-3 bg-white flex-shrink-0"
+                          style={{ width: 44, height: 44 }}
+                        >
                           <Scale size={22} aria-hidden="true" />
                         </div>
                         <div>
-                          <span className="text-muted small d-block">Resíduo selecionado</span>
-                          <strong className="d-block">{getWasteName(entry)}</strong>
-                          {getWasteCode(entry) && <span className="text-muted small">Código: {getWasteCode(entry)}</span>}
+                          <span className="text-muted small d-block">
+                            Resíduo selecionado
+                          </span>
+                          <strong className="d-block">
+                            {getWasteName(entry)}
+                          </strong>
+                          {getWasteCode(entry) && (
+                            <span className="text-muted small">
+                              Código: {getWasteCode(entry)}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
-                    
+
                     {!isEditMode && (
                       <>
                         <div className="col-sm-4 col-lg-2">
-                          <span className="text-muted small d-block">Coletado</span>
-                          <strong>{formatNumber(totalQuantity)} {getCollectionEntryUnitShortLabel(unit)}</strong>
+                          <span className="text-muted small d-block">
+                            Coletado
+                          </span>
+                          <strong>
+                            {formatNumber(totalQuantity)}{" "}
+                            {getCollectionEntryUnitShortLabel(unit)}
+                          </strong>
                         </div>
                         <div className="col-sm-4 col-lg-2">
-                          <span className="text-muted small d-block">Já destinado</span>
-                          <strong>{formatNumber(destinedQuantity)} {getCollectionEntryUnitShortLabel(unit)}</strong>
+                          <span className="text-muted small d-block">
+                            Já destinado
+                          </span>
+                          <strong>
+                            {formatNumber(destinedQuantity)}{" "}
+                            {getCollectionEntryUnitShortLabel(unit)}
+                          </strong>
                         </div>
                         <div className="col-sm-4 col-lg-3">
-                          <span className="text-muted small d-block">Saldo disponível</span>
-                          <strong className="fs-5">{formatNumber(remainingQuantity)} {getCollectionEntryUnitShortLabel(unit)}</strong>
+                          <span className="text-muted small d-block">
+                            Saldo disponível
+                          </span>
+                          <strong className="fs-5">
+                            {formatNumber(remainingQuantity)}{" "}
+                            {getCollectionEntryUnitShortLabel(unit)}
+                          </strong>
                         </div>
                       </>
                     )}
@@ -398,94 +688,226 @@ const WasteDestinationModal = ({
               </div>
 
               {!isEditMode && remainingQuantity <= 0 && (
-                <div className="alert alert-warning d-flex align-items-start gap-2" role="alert">
-                  <AlertCircle size={20} className="flex-shrink-0 mt-1" aria-hidden="true" />
-                  <div>Esta entrada não possui saldo disponível para uma nova destinação.</div>
+                <div
+                  className="alert alert-warning d-flex align-items-start gap-2"
+                  role="alert"
+                >
+                  <AlertCircle
+                    size={20}
+                    className="flex-shrink-0 mt-1"
+                    aria-hidden="true"
+                  />
+                  <div>
+                    Esta entrada não possui saldo disponível para uma nova
+                    destinação.
+                  </div>
                 </div>
               )}
 
               <div className="row g-4">
                 <div className="col-12">
-                  <label className="form-label fw-semibold">Tipo de destinação</label>
+                  <label className="form-label fw-semibold">
+                    Tipo de destinação
+                  </label>
                   <div className="row g-3">
                     {DESTINATION_TYPE_OPTIONS.map((option) => {
                       const selected = form.type === option.value;
                       return (
                         <div className="col-md-6 col-xl-4" key={option.value}>
-                          <label className={["border rounded-3 p-3 h-100 d-block position-relative", selected ? "border-primary bg-primary-subtle" : "bg-white", submitting ? "opacity-75" : ""].join(" ")} style={{ cursor: submitting ? "not-allowed" : "pointer" }}>
-                            <input type="radio" name="type" value={option.value} className="form-check-input me-2" checked={selected} disabled={submitting} onChange={handleTypeChange} />
+                          <label
+                            className={[
+                              "border rounded-3 p-3 h-100 d-block position-relative",
+                              selected
+                                ? "border-primary bg-primary-subtle"
+                                : "bg-white",
+                              submitting ? "opacity-75" : "",
+                            ].join(" ")}
+                            style={{
+                              cursor: submitting ? "not-allowed" : "pointer",
+                            }}
+                          >
+                            <input
+                              type="radio"
+                              name="type"
+                              value={option.value}
+                              className="form-check-input me-2"
+                              checked={selected}
+                              disabled={submitting}
+                              onChange={handleTypeChange}
+                            />
                             <span className="fw-semibold">{option.label}</span>
-                            <span className="text-muted small d-block mt-2">{option.description}</span>
+                            <span className="text-muted small d-block mt-2">
+                              {option.description}
+                            </span>
                           </label>
                         </div>
                       );
                     })}
                   </div>
-                  {errors.type && <div className="text-danger small mt-2">{errors.type}</div>}
+                  {errors.type && (
+                    <div className="text-danger small mt-2">{errors.type}</div>
+                  )}
                 </div>
 
                 {!isEditMode && selectedType && (
                   <div className="col-12">
                     <div className="alert alert-info mb-0">
-                      <strong>{getWasteDestinationTypeLabel(selectedType.value)}:</strong> {selectedType.description}
+                      <strong>
+                        {getWasteDestinationTypeLabel(selectedType.value)}:
+                      </strong>{" "}
+                      {selectedType.description}
                     </div>
                   </div>
                 )}
 
                 <div className="col-md-6">
-                  <label htmlFor="destination-quantity" className="form-label">Quantidade destinada</label>
+                  <label htmlFor="destination-quantity" className="form-label">
+                    Quantidade destinada
+                  </label>
                   <div className="input-group">
-                    <span className="input-group-text"><Scale size={17} aria-hidden="true" /></span>
-                    <input id="destination-quantity" name="quantity" type="number" min="0" max={remainingQuantity} step="0.001" inputMode="decimal" className={`form-control ${errors.quantity ? "is-invalid" : ""}`} placeholder="0,000" value={form.quantity} disabled={submitting || isEditMode || (!isEditMode && remainingQuantity <= 0)} onChange={handleChange} />
-                    <span className="input-group-text">{getCollectionEntryUnitShortLabel(unit)}</span>
+                    <span className="input-group-text">
+                      <Scale size={17} aria-hidden="true" />
+                    </span>
+                    <input
+                      id="destination-quantity"
+                      name="quantity"
+                      type="number"
+                      min="0"
+                      max={remainingQuantity}
+                      step="0.001"
+                      inputMode="decimal"
+                      className={`form-control ${errors.quantity ? "is-invalid" : ""}`}
+                      placeholder="0,000"
+                      value={form.quantity}
+                      disabled={
+                        submitting ||
+                        isEditMode ||
+                        (!isEditMode && remainingQuantity <= 0)
+                      }
+                      onChange={handleChange}
+                    />
+                    <span className="input-group-text">
+                      {getCollectionEntryUnitShortLabel(unit)}
+                    </span>
                     {!isEditMode && (
-                      <button type="button" className="btn btn-outline-secondary" disabled={submitting || remainingQuantity <= 0} onClick={handleUseAllBalance}>
+                      <button
+                        type="button"
+                        className="btn btn-outline-secondary"
+                        disabled={submitting || remainingQuantity <= 0}
+                        onClick={handleUseAllBalance}
+                      >
                         Usar saldo
                       </button>
                     )}
                   </div>
                   {errors.quantity ? (
-                    <div className="text-danger small mt-1">{errors.quantity}</div>
+                    <div className="text-danger small mt-1">
+                      {errors.quantity}
+                    </div>
                   ) : !isEditMode ? (
-                    <div className="form-text">Máximo disponível: {formatNumber(remainingQuantity)} {getCollectionEntryUnitShortLabel(unit)}</div>
+                    <div className="form-text">
+                      Máximo disponível: {formatNumber(remainingQuantity)}{" "}
+                      {getCollectionEntryUnitShortLabel(unit)}
+                    </div>
                   ) : (
-                    <div className="form-text">A quantidade não pode ser alterada após a destinação.</div>
+                    <div className="form-text">
+                      A quantidade não pode ser alterada após a destinação.
+                    </div>
                   )}
                 </div>
 
                 <div className="col-md-6">
-                  <label htmlFor="destination-date" className="form-label">Data da destinação</label>
+                  <label htmlFor="destination-date" className="form-label">
+                    Data da destinação
+                  </label>
                   <div className="input-group">
-                    <span className="input-group-text"><CalendarDays size={17} aria-hidden="true" /></span>
-                    <input id="destination-date" name="destinationDate" type="date" className={`form-control ${errors.destinationDate ? "is-invalid" : ""}`} value={form.destinationDate} disabled={submitting} onChange={handleChange} />
+                    <span className="input-group-text">
+                      <CalendarDays size={17} aria-hidden="true" />
+                    </span>
+                    <input
+                      id="destination-date"
+                      name="destinationDate"
+                      type="date"
+                      className={`form-control ${errors.destinationDate ? "is-invalid" : ""}`}
+                      value={form.destinationDate}
+                      disabled={submitting}
+                      onChange={handleChange}
+                    />
                   </div>
-                  {errors.destinationDate && <div className="text-danger small mt-1">{errors.destinationDate}</div>}
+                  {errors.destinationDate && (
+                    <div className="text-danger small mt-1">
+                      {errors.destinationDate}
+                    </div>
+                  )}
                 </div>
 
                 {showStockFields && (
                   <div className="col-12">
-                    <label htmlFor="stock-item" className="form-label">Item do catálogo</label>
+                    <label htmlFor="stock-item" className="form-label">
+                      Item do catálogo
+                    </label>
                     <div className="input-group">
-                      <span className="input-group-text"><Boxes size={17} aria-hidden="true" /></span>
-                      <select id="stock-item" name="stockItemId" className={`form-select ${errors.stockItemId ? "is-invalid" : ""}`} value={form.stockItemId} disabled={submitting || loadingStockItems} onChange={handleChange}>
-                        <option value="">{loadingStockItems ? "Carregando catálogo..." : "Selecione o item do catálogo"}</option>
+                      <span className="input-group-text">
+                        <Boxes size={17} aria-hidden="true" />
+                      </span>
+                      <select
+                        id="stock-item"
+                        name="stockItemId"
+                        className={`form-select ${errors.stockItemId ? "is-invalid" : ""}`}
+                        value={form.stockItemId}
+                        disabled={submitting || loadingStockItems}
+                        onChange={handleChange}
+                      >
+                        <option value="">
+                          {loadingStockItems
+                            ? "Carregando catálogo..."
+                            : "Selecione o item do catálogo"}
+                        </option>
                         {availableStockItems.map((item) => {
                           const itemId = getStockItemId(item);
-                          const details = [getStockItemCode(item), getStockItemCategory(item), getStockItemUnits(item).length ? getStockItemUnits(item).join("/") : ""].filter(Boolean).join(" • ");
+                          const details = [
+                            getStockItemCode(item),
+                            getStockItemCategory(item),
+                            getStockItemUnits(item).length
+                              ? getStockItemUnits(item).join("/")
+                              : "",
+                          ]
+                            .filter(Boolean)
+                            .join(" • ");
                           return (
                             <option key={itemId} value={itemId}>
-                              {getStockItemName(item)}{details ? ` — ${details}` : ""}
+                              {getStockItemName(item)}
+                              {details ? ` — ${details}` : ""}
                             </option>
                           );
                         })}
                       </select>
                     </div>
-                    {errors.stockItemId && <div className="text-danger small mt-1">{errors.stockItemId}</div>}
+                    {errors.stockItemId && (
+                      <div className="text-danger small mt-1">
+                        {errors.stockItemId}
+                      </div>
+                    )}
                     {stockItemsError && (
                       <div className="mt-2">
-                        <div className="text-danger small mb-2">{stockItemsError}</div>
-                        <button type="button" className="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-2" disabled={loadingStockItems || submitting} onClick={() => onReloadStockItems?.()}>
-                          {loadingStockItems ? <Loader2 size={15} className="spinner-border spinner-border-sm" aria-hidden="true" /> : <RefreshCcw size={15} aria-hidden="true" />}
+                        <div className="text-danger small mb-2">
+                          {stockItemsError}
+                        </div>
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-2"
+                          disabled={loadingStockItems || submitting}
+                          onClick={() => onReloadStockItems?.()}
+                        >
+                          {loadingStockItems ? (
+                            <Loader2
+                              size={15}
+                              className="spinner-border spinner-border-sm"
+                              aria-hidden="true"
+                            />
+                          ) : (
+                            <RefreshCcw size={15} aria-hidden="true" />
+                          )}
                           Tentar carregar novamente
                         </button>
                       </div>
@@ -493,28 +915,78 @@ const WasteDestinationModal = ({
                   </div>
                 )}
 
-                {(showExternalDestinationFields || showOptionalDestinationFields) && (
+                {(showExternalDestinationFields ||
+                  showOptionalDestinationFields) && (
                   <>
                     <div className="col-md-6">
-                      <label htmlFor="destination-name" className="form-label">Nome do destino {showExternalDestinationFields && " *"}</label>
+                      <label htmlFor="destination-name" className="form-label">
+                        Nome do destino {showExternalDestinationFields && " *"}
+                      </label>
                       <div className="input-group">
-                        <span className="input-group-text"><Building2 size={17} aria-hidden="true" /></span>
-                        <input id="destination-name" name="destinationName" type="text" className={`form-control ${errors.destinationName ? "is-invalid" : ""}`} placeholder="Empresa, unidade, aterro ou receptor" value={form.destinationName} disabled={submitting} onChange={handleChange} />
+                        <span className="input-group-text">
+                          <Building2 size={17} aria-hidden="true" />
+                        </span>
+                        <input
+                          id="destination-name"
+                          name="destinationName"
+                          type="text"
+                          className={`form-control ${errors.destinationName ? "is-invalid" : ""}`}
+                          placeholder="Empresa, unidade, aterro ou receptor"
+                          value={form.destinationName}
+                          disabled={submitting}
+                          onChange={handleChange}
+                        />
                       </div>
-                      {errors.destinationName && <div className="text-danger small mt-1">{errors.destinationName}</div>}
+                      {errors.destinationName && (
+                        <div className="text-danger small mt-1">
+                          {errors.destinationName}
+                        </div>
+                      )}
                     </div>
                     <div className="col-md-6">
-                      <label htmlFor="destination-document" className="form-label">Documento do destino</label>
+                      <label
+                        htmlFor="destination-document"
+                        className="form-label"
+                      >
+                        Documento do destino
+                      </label>
                       <div className="input-group">
-                        <span className="input-group-text"><FileCheck2 size={17} aria-hidden="true" /></span>
-                        <input id="destination-document" name="destinationDocument" type="text" className="form-control" placeholder="CNPJ, CPF ou identificação" value={form.destinationDocument} disabled={submitting} onChange={handleChange} />
+                        <span className="input-group-text">
+                          <FileCheck2 size={17} aria-hidden="true" />
+                        </span>
+                        <input
+                          id="destination-document"
+                          name="destinationDocument"
+                          type="text"
+                          className="form-control"
+                          placeholder="CNPJ, CPF ou identificação"
+                          value={form.destinationDocument}
+                          disabled={submitting}
+                          onChange={handleChange}
+                        />
                       </div>
                     </div>
                     <div className="col-12">
-                      <label htmlFor="destination-address" className="form-label">Endereço do destino</label>
+                      <label
+                        htmlFor="destination-address"
+                        className="form-label"
+                      >
+                        Endereço do destino
+                      </label>
                       <div className="input-group">
-                        <span className="input-group-text"><MapPin size={17} aria-hidden="true" /></span>
-                        <input id="destination-address" name="destinationAddress" type="text" className="form-control" placeholder="Endereço completo da unidade de destino" value={form.destinationAddress} disabled={submitting} onChange={handleChange} />
+                        <span className="input-group-text">
+                          <MapPin size={17} aria-hidden="true" />
+                        </span>
+                        <input
+                          id="destination-address"
+                          name="destinationAddress"
+                          type="text"
+                          className="form-control"
+                          placeholder="Endereço completo da unidade de destino"
+                          value={form.destinationAddress}
+                          disabled={submitting}
+                          onChange={handleChange}
+                        />
                       </div>
                     </div>
                   </>
@@ -523,62 +995,168 @@ const WasteDestinationModal = ({
                 {showDocuments && (
                   <>
                     <div className="col-md-6">
-                      <label htmlFor="transport-document" className="form-label">Documento de transporte</label>
+                      <label
+                        htmlFor="transport-document"
+                        className="form-label"
+                      >
+                        Documento de transporte
+                      </label>
                       <div className="input-group">
-                        <span className="input-group-text"><FileText size={17} aria-hidden="true" /></span>
-                        <input id="transport-document" name="transportDocument" type="text" className="form-control" placeholder="MTR, manifesto ou documento equivalente" value={form.transportDocument} disabled={submitting} onChange={handleChange} />
+                        <span className="input-group-text">
+                          <FileText size={17} aria-hidden="true" />
+                        </span>
+                        <input
+                          id="transport-document"
+                          name="transportDocument"
+                          type="text"
+                          className="form-control"
+                          placeholder="MTR, manifesto ou documento equivalente"
+                          value={form.transportDocument}
+                          disabled={submitting}
+                          onChange={handleChange}
+                        />
                       </div>
                     </div>
                     <div className="col-md-6">
-                      <label htmlFor="environmental-document" className="form-label">Documento ambiental</label>
+                      <label
+                        htmlFor="environmental-document"
+                        className="form-label"
+                      >
+                        Documento ambiental
+                      </label>
                       <div className="input-group">
-                        <span className="input-group-text"><FileCheck2 size={17} aria-hidden="true" /></span>
-                        <input id="environmental-document" name="environmentalDocument" type="text" className="form-control" placeholder="Certificado, licença ou comprovante" value={form.environmentalDocument} disabled={submitting} onChange={handleChange} />
+                        <span className="input-group-text">
+                          <FileCheck2 size={17} aria-hidden="true" />
+                        </span>
+                        <input
+                          id="environmental-document"
+                          name="environmentalDocument"
+                          type="text"
+                          className="form-control"
+                          placeholder="Certificado, licença ou comprovante"
+                          value={form.environmentalDocument}
+                          disabled={submitting}
+                          onChange={handleChange}
+                        />
                       </div>
                     </div>
                   </>
                 )}
 
                 <div className="col-12">
-                  <label htmlFor="destination-notes" className="form-label">Observações</label>
-                  <textarea id="destination-notes" name="notes" className="form-control" rows="4" maxLength="2000" placeholder="Inclua informações adicionais sobre a movimentação" value={form.notes} disabled={submitting} onChange={handleChange} />
-                  <div className="form-text text-end">{form.notes.length}/2000</div>
+                  <label htmlFor="destination-notes" className="form-label">
+                    Observações
+                  </label>
+                  <textarea
+                    id="destination-notes"
+                    name="notes"
+                    className="form-control"
+                    rows="4"
+                    maxLength="2000"
+                    placeholder="Inclua informações adicionais sobre a movimentação"
+                    value={form.notes}
+                    disabled={submitting}
+                    onChange={handleChange}
+                  />
+                  {errors.notes && (
+                    <p className="text-danger small">{errors.notes}</p>
+                  )}
+                  <div className="form-text text-end">
+                    {form.notes.length}/2000
+                  </div>
                 </div>
               </div>
 
-              {!isEditMode && form.type && form.quantity && normalizeNumber(form.quantity) > 0 && normalizeNumber(form.quantity) <= remainingQuantity && (
-                <div className="card border-success mt-4">
-                  <div className="card-body">
-                    <div className="d-flex align-items-start gap-3">
-                      <CheckCircle2 size={22} className="flex-shrink-0 mt-1 text-success" aria-hidden="true" />
-                      <div>
-                        <h6 className="mb-1">Resumo da movimentação</h6>
-                        <p className="mb-1">
-                          Serão destinados <strong>{formatNumber(form.quantity)} {getCollectionEntryUnitShortLabel(unit)}</strong> como <strong>{getWasteDestinationTypeLabel(form.type)}</strong>.
-                        </p>
-                        <span className="text-muted small">
-                          O saldo após o registro será de {formatNumber(Math.max(remainingQuantity - normalizeNumber(form.quantity), 0))} {getCollectionEntryUnitShortLabel(unit)}.
-                        </span>
+              {!isEditMode &&
+                form.type &&
+                form.quantity &&
+                normalizeNumber(form.quantity) > 0 &&
+                normalizeNumber(form.quantity) <= remainingQuantity && (
+                  <div className="card border-success mt-4">
+                    <div className="card-body">
+                      <div className="d-flex align-items-start gap-3">
+                        <CheckCircle2
+                          size={22}
+                          className="flex-shrink-0 mt-1 text-success"
+                          aria-hidden="true"
+                        />
+                        <div>
+                          <h6 className="mb-1">Resumo da movimentação</h6>
+                          <p className="mb-1">
+                            Serão destinados{" "}
+                            <strong>
+                              {formatNumber(form.quantity)}{" "}
+                              {getCollectionEntryUnitShortLabel(unit)}
+                            </strong>{" "}
+                            como{" "}
+                            <strong>
+                              {getWasteDestinationTypeLabel(form.type)}
+                            </strong>
+                            .
+                          </p>
+                          <span className="text-muted small">
+                            O saldo após o registro será de{" "}
+                            {formatNumber(
+                              Math.max(
+                                remainingQuantity -
+                                  normalizeNumber(form.quantity),
+                                0,
+                              ),
+                            )}{" "}
+                            {getCollectionEntryUnitShortLabel(unit)}.
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              )}
+                )}
             </div>
 
-            <div className="modal-footer katua-destination-footer" style={{ flex: "0 0 auto", position: "relative", zIndex: 2, backgroundColor: "#fff" }}>
-              <button type="button" className="btn btn-outline-secondary" disabled={submitting} onClick={() => onClose?.()}>
+            <div
+              className="modal-footer katua-destination-footer"
+              style={{
+                flex: "0 0 auto",
+                position: "relative",
+                zIndex: 2,
+                backgroundColor: "#fff",
+              }}
+            >
+              <button
+                type="button"
+                className="btn btn-outline-secondary"
+                disabled={submitting}
+                onClick={() => onClose?.()}
+              >
                 Cancelar
               </button>
-              <button type="submit" className="btn btn-primary d-inline-flex align-items-center gap-2" disabled={submitting || (!isEditMode && remainingQuantity <= 0) || loadingStockItems || (form.type === "STOCK" && Boolean(stockItemsError))}>
+              <button
+                type="submit"
+                className="btn btn-primary d-inline-flex align-items-center gap-2"
+                disabled={
+                  submitting ||
+                  (!isEditMode && remainingQuantity <= 0) ||
+                  loadingStockItems ||
+                  (form.type === "STOCK" && Boolean(stockItemsError))
+                }
+              >
                 {submitting ? (
                   <>
-                    <Loader2 size={17} className="spinner-border spinner-border-sm" aria-hidden="true" />
+                    <Loader2
+                      size={17}
+                      className="spinner-border spinner-border-sm"
+                      aria-hidden="true"
+                    />
                     {isEditMode ? "Salvando..." : "Registrando..."}
                   </>
                 ) : (
                   <>
-                    {isEditMode ? <Save size={17} aria-hidden="true" /> : form.type === "DISPOSAL" ? <Trash2 size={17} aria-hidden="true" /> : <PackagePlus size={17} aria-hidden="true" />}
+                    {isEditMode ? (
+                      <Save size={17} aria-hidden="true" />
+                    ) : form.type === "DISPOSAL" ? (
+                      <Trash2 size={17} aria-hidden="true" />
+                    ) : (
+                      <PackagePlus size={17} aria-hidden="true" />
+                    )}
                     {isEditMode ? "Salvar Alterações" : "Registrar destinação"}
                   </>
                 )}
@@ -588,7 +1166,7 @@ const WasteDestinationModal = ({
         </div>
       </div>
     </>,
-    document.body
+    document.body,
   );
 };
 
