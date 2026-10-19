@@ -7,7 +7,6 @@ import {
   Users,
   Route,
   Truck,
-  MapPinned,
   Archive,
   Recycle,
   Command,
@@ -27,11 +26,6 @@ const Sidebar = ({ active, setActive }) => {
     location.pathname.startsWith("/create-waste") ||
     location.pathname.startsWith("/edit-waste") ||
     location.pathname.startsWith("/collection-requests");
-
-  const isZoneSectionActive =
-    location.pathname.startsWith("/zone-list") ||
-    location.pathname.startsWith("/create-zone") ||
-    location.pathname.startsWith("/edit-zone");
 
   const isGeneratorSectionActive =
     location.pathname.startsWith("/generator-list") ||
@@ -301,71 +295,6 @@ const Sidebar = ({ active, setActive }) => {
 
                   <span className="submenu-text">
                     Cadastrar PEV
-                  </span>
-                </NavLink>
-              </li>
-            </ul>
-          </li>
-
-          {/* Zones */}
-          <li className="nav-item">
-            <a
-              href="#zone"
-              className={`nav-link ${
-                isZoneSectionActive ? "active" : ""
-              }`}
-              data-bs-toggle="collapse"
-              data-bs-target="#zone"
-              aria-expanded={isZoneSectionActive}
-              aria-controls="zone"
-            >
-              <div className="icon-wrap">
-                <MapPinned />
-              </div>
-
-              <span className="text">
-                Zona & Área
-              </span>
-
-              <ChevronRight className="ms-auto arrow align-middle" />
-            </a>
-
-            <ul
-              className={`submenu collapse transition ${
-                isZoneSectionActive ? "show" : ""
-              }`}
-              id="zone"
-            >
-              <li>
-                <NavLink
-                  to="/zone-list"
-                  className={({ isActive }) =>
-                    isActive ? "active" : ""
-                  }
-                >
-                  <span className="dot-wrap">
-                    <span className="dot" />
-                  </span>
-
-                  <span className="submenu-text">
-                    Lista de Zonas
-                  </span>
-                </NavLink>
-              </li>
-
-              <li>
-                <NavLink
-                  to="/create-zone"
-                  className={({ isActive }) =>
-                    isActive ? "active" : ""
-                  }
-                >
-                  <span className="dot-wrap">
-                    <span className="dot" />
-                  </span>
-
-                  <span className="submenu-text">
-                    Criar Zona
                   </span>
                 </NavLink>
               </li>

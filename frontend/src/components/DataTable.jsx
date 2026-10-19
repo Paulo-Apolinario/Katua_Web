@@ -25,7 +25,7 @@ const DataTable = ({
                             {columns.map(col => (
                                 <th key={col.key}>{col.label}</th>
                             ))}
-                            {renderActions && <th>Actions</th>}
+                            {renderActions && <th>Ações</th>}
                         </tr>
                     </thead>
                     <tbody>
@@ -47,7 +47,7 @@ const DataTable = ({
                         ) : (
                             <tr>
                                 <td colSpan={columns.length + (renderActions ? 1 : 0)} className="text-center text-muted">
-                                    No data found.
+                                    Nenhum registro encontrado.
                                 </td>
                             </tr>
                         )}
@@ -58,7 +58,7 @@ const DataTable = ({
                 <div className="col-lg-6">
                     <div className="d-flex justify-content-start gap-2 flex-wrap align-items-center">
                         <span className="text-muted">
-                            Showing {indexOfFirstRow + 1} - {Math.min(indexOfLastRow, data.length)} of {data.length}
+                            Exibindo {data.length === 0 ? 0 : indexOfFirstRow + 1} - {Math.min(indexOfLastRow, data.length)} de {data.length}
                         </span>
                         <select
                             className="form-select show-perpage"
@@ -78,7 +78,7 @@ const DataTable = ({
                     <nav className="d-flex justify-content-end">
                         <ul className="pagination mb-0">
                             <li className={`page-item ${currentPage === 1 && 'disabled'}`}>
-                                <button className="page-link" onClick={() => onPageChange(currentPage - 1)}>Previous</button>
+                                <button className="page-link" onClick={() => onPageChange(currentPage - 1)}>Anterior</button>
                             </li>
                             {Array.from({ length: totalPages }, (_, i) => (
                                 <li
@@ -89,7 +89,7 @@ const DataTable = ({
                                 </li>
                             ))}
                             <li className={`page-item ${currentPage === totalPages && 'disabled'}`}>
-                                <button className="page-link" onClick={() => onPageChange(currentPage + 1)}>Next</button>
+                                <button className="page-link" onClick={() => onPageChange(currentPage + 1)}>Próximo</button>
                             </li>
                         </ul>
                     </nav>
