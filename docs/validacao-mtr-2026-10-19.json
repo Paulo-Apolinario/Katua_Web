@@ -1,0 +1,25 @@
+{
+  "environment": "API Fastify/Prisma e banco PGlite locais; Chromium desktop/móvel; sem emissão externa ou produção",
+  "outcomes": [
+    {
+      "name": "Consulta real de rotas, filtros por data/status/motorista/veículo e recarga",
+      "status": "PASS"
+    },
+    {
+      "name": "Ficha por coleta preserva equipe histórica, material em litros e acesso seguro ao portal",
+      "status": "PASS"
+    },
+    {
+      "name": "Coleta cancelada somente consulta; ausência de peso não vira zero; nenhum formulário de senha",
+      "status": "PASS"
+    },
+    {
+      "name": "Erro de consulta não é apresentado como lista vazia ou dados anteriores",
+      "status": "PASS"
+    },
+    {
+      "name": "Isolamento entre cooperativas real, perfil DRIVER bloqueado e navegação móvel",
+      "status": "PASS"
+    }
+  ]
+}

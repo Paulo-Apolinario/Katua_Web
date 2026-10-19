@@ -1,616 +1,176 @@
-// frontend/src/pages/route-management/MtrOnlineStatus.jsx
-import { useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router";
-import { House, ChevronRight, MapPin, Calendar, Plus } from "lucide-react";
-import HeadTags from "../../components/HeadTags";
-import { toast } from "react-hot-toast";
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router';
+import { House, ChevronRight, ExternalLink, RefreshCw, Download, Copy, FileText } from 'lucide-react';
+import toast from 'react-hot-toast';
+import HeadTags from '../../components/HeadTags';
+import RouteAssignmentSummary from '../../components/RouteAssignmentSummary';
+import { useAdminAuth } from '../../context/AdminAuthContext';
+import { getAllRoutes, getRouteById } from '../../services/routeService';
+import { MTR_PORTALS, ROUTE_LABELS, COLLECTION_LABELS, buildMtrPreparation, dateKey, formatMtrDate, displayValue } from '../../utils/mtrPreparation';
 
-const MtrOnlineStatus = () => {
-  const navigate = useNavigate();
+const initialFilters = { q: '', status: '', driverId: '', vehicleId: '', start: '', end: '' };
+const errorMessage = error => error?.error || error?.message || 'Não foi possível consultar as rotas. Tente novamente.';
 
-  // ✅ filtros (por enquanto tudo client-side)
-  const [filters, setFilters] = useState({
-    company_id: "",
-    vehicle_id: "",
-    driver_id: "",
-    q: "",
-    finished: "",
-    status: "",
-    start_date: "",
-    end_date: "",
-  });
+export default function MtrOnlineStatus() {
+  const { admin } = useAdminAuth();
+  const accountId = admin?.id;
+  const [routeData, setRouteData] = useState({ accountId: null, items: [] });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [reload, setReload] = useState(0);
+  const [filters, setFilters] = useState(initialFilters);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [portalId, setPortalId] = useState('');
+  const [selection, setSelection] = useState(null);
+  const [collectionId, setCollectionId] = useState('');
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState('');
+  const detailRequest = useRef(0);
+  const routes = useMemo(() => routeData.accountId === accountId ? routeData.items : [], [routeData, accountId]);
+  const selected = selection?.accountId === accountId ? selection.route : null;
 
-  // ✅ paginação client-side
-  const [currentPage, setCurrentPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  useEffect(() => {
+    let ignore = false;
+    setLoading(true); setError(''); setRouteData({ accountId, items: [] });
+    setSelection(null); setCollectionId(''); setDetailError(''); setDetailLoading(false); detailRequest.current++;
+    setPage(1);
+    if (!accountId) { setLoading(false); return; }
+    getAllRoutes().then(response => {
+      if (!Array.isArray(response?.routes)) throw new Error('Resposta de rotas inválida. Atualize e tente novamente.');
+      if (!ignore) setRouteData({ accountId, items: response.routes });
+    }).catch(err => { if (!ignore) setError(errorMessage(err)); }).finally(() => { if (!ignore) setLoading(false); });
+    return () => { ignore = true; };
+  }, [accountId, reload]);
 
-  // ✅ abre/fecha formulário MTR Online (CRIAR)
-  const [showMtrForm, setShowMtrForm] = useState(false);
+  const portal = MTR_PORTALS.find(item => item.id === portalId);
+  const collection = selected?.collections?.find(item => item.id === collectionId);
+  const preparation = selected && collection ? buildMtrPreparation(selected, collection, portal) : null;
+  const canExport = preparation && portal && collection.status !== 'CANCELLED' && selected.status !== 'CANCELLED' && !detailLoading;
+  const drivers = [...new Map(routes.filter(item => item.driver).map(item => [item.driver.id, item.driver])).values()];
+  const vehicles = [...new Map(routes.filter(item => item.vehicle).map(item => [item.vehicle.id, item.vehicle])).values()];
+  const invalidDates = !!(filters.start && filters.end && filters.start > filters.end);
+  const filtered = useMemo(() => routes.filter(route => {
+    if (invalidDates) return false;
+    const q = filters.q.trim().toLocaleLowerCase('pt-BR');
+    if (q && ![route.name, route.id, route.driver?.name, route.vehicle?.plate, route.cooperative?.name].filter(Boolean).join(' ').toLocaleLowerCase('pt-BR').includes(q)) return false;
+    if (filters.status && route.status !== filters.status) return false;
+    if (filters.driverId && route.driverId !== filters.driverId) return false;
+    if (filters.vehicleId && route.vehicleId !== filters.vehicleId) return false;
+    const date = dateKey(route.scheduledDate);
+    if ((filters.start || filters.end) && !date) return false;
+    return (!filters.start || date >= filters.start) && (!filters.end || date <= filters.end);
+  }), [routes, filters, invalidDates]);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const items = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
-  // ✅ estado do formulário (controlado)
-  const [mtrForm, setMtrForm] = useState({
-    responsavel: "",
-    cargo: "",
-    docType: "PF", // PF | PJ | Email
-    usuario: "",
-    senha: "",
-    codigoUnidade: "",
-    residuosMTR: "1", // 1 | 2 | 3
-  });
-
-  // ✅ mock de dados (substituir por API depois)
-  const mockData = useMemo(
-    () => [
-      {
-        id: 208,
-        name: "2ª ROTA TARDE",
-        start_date: "2024-05-02",
-        end_date: "2024-05-04",
-        total_customers: 0,
-        emitted: 0,
-        pending: 0,
-        company_name: "Empresa A",
-        vehicle_name: "ABC-1234",
-        driver_name: "Motorista 01",
-        status: "pending",
-        finished: false,
-      },
-      {
-        id: 207,
-        name: "1ª ROTA MANHÃ",
-        start_date: "2024-05-02",
-        end_date: "2024-05-04",
-        total_customers: 0,
-        emitted: 0,
-        pending: 0,
-        company_name: "Empresa A",
-        vehicle_name: "XYZ-9876",
-        driver_name: "Motorista 02",
-        status: "emitted",
-        finished: true,
-      },
-    ],
-    []
-  );
-
-  // ✅ opções de selects (mock)
-  const companies = useMemo(() => ["Empresa A", "Empresa B"], []);
-  const vehicles = useMemo(() => ["ABC-1234", "XYZ-9876"], []);
-  const drivers = useMemo(() => ["Motorista 01", "Motorista 02"], []);
-
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target;
-    setFilters((prev) => ({ ...prev, [name]: value }));
-    setCurrentPage(1);
-  };
-
-  const clearFilters = () => {
-    setFilters({
-      company_id: "",
-      vehicle_id: "",
-      driver_id: "",
-      q: "",
-      finished: "",
-      status: "",
-      start_date: "",
-      end_date: "",
-    });
-    setCurrentPage(1);
-    setRowsPerPage(10);
-  };
-
-  const formatBR = (isoDate) => {
-    if (!isoDate) return "-";
-    const [y, m, d] = isoDate.split("-");
-    return `${d}/${m}/${y}`;
-  };
-
-  const calcPercent = (emitted, pending) => {
-    const total = (emitted || 0) + (pending || 0);
-    if (total <= 0) return 0;
-    return Math.round(((emitted || 0) / total) * 100);
-  };
-
-  // ✅ filtro client-side
-  const filteredData = useMemo(() => {
-    const q = (filters.q || "").trim().toLowerCase();
-
-    return mockData.filter((item) => {
-      if (filters.company_id && item.company_name !== filters.company_id) return false;
-      if (filters.vehicle_id && item.vehicle_name !== filters.vehicle_id) return false;
-      if (filters.driver_id && item.driver_name !== filters.driver_id) return false;
-
-      if (filters.finished !== "") {
-        const wantFinished = filters.finished === "1";
-        if (item.finished !== wantFinished) return false;
+  function changeFilter(event) { setFilters(prev => ({ ...prev, [event.target.name]: event.target.value })); setPage(1); }
+  async function openRoute(id) {
+    const request = ++detailRequest.current;
+    setDetailLoading(true); setSelection(null); setCollectionId(''); setDetailError('');
+    try {
+      const response = await getRouteById(id);
+      if (!response?.route || !Array.isArray(response.route.collections)) throw new Error('Detalhes da rota indisponíveis. Tente novamente.');
+      if (request === detailRequest.current) {
+        setSelection({ accountId, route: response.route });
+        const heading = document.getElementById('mtr-ficha');
+        heading?.focus({ preventScroll: true });
+        heading?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
+    } catch (err) { if (request === detailRequest.current) setDetailError(errorMessage(err)); }
+    finally { if (request === detailRequest.current) setDetailLoading(false); }
+  }
+  function downloadPreparation() {
+    if (!canExport) return;
+    const url = URL.createObjectURL(new Blob([preparation.text], { type: 'text/plain;charset=utf-8' }));
+    const anchor = document.createElement('a'); anchor.href = url; anchor.download = `ficha-apoio-mtr-${collection.id.replace(/[^a-zA-Z0-9_-]/g, '')}.txt`;
+    document.body.appendChild(anchor); anchor.click(); anchor.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+  async function copyPreparation() {
+    if (!canExport) return;
+    try { await navigator.clipboard.writeText(preparation.text); toast.success('Ficha copiada. Emita o MTR no portal oficial.'); }
+    catch { toast.error('Não foi possível copiar. Use Baixar ficha de apoio.'); }
+  }
 
-      if (filters.status && item.status !== filters.status) return false;
+  return <>
+    <HeadTags title="MTR Online" />
+    <div className="page-header mb-4">
+      <h1 className="fs-30">MTR Online</h1>
+      <p>Consulte os dados da operação e acesse o sistema oficial para emitir o Manifesto de Transporte de Resíduos.</p>
+      <nav aria-label="Caminho da página"><ol className="breadcrumb">
+        <li className="breadcrumb-item"><Link to="/"><House size={16} /> Painel Geral</Link></li>
+        <li className="breadcrumb-item"><Link to="/route-list">Gestão de Rotas</Link></li>
+        <li className="breadcrumb-item active">MTR Online</li>
+      </ol></nav>
+    </div>
 
-      if (filters.start_date && item.start_date < filters.start_date) return false;
-      if (filters.end_date && item.end_date > filters.end_date) return false;
-
-      if (q) {
-        const haystack = `${item.id} ${item.name} ${item.company_name} ${item.vehicle_name} ${item.driver_name}`.toLowerCase();
-        if (!haystack.includes(q)) return false;
-      }
-
-      return true;
-    });
-  }, [filters, mockData]);
-
-  // ✅ paginação client-side
-  const totalPages = useMemo(() => {
-    return Math.max(1, Math.ceil(filteredData.length / rowsPerPage));
-  }, [filteredData.length, rowsPerPage]);
-
-  const currentItems = useMemo(() => {
-    const start = (currentPage - 1) * rowsPerPage;
-    const end = start + rowsPerPage;
-    return filteredData.slice(start, end);
-  }, [filteredData, currentPage, rowsPerPage]);
-
-  const goToPage = (page) => {
-    if (page < 1 || page > totalPages) return;
-    setCurrentPage(page);
-  };
-
-  // ✅ Form handlers
-  const handleMtrFormChange = (e) => {
-    const { name, value } = e.target;
-    setMtrForm((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const saveMTR = () => {
-    // 🔥 aqui você vai ligar na API depois
-    // Ex: await mtrService.save(mtrForm)
-    console.log("Salvar MTR Online:", mtrForm);
-
-    toast.success("Dados MTR Online salvos (mock).");
-    setShowMtrForm(false);
-  };
-
-  const cancelForm = () => {
-    setShowMtrForm(false);
-    setMtrForm({
-      responsavel: "",
-      cargo: "",
-      docType: "PF",
-      usuario: "",
-      senha: "",
-      codigoUnidade: "",
-      residuosMTR: "1",
-    });
-  };
-
-  const openCreateMtr = () => {
-    setShowMtrForm(true);
-    // opcional: rolar até o form
-    setTimeout(() => {
-      const el = document.getElementById("MTROnlinE");
-      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-    }, 50);
-  };
-
-  return (
-    <>
-      <HeadTags title="MTR Online" />
-
-      <div className="page-header mb-30 px-2">
-        <div className="page-title mb-3">
-          <h3 className="fs-30">Status dos roteiros / MTR Online</h3>
+    <section className="card p-4 mb-4" aria-labelledby="mtr-portais">
+      <h2 className="fs-20" id="mtr-portais">Gerar MTR no portal oficial</h2>
+      <p>Escolha o sistema aplicável à operação. O KATUÁ abre o portal em outra aba; o cadastro, a emissão e a numeração são realizados pelo órgão responsável.</p>
+      <div className="row g-3 align-items-end">
+        <div className="col-lg-6"><label htmlFor="mtr-portal" className="form-label">Sistema de emissão</label>
+          <select id="mtr-portal" className="form-select" value={portalId} onChange={e => setPortalId(e.target.value)}>
+            <option value="">Selecione o portal</option>{MTR_PORTALS.map(item => <option key={item.id} value={item.id}>{item.name} — {item.region}</option>)}
+          </select>
         </div>
-
-        <div className="page-tool d-flex justify-content-between align-items-center">
-          <div className="breadcrumb-wrap">
-            <nav aria-label="breadcrumb">
-              <ol className="breadcrumb pb-0 mb-0">
-                <li className="breadcrumb-item">
-                  <Link to="/" className="d-flex align-items-center gap-8">
-                    <House /> Dashboard
-                  </Link>
-                </li>
-                <li className="breadcrumb-item">
-                  <ChevronRight />
-                </li>
-                <li className="breadcrumb-item">
-                  <Link to="/route-list">Gestão de Rotas</Link>
-                </li>
-                <li className="breadcrumb-item">
-                  <ChevronRight />
-                </li>
-                <li className="breadcrumb-item active" aria-current="page">
-                  MTR Online
-                </li>
-              </ol>
-            </nav>
-          </div>
-
-          {/* ✅ BOTÃO TROCAD0: no lugar de "Voltar para rotas" */}
-          <button type="button" className="btn-sm primary-btn border-0" onClick={openCreateMtr}>
-            <Plus size={16} />
-            MTR Online
-          </button>
-        </div>
+        <div className="col-lg-6 d-flex gap-2 flex-wrap">{portal ? <>
+          <a className="btn btn-success" href={portal.url} target="_blank" rel="noopener noreferrer"><ExternalLink size={16} /> {portal.id === 'ES' ? 'Acessar emissão e orientações MTR-ES' : 'Acessar emissão de MTR'}</a>
+          <a className="btn btn-outline-secondary" href={portal.help} target="_blank" rel="noopener noreferrer">Orientações do órgão</a>
+        </> : <span className="text-muted">Selecione um portal para abrir a emissão.</span>}</div>
       </div>
+      {portal && <p className="small mt-3 mb-1">{portal.note}</p>}
+      <p className="small mt-3 mb-0">Para outros estados ou operações entre estados, <a href="https://sinir.gov.br/sistemas/mtr/" target="_blank" rel="noopener noreferrer">consulte as orientações oficiais do SINIR</a> e confirme o sistema com o responsável ambiental. Entre com suas credenciais somente no portal oficial.</p>
+    </section>
 
-      <div className="row justify-content-center mb-4">
-        <div className="col-lg-12 col-xl-11">
-          <div className="card p-25">
-            <h3 className="fw-600 fs-18 mb-3">Filtros</h3>
-
-            <div className="row g-3 align-items-end">
-              <div className="col-md-3">
-                <label className="form-label">Empresa</label>
-                <select className="form-select" name="company_id" value={filters.company_id} onChange={handleFilterChange}>
-                  <option value="">Todas</option>
-                  {companies.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="col-md-3">
-                <label className="form-label">Veículo</label>
-                <select className="form-select" name="vehicle_id" value={filters.vehicle_id} onChange={handleFilterChange}>
-                  <option value="">Todos</option>
-                  {vehicles.map((v) => (
-                    <option key={v} value={v}>
-                      {v}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="col-md-3">
-                <label className="form-label">Motorista</label>
-                <select className="form-select" name="driver_id" value={filters.driver_id} onChange={handleFilterChange}>
-                  <option value="">Todos</option>
-                  {drivers.map((d) => (
-                    <option key={d} value={d}>
-                      {d}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="col-md-3">
-                <label className="form-label">Pesquisar</label>
-                <input
-                  className="form-control"
-                  name="q"
-                  value={filters.q}
-                  onChange={handleFilterChange}
-                  placeholder="MTR, ID ou descrição"
-                />
-              </div>
-
-              <div className="col-md-3">
-                <label className="form-label">Rotas finalizadas</label>
-                <select className="form-select" name="finished" value={filters.finished} onChange={handleFilterChange}>
-                  <option value="">Todas</option>
-                  <option value="1">Sim</option>
-                  <option value="0">Não</option>
-                </select>
-              </div>
-
-              <div className="col-md-3">
-                <label className="form-label">Status atual</label>
-                <select className="form-select" name="status" value={filters.status} onChange={handleFilterChange}>
-                  <option value="">Todos</option>
-                  <option value="pending">Pendente</option>
-                  <option value="emitted">Emitido</option>
-                  <option value="in_progress">Em andamento</option>
-                  <option value="finished">Finalizado</option>
-                </select>
-              </div>
-
-              <div className="col-md-3">
-                <label className="form-label">Data de Início</label>
-                <input type="date" className="form-control" name="start_date" value={filters.start_date} onChange={handleFilterChange} />
-              </div>
-
-              <div className="col-md-3">
-                <label className="form-label">Data de Término</label>
-                <input type="date" className="form-control" name="end_date" value={filters.end_date} onChange={handleFilterChange} />
-              </div>
-
-              <div className="col-12 d-flex gap-10 mt-2">
-                <button className="btn-md primary-btn border-0" type="button">
-                  FILTRAR
-                </button>
-                <button className="btn-md outline-btn" type="button" onClick={clearFilters}>
-                  Limpar
-                </button>
-              </div>
-            </div>
-
-            <hr className="my-4" />
-
-            <div className="d-flex justify-content-between align-items-center flex-wrap gap-10">
-              <h3 className="fw-600 fs-18 mb-0">Roteiros</h3>
-              <div className="d-flex align-items-center gap-10">
-                <span className="text-muted">Resultados por página:</span>
-                <select
-                  className="form-select show-perpage"
-                  style={{ width: 90 }}
-                  value={rowsPerPage}
-                  onChange={(e) => {
-                    setRowsPerPage(Number(e.target.value));
-                    setCurrentPage(1);
-                  }}
-                >
-                  {[5, 10, 15, 20].map((n) => (
-                    <option key={n} value={n}>
-                      {n}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="mt-3">
-              {currentItems.length === 0 ? (
-                <div className="text-center text-muted py-4">Nenhum roteiro encontrado.</div>
-              ) : (
-                currentItems.map((r) => {
-                  const percent = calcPercent(r.emitted, r.pending);
-
-                  return (
-                    <div
-                      key={r.id}
-                      className="d-flex justify-content-between align-items-center p-3 mb-3"
-                      style={{
-                        background: "#fff",
-                        borderRadius: 8,
-                        boxShadow: "0px 0px 10px rgba(0, 0, 0, 0.08)",
-                      }}
-                    >
-                      <div className="d-flex align-items-center gap-12">
-                        <MapPin size={42} />
-                        <div>
-                          <div className="fw-700">
-                            Rota: {r.id} - {r.name}
-                          </div>
-                          <div className="text-muted">
-                            Data de Início: {formatBR(r.start_date)} | Data de Término: {formatBR(r.end_date)}
-                          </div>
-                          <div className="text-muted">Total de Clientes: {r.total_customers}</div>
-                          <div className="text-muted small">
-                            <span className="me-2">Empresa: {r.company_name}</span> |{" "}
-                            <span className="mx-2">Veículo: {r.vehicle_name}</span> |{" "}
-                            <span className="ms-2">Motorista: {r.driver_name}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div style={{ minWidth: 260 }}>
-                        <div className="d-flex justify-content-center gap-12">
-                          <span style={{ color: "#28a745", fontWeight: 700 }}>Emitido: {r.emitted}</span>
-                          <span style={{ color: "#FFA500", fontWeight: 700 }}>Pendente: {r.pending}</span>
-                        </div>
-
-                        <div className="progress mt-2" style={{ height: 6 }}>
-                          <div className="progress-bar" role="progressbar" style={{ width: `${percent}%` }} />
-                        </div>
-
-                        <div className="text-center text-muted small mt-1">{percent}% emitido</div>
-                      </div>
-
-                      <Link
-                        to="/mtr-online"
-                        className="d-flex justify-content-center align-items-center"
-                        style={{
-                          width: 42,
-                          height: 42,
-                          borderRadius: "50%",
-                          background: "#6A1B9A",
-                          color: "#fff",
-                          textDecoration: "none",
-                        }}
-                        title="Calendário/detalhes"
-                      >
-                        <Calendar size={18} />
-                      </Link>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-
-            {/* Paginação */}
-            <div className="d-flex justify-content-between align-items-center mt-4 flex-wrap gap-10">
-              <div className="text-muted">
-                Mostrando {(currentPage - 1) * rowsPerPage + (filteredData.length ? 1 : 0)} -{" "}
-                {Math.min(currentPage * rowsPerPage, filteredData.length)} de {filteredData.length}
-              </div>
-
-              <nav>
-                <ul className="pagination mb-0">
-                  <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
-                    <button className="page-link" onClick={() => goToPage(currentPage - 1)}>
-                      Anterior
-                    </button>
-                  </li>
-
-                  {Array.from({ length: totalPages }, (_, i) => (
-                    <li key={i} className={`page-item ${currentPage === i + 1 ? "active" : ""}`}>
-                      <button className="page-link" onClick={() => goToPage(i + 1)}>
-                        {i + 1}
-                      </button>
-                    </li>
-                  ))}
-
-                  <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
-                    <button className="page-link" onClick={() => goToPage(currentPage + 1)}>
-                      Próximo
-                    </button>
-                  </li>
-                </ul>
-              </nav>
-            </div>
-
-            {/* ✅ FORM MTR ONLINE (aparece ao clicar no botão "MTRonline") */}
-            {showMtrForm && (
-              <>
-                <hr className="my-4" />
-
-                <div className="tab-content" id="MTROnlinE">
-                  <h3 className="fw-700 mb-3">MTR Online</h3>
-
-                  <div className="form-group mb-3">
-                    <label className="form-label" htmlFor="responsavel">
-                      Responsável MTR Online:
-                    </label>
-                    <input
-                      type="text"
-                      id="responsavel"
-                      name="responsavel"
-                      className="form-control"
-                      placeholder="Nome do responsável"
-                      value={mtrForm.responsavel}
-                      onChange={handleMtrFormChange}
-                    />
-                  </div>
-
-                  <div className="form-group mb-3">
-                    <label className="form-label" htmlFor="cargo">
-                      Cargo:
-                    </label>
-                    <input
-                      type="text"
-                      id="cargo"
-                      name="cargo"
-                      className="form-control"
-                      placeholder="Cargo do responsável"
-                      value={mtrForm.cargo}
-                      onChange={handleMtrFormChange}
-                    />
-                  </div>
-
-                  <div className="form-group mb-3">
-                    <label className="form-label">Tipo de Documento:</label>
-                    <div className="d-flex gap-20 flex-wrap">
-                      <label className="d-flex align-items-center gap-8">
-                        <input
-                          type="radio"
-                          name="docType"
-                          value="PF"
-                          checked={mtrForm.docType === "PF"}
-                          onChange={handleMtrFormChange}
-                        />
-                        Pessoa Física
-                      </label>
-
-                      <label className="d-flex align-items-center gap-8">
-                        <input
-                          type="radio"
-                          name="docType"
-                          value="PJ"
-                          checked={mtrForm.docType === "PJ"}
-                          onChange={handleMtrFormChange}
-                        />
-                        Pessoa Jurídica
-                      </label>
-
-                      <label className="d-flex align-items-center gap-8">
-                        <input
-                          type="radio"
-                          name="docType"
-                          value="Email"
-                          checked={mtrForm.docType === "Email"}
-                          onChange={handleMtrFormChange}
-                        />
-                        Email
-                      </label>
-                    </div>
-                  </div>
-
-                  <div className="form-group mb-3">
-                    <label className="form-label" htmlFor="usuario">
-                      Usuário:
-                    </label>
-                    <input
-                      type="text"
-                      id="usuario"
-                      name="usuario"
-                      className="form-control"
-                      placeholder="Usuário para acesso"
-                      value={mtrForm.usuario}
-                      onChange={handleMtrFormChange}
-                    />
-                  </div>
-
-                  <div className="form-group mb-3">
-                    <label className="form-label" htmlFor="senha">
-                      Senha MTR Online:
-                    </label>
-                    <input
-                      type="password"
-                      id="senha"
-                      name="senha"
-                      className="form-control"
-                      placeholder="Senha"
-                      value={mtrForm.senha}
-                      onChange={handleMtrFormChange}
-                    />
-                  </div>
-
-                  <div className="form-group mb-3">
-                    <label className="form-label" htmlFor="codigoUnidade">
-                      Código da Unidade:
-                    </label>
-                    <input
-                      type="text"
-                      id="codigoUnidade"
-                      name="codigoUnidade"
-                      className="form-control"
-                      placeholder="Digite o código da unidade"
-                      value={mtrForm.codigoUnidade}
-                      onChange={handleMtrFormChange}
-                    />
-                  </div>
-
-                  <div className="form-group mb-4">
-                    <label className="form-label" htmlFor="residuosMTR">
-                      Resíduos Impressos no MTR:
-                    </label>
-                    <select
-                      id="residuosMTR"
-                      name="residuosMTR"
-                      className="form-control"
-                      value={mtrForm.residuosMTR}
-                      onChange={handleMtrFormChange}
-                    >
-                      <option value="1">1 - Resíduo do Contrato e da Coleta</option>
-                      <option value="2">2 - Resíduos do Contrato</option>
-                      <option value="3">3 - Última Coleta</option>
-                    </select>
-                  </div>
-
-                  <div className="d-flex gap-10 flex-wrap">
-                    <button className="btn-md primary-btn border-0" type="button" onClick={saveMTR}>
-                      Salvar Dados MTR
-                    </button>
-
-                    <button className="btn-md outline-btn" type="button" onClick={cancelForm}>
-                      Cancelar
-                    </button>
-
-                    <button className="btn-md outline-btn" type="button" onClick={() => navigate(-1)}>
-                      Voltar
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
+    <section className="card p-4 mb-4" aria-labelledby="mtr-rotas">
+      <div className="d-flex justify-content-between gap-3 flex-wrap mb-3"><div><h2 className="fs-20" id="mtr-rotas">Rotas da cooperativa</h2><p className="small mb-0">Selecione uma rota e uma coleta para preparar os dados de apoio.</p></div>
+        <button className="btn btn-outline-success" disabled={loading} onClick={() => setReload(value => value + 1)}><RefreshCw size={16} /> Atualizar rotas</button>
       </div>
-    </>
-  );
-};
+      <div className="row g-3 mb-3">
+        <div className="col-md-6 col-xl-4"><label className="form-label" htmlFor="mtr-q">Pesquisar rota, motorista ou placa</label><input className="form-control" id="mtr-q" name="q" value={filters.q} onChange={changeFilter} placeholder="Digite para pesquisar" /></div>
+        <div className="col-md-6 col-xl-4"><label className="form-label" htmlFor="mtr-status">Status da rota</label><select className="form-select" id="mtr-status" name="status" value={filters.status} onChange={changeFilter}><option value="">Todos</option>{Object.entries(ROUTE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></div>
+        <div className="col-md-6 col-xl-4"><label className="form-label" htmlFor="mtr-driver">Motorista da rota</label><select className="form-select" id="mtr-driver" name="driverId" value={filters.driverId} onChange={changeFilter}><option value="">Todos</option>{drivers.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></div>
+        <div className="col-md-6 col-xl-4"><label className="form-label" htmlFor="mtr-vehicle">Veículo da rota</label><select className="form-select" id="mtr-vehicle" name="vehicleId" value={filters.vehicleId} onChange={changeFilter}><option value="">Todos</option>{vehicles.map(item => <option key={item.id} value={item.id}>{item.plate}</option>)}</select></div>
+        <div className="col-md-6 col-xl-4"><label className="form-label" htmlFor="mtr-start">Data programada — de</label><input className="form-control" id="mtr-start" name="start" type="date" value={filters.start} onChange={changeFilter} /></div>
+        <div className="col-md-6 col-xl-4"><label className="form-label" htmlFor="mtr-end">Data programada — até</label><input className="form-control" id="mtr-end" name="end" type="date" value={filters.end} onChange={changeFilter} /></div>
+      </div>
+      <button className="btn btn-outline-secondary mb-3" onClick={() => { setFilters(initialFilters); setPage(1); }}>Limpar filtros</button>
+      {(filters.start || filters.end) && <p className="small text-muted">O período considera a data programada da rota. Rotas sem data ficam fora deste filtro.</p>}
+      {invalidDates && <p className="text-danger" role="alert">A data inicial deve ser anterior ou igual à data final.</p>}
+      {loading ? <p role="status">Carregando rotas...</p> : error ? <p className="text-danger" role="alert">{error}</p> : <>
+        <p className="small text-muted">{filtered.length} rota(s) encontrada(s). A emissão de MTR não é consultada nesta lista.</p>
+        {!items.length && <p className="text-center py-4">{routes.length ? 'Nenhuma rota corresponde aos filtros.' : 'Nenhuma rota cadastrada. Cadastre uma rota em Gestão de Rotas.'}</p>}
+        {items.map(route => <article className="border rounded p-3 mb-3" key={route.id}>
+          <div className="d-flex justify-content-between flex-wrap gap-3"><div><h3 className="fs-18">{route.name}</h3><div className="small">{ROUTE_LABELS[route.status] || 'Status não informado'} · Data programada: {formatMtrDate(route.scheduledDate)}</div><RouteAssignmentSummary route={route} /></div>
+            <div className="d-flex gap-2 align-items-center flex-wrap"><Link className="btn btn-outline-secondary" to={`/edit-route/${route.id}`}>Ver rota <ChevronRight size={16} /></Link><button className="btn btn-success" disabled={detailLoading} onClick={() => openRoute(route.id)}><FileText size={16} /> Preparar dados</button></div>
+          </div>
+        </article>)}
+        <div className="d-flex justify-content-between align-items-center gap-3 flex-wrap"><label>Rotas por página <select className="form-select d-inline-block w-auto" value={pageSize} onChange={e => { setPageSize(Number(e.target.value)); setPage(1); }}>{[5, 10, 20, 50].map(n => <option value={n} key={n}>{n}</option>)}</select></label>
+          <div className="d-flex align-items-center gap-2"><button className="btn btn-outline-secondary" disabled={currentPage <= 1} onClick={() => setPage(value => value - 1)}>Anterior</button><span>Página {currentPage} de {totalPages}</span><button className="btn btn-outline-secondary" disabled={currentPage >= totalPages} onClick={() => setPage(value => value + 1)}>Próximo</button></div>
+        </div>
+      </>}
+    </section>
 
-export default MtrOnlineStatus;
+    <section className="card p-4 mb-4" aria-labelledby="mtr-ficha">
+      <h2 className="fs-20" id="mtr-ficha" tabIndex={-1}>Ficha de apoio à emissão</h2>
+      {detailLoading ? <p role="status">Consultando as coletas da rota...</p> : detailError ? <p className="text-danger" role="alert">{detailError}</p> : selected ? <>
+        <h3 className="fs-18">{selected.name}</h3><p>Selecione uma coleta. Os dados abaixo não agrupam geradores diferentes em um único manifesto.</p>
+        <label className="form-label" htmlFor="mtr-collection">Coleta da rota</label><select id="mtr-collection" className="form-select mb-3" value={collectionId} onChange={e => setCollectionId(e.target.value)}><option value="">Selecione a coleta</option>{selected.collections.map(item => <option key={item.id} value={item.id}>{item.generator?.companyName || item.generator?.name || 'Gerador não informado'} — {COLLECTION_LABELS[item.status] || 'Status não informado'} — {item.id}</option>)}</select>
+        {!selected.collections.length && <p>Nenhuma coleta vinculada a esta rota.</p>}
+        {preparation && <>
+          <p className="small">Ficha de consulta. A emissão oficial e os campos obrigatórios devem ser conferidos no portal. O KATUÁ não registra nem confirma a emissão do MTR.</p>
+          <dl className="row">{preparation.rows.map(([name, value]) => <div className="col-md-6 mb-3" key={name}><dt className="small">{name}</dt><dd className="mb-0 text-break">{displayValue(value)}</dd></div>)}</dl>
+          <h3 className="fs-18">Resíduos registrados na coleta</h3>
+          {preparation.materials.length ? <div className="table-responsive"><table className="table"><thead><tr><th>Descrição</th><th>Quantidade registrada</th><th>Unidade registrada</th></tr></thead><tbody>{preparation.materials.map((item, i) => <tr key={i}><td>{item.name}</td><td>{item.quantity}</td><td>{item.unit}</td></tr>)}</tbody></table></div> : <p>Sem materiais informados nesta coleta.</p>}
+          <h3 className="fs-18">Conferir antes de emitir no portal</h3><ul>{preparation.missing.map(item => <li key={item}>{item}</li>)}</ul>
+          <p className="small">Capacidade do veículo, peso registrado, quantidade do resíduo e peso da carga são informações diferentes. Nenhum valor é estimado ou convertido automaticamente.</p>
+          {(collection.status === 'CANCELLED' || selected.status === 'CANCELLED') && <p className="text-danger" role="alert">Operação cancelada: a ficha fica disponível apenas para consulta.</p>}
+          {!portal && <p>Selecione um sistema de emissão no início da página para exportar a ficha.</p>}
+          <div className="d-flex gap-2 flex-wrap"><button className="btn btn-outline-success" disabled={!canExport} onClick={downloadPreparation}><Download size={16} /> Baixar ficha de apoio</button><button className="btn btn-outline-secondary" disabled={!canExport} onClick={copyPreparation}><Copy size={16} /> Copiar ficha</button>{canExport && <a className="btn btn-success" href={portal.url} target="_blank" rel="noopener noreferrer"><ExternalLink size={16} /> Abrir portal para emitir</a>}</div>
+        </>}
+      </> : <p>Use Preparar dados em uma rota para consultar as coletas e montar a ficha.</p>}
+    </section>
+    <section className="card p-4"><h2 className="fs-20">Emissão, recebimento e destinação</h2><p className="mb-0">Após emitir, acompanhe o recebimento, o CDF e a DMR no sistema oficial aplicável. O status da rota ou da coleta no KATUÁ não representa o status do manifesto.</p></section>
+  </>;
+}
