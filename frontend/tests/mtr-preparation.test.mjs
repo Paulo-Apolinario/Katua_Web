@@ -23,3 +23,10 @@ test('MTR: destinos de emissão são fixos, HTTPS e sem dados da operação na U
  assert.equal(new Set(MTR_PORTALS.map(p=>p.id)).size,MTR_PORTALS.length);
  for(const p of MTR_PORTALS){const u=new URL(p.url);assert.equal(u.protocol,'https:');assert.equal(u.search,'');assert.equal(u.hash,'');assert.ok(u.hostname.endsWith('.gov.br'));}
 });
+
+test('Emissão local: catálogo sem estados externos e notas separadas por operação', async () => {
+ const { FISCAL_PORTALS } = await import('../src/utils/mtrPreparation.js');
+ assert.deepEqual(MTR_PORTALS.map(item => item.id), ['NACIONAL']);
+ assert.deepEqual(FISCAL_PORTALS.map(item => item.id), ['NFA_CE', 'NFSE_FORTALEZA', 'NFSE_NACIONAL']);
+ for (const item of FISCAL_PORTALS) { const url = new URL(item.url); assert.equal(url.protocol, 'https:'); assert.ok(url.hostname.endsWith('.gov.br')); assert.equal(url.search, ''); assert.equal(url.hash, ''); }
+});

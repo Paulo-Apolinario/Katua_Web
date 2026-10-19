@@ -1,3 +1,26 @@
+# Atualização: foco no Ceará e acessos fiscais
+
+19/10/2026. Base main 95a5fbc. Autorizado pelo usuário: simplificar emissores para cooperativas de Fortaleza e interior e adicionar acesso à geração de notas e MTR.
+
+## Resultado atual (substitui o catálogo multistadual descrito abaixo)
+
+- Página intitulada MTR e Notas Fiscais, mantendo URL e menu existentes.
+- Removidos do catálogo SP, MG, RJ, SC, RS, ES e GO; SINIR Nacional selecionado inicialmente. Operações interestaduais continuam com link de orientação, sem presunção de regra ambiental universal.
+- Três cartões fiscais: solicitação de Nota Fiscal Avulsa pela página oficial da Sefaz-CE; ISS Fortaleza; Emissor Nacional de NFS-e. A página estadual é um acesso ao serviço, não um emissor universal de NF-e própria.
+- Nota avulsa condicionada ao cadastro/operação; NF-e própria permanece no emissor da cooperativa. Sistema de serviços no interior deve ser confirmado com a prefeitura e a contabilidade, sem presumir habilitação no emissor nacional.
+- Credenciais somente nos órgãos; sem transmissão de dados por URL, consulta de autorização ou sucesso de emissão fictício. Não há integração fiscal direta. A ficha de coleta continua sendo apenas apoio ao MTR, sem preços, tributos ou códigos fiscais inventados.
+- Fontes oficiais conferidas: https://www.sefaz.ce.gov.br/nota-fiscal-avulsa/ ; https://iss.fortaleza.ce.gov.br/ ; https://www.gov.br/nfse/pt-br (link ao https://www.nfse.gov.br/EmissorNacional) ; https://sinir.gov.br/sistemas/mtr/ . Não foi localizada orientação específica da SEMACE nesta consulta; não se afirma obrigatoriedade ou dispensa universal de MTR.
+
+## Backlog e continuidade
+
+- Validado localmente: catálogo Ceará/nacional, separação de documentos, links fixos e seguros, contratos de edição, ficha com equipe histórica e unidades. Compilação e ESLint passaram. Relatório de navegador em validacao-mtr-2026-10-19.json.
+- Pendente de publicação: atualização do painel pelo usuário; API, banco e VPS não foram alterados nesta etapa.
+- A confirmar antes de integração direta: tipos de notas usados pelas cooperativas, inscrições/certificados, sistema municipal de cada cidade, APIs oficiais e credenciais. Emissão real e autorização fiscal não foram testadas nem observadas em produção.
+- Próximo passo: publicar o painel e conferir acessos oficiais com o cadastro real da cooperativa; uma eventual integração de transmissão e armazenamento precisa de etapa própria.
+
+---
+Registro da primeira entrega (catálogo de outros estados substituído acima):
+
 # MTR Online — página operacional de apoio à emissão
 
 Data: 19/10/2026. Base: main fd35b84 do Katua_Web. Solicitação: analisar e reescrever a tela, retirar conteúdo ilustrativo e disponibilizar opções e links para geração do MTR. Autorização restrita a esta etapa; nenhuma mudança na API, banco, VPS ou App Web foi feita nesta entrega.

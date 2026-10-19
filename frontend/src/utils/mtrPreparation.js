@@ -1,13 +1,14 @@
 // Portais oficiais conferidos em 19/10/2026. A escolha do sistema é do responsável pela operação.
 export const MTR_PORTALS = [
   { id: 'NACIONAL', name: 'SINIR — MTR Nacional', region: 'Nacional', url: 'https://mtr.sinir.gov.br/', help: 'https://sinir.gov.br/sistemas/mtr/', note: 'Acesso pelo Gov.br. Confira o vínculo do usuário com a unidade.' },
-  { id: 'SP', name: 'SIGOR MTR — CETESB', region: 'São Paulo', url: 'https://mtr.cetesb.sp.gov.br/', help: 'https://cetesb.sp.gov.br/sigor-mtr/', note: 'Acesso ao módulo MTR da CETESB.' },
-  { id: 'MG', name: 'MTR-MG — SEMAD', region: 'Minas Gerais', url: 'https://mtr.meioambiente.mg.gov.br/', help: 'https://semad.mg.gov.br/sistema-mtr-mg', note: 'Acesso ao sistema estadual de Minas Gerais.' },
-  { id: 'RJ', name: 'MTR-RJ — INEA', region: 'Rio de Janeiro', url: 'https://mtr.inea.rj.gov.br/', help: 'https://www.inea.rj.gov.br/inea-licenciamento-pos-licenca-e-fiscalizacao/sistema-de-autocontrole/manifesto-de-transporte-de-residuos-mtr/', note: 'Acesso ao sistema estadual do INEA.' },
-  { id: 'SC', name: 'MTR-SC — IMA', region: 'Santa Catarina', url: 'https://mtr.ima.sc.gov.br/', help: 'https://mtr.ima.sc.gov.br/', note: 'Acesso ao sistema estadual do IMA.' },
-  { id: 'RS', name: 'MTR Online — FEPAM', region: 'Rio Grande do Sul', url: 'https://mtr.fepam.rs.gov.br/', help: 'https://fepam.rs.gov.br/manifesto-de-transporte-de-residuos-mtr', note: 'Acesso ao sistema estadual da FEPAM.' },
-  { id: 'ES', name: 'MTR-ES — IEMA', region: 'Espírito Santo', url: 'https://iema.es.gov.br/mtr_es', help: 'https://iema.es.gov.br/mtres/manual', note: 'Página oficial com orientações e acesso ao sistema MTR-ES.' },
-  { id: 'GO', name: 'MTR-GO — SEMAD', region: 'Goiás', url: 'https://mtr.meioambiente.go.gov.br/', help: 'https://mtr.meioambiente.go.gov.br/', note: 'Acesso ao sistema estadual de Goiás.' },
+
+];
+
+// A escolha do documento fiscal depende da operação e do cadastro da cooperativa.
+export const FISCAL_PORTALS = [
+  { id: 'NFA_CE', name: 'Mercadorias — Nota Fiscal Avulsa do Ceará', scope: 'Fortaleza e interior do Ceará', url: 'https://www.sefaz.ce.gov.br/nota-fiscal-avulsa/', action: 'Acessar solicitação de NFA', note: 'Serviço da Sefaz-CE. Confira com a contabilidade se a operação e o cadastro permitem nota avulsa. Para NF-e própria, utilize o emissor da cooperativa.' },
+  { id: 'NFSE_FORTALEZA', name: 'Serviços — NFS-e de Fortaleza', scope: 'Inscrição municipal em Fortaleza', url: 'https://iss.fortaleza.ce.gov.br/', action: 'Acessar emissão em Fortaleza', note: 'Acesso ao ISS Fortaleza. Confirme o serviço, o cadastro municipal e o sistema aplicável à cooperativa.' },
+  { id: 'NFSE_NACIONAL', name: 'Serviços — Emissor Nacional de NFS-e', scope: 'Conforme habilitação do contribuinte e do município', url: 'https://www.nfse.gov.br/EmissorNacional', action: 'Acessar Emissor Nacional', note: 'Para cooperativas do interior, confirme com a prefeitura se a emissão ocorre aqui ou no sistema municipal. Não utilize o portal de Fortaleza para outro município por presunção.' },
 ];
 
 export const ROUTE_LABELS = { PENDING: 'Pendente', SCHEDULED: 'Agendada', IN_PROGRESS: 'Em andamento', COMPLETED: 'Concluída', CANCELLED: 'Cancelada' };

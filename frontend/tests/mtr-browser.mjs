@@ -35,15 +35,15 @@ try{
  async function contextFor(token,user,viewport={width:1440,height:1100}){const c=await browser.newContext({viewport});await c.route('**/*',r=>{const u=new URL(r.request().url());if(u.port==='3339'&&r.request().method()!=='GET')mutations.push(r.request().method()+' '+u.pathname);return ['127.0.0.1','localhost'].includes(u.hostname)?r.continue():r.abort();});await c.addInitScript(({token,user})=>{localStorage.setItem('auth_token',token);localStorage.setItem('auth_user',JSON.stringify(user));},{token,user});return c;}
  const context=await contextFor(f.token,f.owner);const page=await context.newPage();page.setDefaultTimeout(15000);
  await check('Consulta real de rotas, filtros por data/status/motorista/veículo e recarga',async()=>{
-  await page.goto('http://127.0.0.1:5179/mtr-online');await page.getByText('QA equipe',{exact:true}).waitFor();assert.equal(await page.locator('article').count(),5);
-  await page.locator('#mtr-start').fill('2026-10-20');await page.locator('#mtr-end').fill('2026-10-20');assert.equal(await page.locator('article').count(),1);
-  await page.locator('#mtr-driver').selectOption(f.driver2.id);await page.locator('#mtr-vehicle').selectOption(f.vehicle2.id);await page.locator('#mtr-status').selectOption('IN_PROGRESS');assert.equal(await page.locator('article').count(),1);
+  await page.goto('http://127.0.0.1:5179/mtr-online');await page.getByText('QA equipe',{exact:true}).waitFor();assert.equal(await page.locator('section[aria-labelledby="mtr-rotas"] article').count(),5);
+  await page.locator('#mtr-start').fill('2026-10-20');await page.locator('#mtr-end').fill('2026-10-20');assert.equal(await page.locator('section[aria-labelledby="mtr-rotas"] article').count(),1);
+  await page.locator('#mtr-driver').selectOption(f.driver2.id);await page.locator('#mtr-vehicle').selectOption(f.vehicle2.id);await page.locator('#mtr-status').selectOption('IN_PROGRESS');assert.equal(await page.locator('section[aria-labelledby="mtr-rotas"] article').count(),1);
   await page.locator('#mtr-start').fill('2026-10-21');await page.getByRole('alert').filter({hasText:'A data inicial'}).waitFor();
   await page.getByRole('button',{name:'Limpar filtros',exact:true}).click();await page.locator('#mtr-q').fill('inexistente');await page.getByText('Nenhuma rota corresponde aos filtros.',{exact:true}).waitFor();
   await page.reload();await page.getByText('QA equipe',{exact:true}).waitFor();
  });
  await check('Ficha por coleta preserva equipe histórica, material em litros e acesso seguro ao portal',async()=>{
-  await page.locator('article').filter({hasText:'QA equipe'}).getByRole('button',{name:'Preparar dados',exact:true}).click();await page.locator('#mtr-collection').selectOption(f.collections.historical.id);
+  await page.locator('section[aria-labelledby="mtr-rotas"] article').filter({hasText:'QA equipe'}).getByRole('button',{name:'Preparar dados',exact:true}).click();await page.locator('#mtr-collection').selectOption(f.collections.historical.id);
   await page.getByText('Gerador MTR de teste',{exact:true}).last().waitFor();
   await page.locator('#mtr-portal').selectOption('NACIONAL');
   const dd=page.locator('dd');assert.ok((await dd.allTextContents()).includes('QA Motorista Ana'));assert.ok((await dd.allTextContents()).includes(f.vehicle1.plate));
@@ -55,19 +55,19 @@ try{
  });
  await check('Coleta cancelada somente consulta; ausência de peso não vira zero; nenhum formulário de senha',async()=>{
   await page.locator('#mtr-collection').selectOption(f.collections.pending.id);await page.getByText('Não informado / não aferido',{exact:true}).waitFor();
-  await page.locator('article').filter({hasText:'QA mixed'}).getByRole('button',{name:'Preparar dados',exact:true}).click();await page.locator('#mtr-collection').selectOption(f.collections.mixedCancelled.id);
+  await page.locator('section[aria-labelledby="mtr-rotas"] article').filter({hasText:'QA mixed'}).getByRole('button',{name:'Preparar dados',exact:true}).click();await page.locator('#mtr-collection').selectOption(f.collections.mixedCancelled.id);
   await page.getByRole('alert').filter({hasText:'Operação cancelada'}).waitFor();assert.equal(await page.getByRole('button',{name:'Baixar ficha de apoio',exact:true}).isDisabled(),true);assert.equal(await page.locator('input[type=password]').count(),0);
  });
  await check('Erro de consulta não é apresentado como lista vazia ou dados anteriores',async()=>{
   await page.route('**/routes',r=>r.fulfill({status:500,contentType:'application/json',body:JSON.stringify({error:'Falha controlada de consulta'})}));
-  await page.getByRole('button',{name:'Atualizar rotas',exact:true}).click();await page.getByRole('alert').filter({hasText:'Falha controlada de consulta'}).waitFor();assert.equal(await page.locator('article').count(),0);assert.equal(await page.locator('#mtr-collection').count(),0);
+  await page.getByRole('button',{name:'Atualizar rotas',exact:true}).click();await page.getByRole('alert').filter({hasText:'Falha controlada de consulta'}).waitFor();assert.equal(await page.locator('section[aria-labelledby="mtr-rotas"] article').count(),0);assert.equal(await page.locator('#mtr-collection').count(),0);
   await page.unroute('**/routes');await page.getByRole('button',{name:'Atualizar rotas',exact:true}).click();await page.getByText('QA equipe',{exact:true}).waitFor();
  });
  await check('Isolamento entre cooperativas real, perfil DRIVER bloqueado e navegação móvel',async()=>{
   const denied=await fetch('http://127.0.0.1:3339/routes/'+f.routes.equipe.id,{headers:{Authorization:'Bearer '+f.otherToken}});assert.equal(denied.status,404);
-  const other=await contextFor(f.otherToken,f.otherUser);const p=await other.newPage();await p.goto('http://127.0.0.1:5179/mtr-online');await p.getByText('Nenhuma rota cadastrada. Cadastre uma rota em Gestão de Rotas.',{exact:true}).waitFor();assert.equal(await p.locator('article').count(),0);
+  const other=await contextFor(f.otherToken,f.otherUser);const p=await other.newPage();await p.goto('http://127.0.0.1:5179/mtr-online');await p.getByText('Nenhuma rota cadastrada. Cadastre uma rota em Gestão de Rotas.',{exact:true}).waitFor();assert.equal(await p.locator('section[aria-labelledby="mtr-rotas"] article').count(),0);
   const driver=await contextFor(f.driverToken,{id:f.driver1.userId,role:'DRIVER'});const d=await driver.newPage();await d.goto('http://127.0.0.1:5179/mtr-online');await d.waitForURL('**/login');
-  await page.setViewportSize({width:430,height:932});await page.reload();await page.getByText('QA equipe',{exact:true}).waitFor();await page.locator('#mtr-portal').selectOption('SP');await page.getByRole('link',{name:'Acessar emissão de MTR',exact:true}).waitFor();assert.equal(await page.getByRole('link',{name:'Acessar emissão de MTR',exact:true}).getAttribute('href'),'https://mtr.cetesb.sp.gov.br/');await page.screenshot({path:join(outputDir,'mtr-mobile.png'),fullPage:true});assert.equal(mutations.length,0);
+  await page.setViewportSize({width:430,height:932});await page.reload();await page.getByText('QA equipe',{exact:true}).waitFor();await page.locator('#mtr-portal').selectOption('NACIONAL');await page.getByRole('link',{name:'Acessar emissão de MTR',exact:true}).waitFor();assert.equal(await page.getByRole('link',{name:'Acessar emissão de MTR',exact:true}).getAttribute('href'),'https://mtr.sinir.gov.br/');await page.screenshot({path:join(outputDir,'mtr-mobile.png'),fullPage:true});assert.equal(await page.locator('#mtr-portal option').count(),2);for(const [name,url] of [['Acessar solicitação de NFA','https://www.sefaz.ce.gov.br/nota-fiscal-avulsa/'],['Acessar emissão em Fortaleza','https://iss.fortaleza.ce.gov.br/'],['Acessar Emissor Nacional','https://www.nfse.gov.br/EmissorNacional']]){const a=page.getByRole('link',{name,exact:true});assert.equal(await a.getAttribute('href'),url);assert.equal(await a.getAttribute('rel'),'noopener noreferrer');}assert.equal(mutations.length,0);
  });
 }catch(e){outcomes.push({name:'Ambiente',status:'FAIL',error:e.message});console.error(e.message.slice(0,1000));}
 finally{await writeFile(join(outputDir,'results.json'),JSON.stringify({environment:'API Fastify/Prisma e banco PGlite locais; Chromium desktop/móvel; sem emissão externa ou produção',outcomes},null,2));await browser?.close();for(const p of children)p.kill('SIGTERM');await socket?.stop();await db?.close();console.log('REPORT_DIR',outputDir);if(outcomes.some(r=>r.status==='FAIL'))process.exitCode=1;}

@@ -6,7 +6,7 @@ import HeadTags from '../../components/HeadTags';
 import RouteAssignmentSummary from '../../components/RouteAssignmentSummary';
 import { useAdminAuth } from '../../context/AdminAuthContext';
 import { getAllRoutes, getRouteById } from '../../services/routeService';
-import { MTR_PORTALS, ROUTE_LABELS, COLLECTION_LABELS, buildMtrPreparation, dateKey, formatMtrDate, displayValue } from '../../utils/mtrPreparation';
+import { MTR_PORTALS, FISCAL_PORTALS, ROUTE_LABELS, COLLECTION_LABELS, buildMtrPreparation, dateKey, formatMtrDate, displayValue } from '../../utils/mtrPreparation';
 
 const initialFilters = { q: '', status: '', driverId: '', vehicleId: '', start: '', end: '' };
 const errorMessage = error => error?.error || error?.message || 'Não foi possível consultar as rotas. Tente novamente.';
@@ -21,7 +21,7 @@ export default function MtrOnlineStatus() {
   const [filters, setFilters] = useState(initialFilters);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  const [portalId, setPortalId] = useState('');
+  const [portalId, setPortalId] = useState('NACIONAL');
   const [selection, setSelection] = useState(null);
   const [collectionId, setCollectionId] = useState('');
   const [detailLoading, setDetailLoading] = useState(false);
@@ -94,10 +94,10 @@ export default function MtrOnlineStatus() {
   }
 
   return <>
-    <HeadTags title="MTR Online" />
+    <HeadTags title="MTR e Notas Fiscais" />
     <div className="page-header mb-4">
-      <h1 className="fs-30">MTR Online</h1>
-      <p>Consulte os dados da operação e acesse o sistema oficial para emitir o Manifesto de Transporte de Resíduos.</p>
+      <h1 className="fs-30">MTR e Notas Fiscais</h1>
+      <p>Prepare os dados da operação e acesse os portais oficiais de manifestos e notas fiscais para Fortaleza e o interior do Ceará.</p>
       <nav aria-label="Caminho da página"><ol className="breadcrumb">
         <li className="breadcrumb-item"><Link to="/"><House size={16} /> Painel Geral</Link></li>
         <li className="breadcrumb-item"><Link to="/route-list">Gestão de Rotas</Link></li>
@@ -107,7 +107,7 @@ export default function MtrOnlineStatus() {
 
     <section className="card p-4 mb-4" aria-labelledby="mtr-portais">
       <h2 className="fs-20" id="mtr-portais">Gerar MTR no portal oficial</h2>
-      <p>Escolha o sistema aplicável à operação. O KATUÁ abre o portal em outra aba; o cadastro, a emissão e a numeração são realizados pelo órgão responsável.</p>
+      <p>Acesso ao SINIR Nacional, com foco na operação no Ceará. O KATUÁ abre o portal em outra aba; o cadastro, a emissão e a numeração são realizados pelo órgão responsável.</p>
       <div className="row g-3 align-items-end">
         <div className="col-lg-6"><label htmlFor="mtr-portal" className="form-label">Sistema de emissão</label>
           <select id="mtr-portal" className="form-select" value={portalId} onChange={e => setPortalId(e.target.value)}>
@@ -115,12 +115,24 @@ export default function MtrOnlineStatus() {
           </select>
         </div>
         <div className="col-lg-6 d-flex gap-2 flex-wrap">{portal ? <>
-          <a className="btn btn-success" href={portal.url} target="_blank" rel="noopener noreferrer"><ExternalLink size={16} /> {portal.id === 'ES' ? 'Acessar emissão e orientações MTR-ES' : 'Acessar emissão de MTR'}</a>
+          <a className="btn btn-success" href={portal.url} target="_blank" rel="noopener noreferrer"><ExternalLink size={16} /> Acessar emissão de MTR</a>
           <a className="btn btn-outline-secondary" href={portal.help} target="_blank" rel="noopener noreferrer">Orientações do órgão</a>
         </> : <span className="text-muted">Selecione um portal para abrir a emissão.</span>}</div>
       </div>
       {portal && <p className="small mt-3 mb-1">{portal.note}</p>}
       <p className="small mt-3 mb-0">Para outros estados ou operações entre estados, <a href="https://sinir.gov.br/sistemas/mtr/" target="_blank" rel="noopener noreferrer">consulte as orientações oficiais do SINIR</a> e confirme o sistema com o responsável ambiental. Entre com suas credenciais somente no portal oficial.</p>
+    </section>
+
+    <section className="card p-4 mb-4" aria-labelledby="notas-fiscais">
+      <h2 className="fs-20" id="notas-fiscais">Gerar notas fiscais nos portais oficiais</h2>
+      <p>Escolha conforme a operação: mercadorias ou prestação de serviços. A emissão e a autorização acontecem no sistema fiscal responsável, com o cadastro da cooperativa.</p>
+      <div className="row g-3">
+        {FISCAL_PORTALS.map(item => <div className="col-lg-4" key={item.id}><article className="border rounded p-3 h-100 d-flex flex-column">
+          <h3 className="fs-18">{item.name}</h3><p className="small fw-semibold">{item.scope}</p><p className="small">{item.note}</p>
+          <a className="btn btn-outline-success mt-auto" href={item.url} target="_blank" rel="noopener noreferrer"><ExternalLink size={16} /> {item.action}</a>
+        </article></div>)}
+      </div>
+      <p className="small mt-3 mb-0">O KATUÁ não transmite notas fiscais nem consulta sua autorização nesta tela. Abrir um portal não registra uma emissão. Confirme valores, destinatário, classificação fiscal e tributos com a contabilidade. A ficha de apoio da coleta não substitui nota fiscal ou MTR.</p>
     </section>
 
     <section className="card p-4 mb-4" aria-labelledby="mtr-rotas">
