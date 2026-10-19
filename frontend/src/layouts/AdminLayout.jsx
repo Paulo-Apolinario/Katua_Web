@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
-import { Toaster } from 'react-hot-toast';
 import { Outlet } from 'react-router';
 import { getAllCompanySettings } from "../services/settingService";
 import HeadTags from "../components/HeadTags";
@@ -29,7 +28,6 @@ const AdminLayout = () => {
     return (
         <>
         <HeadTags />
-        <Toaster position="top-center" reverseOrder={false} />
         <Sidebar active={active} setting={settings} setActive={setActive} />
         <Header active={active} setActive={setActive} />
         <main className="page-content mt-5">

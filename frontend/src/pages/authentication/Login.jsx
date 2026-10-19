@@ -56,11 +56,11 @@ const Login = () => {
     } catch (err) {
       if (err?.errors) {
         setErrors(err.errors);
-        return;
       }
 
       toast.error(
         err?.message ||
+          (typeof err?.error === "string" ? err.error : "") ||
           "Não foi possível fazer login. Verifique suas credenciais."
       );
     } finally {
