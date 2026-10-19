@@ -5,13 +5,13 @@ import {
   ChevronRight,
   CirclePlus,
   Pencil,
-  Trash2,
+  Power,
   Search,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import DataTable from "../../components/DataTable";
 import DeleteModal from "../../components/modal/DeleteModal";
-import { getAllVehicles, deleteVehicle } from "../../services/vehicleService";
+import { getAllVehicles, updateVehicleStatus } from "../../services/vehicleService";
 import HeadTags from "../../components/HeadTags";
 import TopProgressBar from "../../components/TopProgressBar";
 
@@ -123,22 +123,22 @@ const VehicleList = () => {
     if (!deleteId) return;
 
     try {
-      await deleteVehicle(deleteId);
+      await updateVehicleStatus(deleteId, "INACTIVE");
 
       setVehicles((prev) =>
         prev
-          .filter((item) => item.id !== deleteId)
+          .map((item) => item.id === deleteId ? { ...item, status: "INACTIVE" } : item)
           .map((item, index) => ({
             ...item,
             sn: index + 1,
           }))
       );
 
-      toast.success("Veículo excluído com sucesso.");
+      toast.success("Veículo inativado. Histórico preservado.");
       setDeleteId(null);
     } catch (error) {
-      toast.error(error?.message || "Erro ao excluir veículo.");
-      console.error("Delete vehicle error:", error);
+      toast.error(error?.error || error?.message || "Erro ao inativar veículo.");
+      console.error("Inactivate vehicle error:", error);
     }
   };
 
@@ -146,7 +146,7 @@ const VehicleList = () => {
     <>
       <HeadTags title="Lista de Veículos" />
       <TopProgressBar loading={loading} />
-      <DeleteModal handleDelete={handleDelete} />
+      <DeleteModal handleDelete={handleDelete} title="Inativar veículo" message="Deseja inativar este veículo? O cadastro e o histórico serão preservados." confirmLabel="Inativar" cancelLabel="Cancelar" />
 
       <div className="page-header mb-30 px-2">
         <div className="page-title mb-3">
@@ -220,11 +220,14 @@ const VehicleList = () => {
 
                   <button
                     className="action-button delete"
+                    title="Inativar veículo"
+                    aria-label="Inativar veículo"
+                    disabled={row.status === "INACTIVE"}
                     data-bs-toggle="modal"
                     data-bs-target="#deleteModal"
                     onClick={() => setDeleteId(row.id)}
                   >
-                    <Trash2 />
+                    <Power />
                   </button>
                 </div>
               )}

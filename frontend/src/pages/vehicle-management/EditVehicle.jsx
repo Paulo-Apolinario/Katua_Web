@@ -138,7 +138,7 @@ const EditVehicle = () => {
       if (err?.errors) {
         setErrors(err.errors);
       } else {
-        toast.error(err?.message || "Erro ao atualizar veículo.");
+        toast.error(err?.error || err?.message || "Erro ao atualizar veículo.");
       }
 
       console.error("Update vehicle error:", err);

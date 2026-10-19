@@ -53,11 +53,14 @@ export const updateVehicleStatus = async (id, status) => {
 };
 
 export const updateVehicle = async (id, payload) => {
-  return updateVehicleStatus(id, payload.status);
-};
-
-export const deleteVehicle = async (id) => {
-  return apiRequest(`/vehicles/${id}`, {
-    method: "DELETE",
-  });
+  const data = {};
+  for (const field of ["plate", "model", "brand", "driverId"]) {
+    if (payload[field] !== undefined) data[field] = payload[field]?.trim() || null;
+  }
+  if (typeof data.plate === "string") data.plate = data.plate.toUpperCase();
+  for (const field of ["year", "capacityKg"]) {
+    if (payload[field] !== undefined) data[field] = payload[field] === null || payload[field] === "" ? null : Number(payload[field]);
+  }
+  if (payload.status !== undefined) data.status = payload.status;
+  return apiRequest(`/vehicles/${id}`, { method: "PATCH", body: JSON.stringify(data) });
 };
