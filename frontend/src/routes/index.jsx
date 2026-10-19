@@ -443,6 +443,7 @@ const Router = () => {
           </Route>
 
           {/* Authentication */}
+          <Route path="/quick-login" element={<Login />} />
           <Route
             path="/login"
             element={

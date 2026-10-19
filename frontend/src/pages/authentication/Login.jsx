@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, Navigate } from "react-router";
 import {
   BarChart3,
@@ -15,12 +15,17 @@ import {
 import toast from "react-hot-toast";
 
 import { useAdminAuth } from "../../context/AdminAuthContext";
-import { login as loginService } from "../../services/authService";
+import { login as loginService, requestLoginLink, consumeLoginLink } from "../../services/authService";
 import HeadTags from "../../components/HeadTags";
 
 const Login = () => {
   const { login, admin, loading } = useAdminAuth();
 
+  const [linkToken] = useState(() => new URLSearchParams(window.location.hash.slice(1)).get("token") || "");
+  const [quickAccess, setQuickAccess] = useState(false);
+  useEffect(() => {
+    if (linkToken) window.history.replaceState(null, "", window.location.pathname);
+  }, [linkToken]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [visible, setVisible] = useState(false);
@@ -37,15 +42,20 @@ const Login = () => {
     e.preventDefault();
     setErrors({});
 
-    if (!email || !password) {
-      toast.error("Informe email e senha.");
+    if (!linkToken && (!email || (!quickAccess && !password))) {
+      toast.error(quickAccess ? "Informe seu e-mail." : "Informe email e senha.");
       return;
     }
 
     try {
       setSubmitting(true);
 
-      const response = await loginService({ email, password });
+      if (quickAccess && !linkToken) {
+        const result = await requestLoginLink(email);
+        toast.success(result.message);
+        return;
+      }
+      const response = linkToken ? await consumeLoginLink(linkToken) : await loginService({ email, password });
 
       login({
         token: response?.token,
@@ -124,8 +134,13 @@ const Login = () => {
               </p>
             </div>
 
+            {!linkToken && <div className="d-flex gap-3 mb-3" role="group" aria-label="Forma de acesso">
+              <button type="button" className={`btn btn-sm ${!quickAccess ? "btn-success" : "btn-outline-success"}`} disabled={submitting} onClick={() => setQuickAccess(false)}>Senha</button>
+              <button type="button" className={`btn btn-sm ${quickAccess ? "btn-success" : "btn-outline-success"}`} disabled={submitting} onClick={() => setQuickAccess(true)}>Acesso rápido</button>
+            </div>}
+            {(quickAccess || linkToken) && <p className="small text-muted">{linkToken ? "Confirme abaixo para entrar com o link recebido. O link só pode ser usado uma vez." : "Você receberá um link de acesso no e-mail informado. Válido por 15 minutos."}</p>}
             <form onSubmit={handleSubmit}>
-              <div className="mb-3">
+              {!linkToken && <div className="mb-3">
                 <label
                   htmlFor="email"
                   className="form-label"
@@ -170,9 +185,9 @@ const Login = () => {
                     {errors.email[0]}
                   </div>
                 )}
-              </div>
+              </div>}
 
-              <div className="mb-3">
+              {!quickAccess && !linkToken && <div className="mb-3">
                 <label
                   htmlFor="password"
                   className="form-label"
@@ -235,7 +250,7 @@ const Login = () => {
                     {errors.password[0]}
                   </div>
                 )}
-              </div>
+              </div>}
 
               <button
                 type="submit"
@@ -252,7 +267,7 @@ const Login = () => {
                   boxShadow: "0 10px 20px rgba(19, 138, 0, 0.16)",
                 }}
               >
-                {submitting ? "Entrando..." : "Entrar"}
+                {submitting ? "Aguarde..." : linkToken ? "Confirmar acesso" : quickAccess ? "Enviar link" : "Entrar"}
               </button>
             </form>
 

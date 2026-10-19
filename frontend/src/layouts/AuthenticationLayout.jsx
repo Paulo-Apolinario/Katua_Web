@@ -1,12 +1,10 @@
 import dashboard_img from '../../public/images/dashboard.jpg';
-import { Toaster } from 'react-hot-toast';
 import HeadTags from "../components/HeadTags";
 
 const AuthenticationLayout = ({ children }) => {
     return (
         <>
         <HeadTags />
-        <Toaster position="top-center" reverseOrder={false} />
             <div className="auth-container">
                 <div className="left-section flex-column">
                     {children}

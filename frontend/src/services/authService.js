@@ -33,6 +33,7 @@ export const forgotPassword = async (payload) => {
     method: "POST",
     body: JSON.stringify({
       email: payload.email?.trim().toLowerCase(),
+      audience: "PANEL",
     }),
   });
 };
@@ -67,3 +68,10 @@ export const resetPassword = async (payload) => {
     }),
   });
 };
+
+export const requestLoginLink = (email) => apiRequest("/auth/login-link", {
+  method: "POST", body: { email: email.trim().toLowerCase(), audience: "PANEL" },
+});
+export const consumeLoginLink = (token) => apiRequest("/auth/login-link/consume", {
+  method: "POST", body: { token, audience: "PANEL" },
+});

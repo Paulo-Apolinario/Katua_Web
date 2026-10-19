@@ -95,7 +95,7 @@ const ResetPassword = () => {
 
       if (response?.success === false) {
         toast.error(
-          response?.message || "Não foi possível redefinir sua senha."
+          response?.message || (typeof response?.error === "string" ? response.error : "") || "Não foi possível redefinir sua senha."
         );
 
         setErrors(response?.errors || {});
@@ -103,7 +103,7 @@ const ResetPassword = () => {
       }
 
       toast.success(
-        response?.message ||
+        response?.message || (typeof response?.error === "string" ? response.error : "") ||
           "Senha redefinida com sucesso. Faça login novamente."
       );
 
@@ -114,7 +114,7 @@ const ResetPassword = () => {
       }
 
       toast.error(
-        err?.message ||
+        err?.message || (typeof err?.error === "string" ? err.error : "") ||
           "Erro ao redefinir senha. Verifique os dados e tente novamente."
       );
     } finally {

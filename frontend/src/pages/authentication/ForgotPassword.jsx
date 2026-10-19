@@ -41,7 +41,7 @@ const ForgotPassword = () => {
 
       if (response?.success === false) {
         toast.error(
-          response?.message || "Não foi possível enviar o e-mail de recuperação."
+          response?.message || (typeof response?.error === "string" ? response.error : "") || "Não foi possível enviar o e-mail de recuperação."
         );
 
         if (response?.errors?.email) {
@@ -55,7 +55,7 @@ const ForgotPassword = () => {
       setCountdown(6);
 
       toast.success(
-        response?.message ||
+        response?.message || (typeof response?.error === "string" ? response.error : "") ||
           "Enviamos uma senha temporária e o link de redefinição para seu e-mail."
       );
     } catch (err) {
@@ -63,7 +63,7 @@ const ForgotPassword = () => {
         setError(Array.isArray(err.errors.email) ? err.errors.email[0] : err.errors.email);
       } else {
         toast.error(
-          err?.message ||
+          err?.message || (typeof err?.error === "string" ? err.error : "") ||
             "Erro ao solicitar recuperação de senha. Verifique sua conexão."
         );
       }
@@ -110,9 +110,9 @@ const ForgotPassword = () => {
           </div>
 
           <div className="notification-content">
-            <h5>E-mail de recuperação enviado!</h5>
+            <h5>Solicitação de recuperação recebida</h5>
             <p>
-              Enviamos uma senha temporária e o link para redefinir sua senha.
+              Se o e-mail estiver habilitado, enviaremos as instruções de recuperação.
               Verifique sua caixa de entrada e spam.
             </p>
           </div>
