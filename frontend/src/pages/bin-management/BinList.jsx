@@ -1,497 +1,453 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router';
+import { useMemo, useState } from "react";
+import { Link, useSearchParams } from "react-router";
+import { getAllBins } from "../../services/binService";
+import { useWasteResource } from "../../components/waste-workspace/useWasteResource";
 import {
-  House,
-  ChevronRight,
-  CirclePlus,
-  Pencil,
-  Trash2,
-  Search,
-  Archive,
-  MapPin,
-  Truck,
-  Image as ImageIcon,
-  RefreshCw,
-} from 'lucide-react';
-import toast from 'react-hot-toast';
-
-import DeleteModal from '../../components/modal/DeleteModal';
-import { getAllBins, deleteBin } from '../../services/binService';
-import HeadTags from '../../components/HeadTags';
-import TopProgressBar from '../../components/TopProgressBar';
-
-const BIN_TYPES = [
-  { value: 'recyclable', label: 'Reciclável' },
-  { value: 'organic', label: 'Orgânico' },
-  { value: 'non-recyclable', label: 'Não reciclável' },
-  { value: 'mixed', label: 'Misto' },
-  { value: 'electronic', label: 'Eletrônico' },
-  { value: 'hazardous', label: 'Perigoso' },
-];
-
-const BIN_STATUS = [
-  { value: 'active', label: 'Ativo', className: 'status-success' },
-  { value: 'inactive', label: 'Inativo', className: 'status-danger' },
-  { value: 'full', label: 'Cheio', className: 'status-warning' },
-  { value: 'maintenance', label: 'Manutenção', className: 'status-warning' },
-];
-
-const getBinTypeLabel = (value) => {
-  return BIN_TYPES.find((item) => item.value === value)?.label || value || 'N/A';
+  PevScope,
+  PevPage,
+  PevState,
+  PevBadge,
+  PevGuide,
+} from "../../components/pevs/PevParts";
+import {
+  Summary,
+  WorkspacePagination,
+} from "../../components/collections/WorkspaceParts";
+import {
+  address,
+  title,
+  hasPosition,
+  accepted,
+  capacity,
+  filterPevs,
+  photoUrl,
+  STATES,
+} from "../../components/pevs/pevUtils";
+import { dateLabel } from "../../utils/collectionWorkspace";
+import { downloadCsv } from "../../utils/wasteReports";
+import PevMap from "../../components/pevs/PevMap";
+const load = async () => {
+  const r = await getAllBins();
+  if (!Array.isArray(r?.data)) throw Error("Resposta de PEVs inválida.");
+  return r.data;
 };
-
-const getStatusConfig = (value) => {
+const emptyFilters = {
+  search: "",
+  status: "",
+  city: "",
+  neighborhood: "",
+  material: "",
+  pickup: false,
+  unmapped: false,
+};
+export default function BinList() {
   return (
-    BIN_STATUS.find((item) => item.value === value) || {
-      label: value || 'N/A',
-      className: 'status-danger',
-    }
+    <PevScope>
+      <List />
+    </PevScope>
   );
-};
-
-const formatDate = (value) => {
-  if (!value) return 'N/A';
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) return 'N/A';
-
-  return date.toLocaleDateString('pt-BR');
-};
-
-const getZoneLabel = (zone) => {
-  if (!zone) return 'N/A';
-
-  return zone.name || zone.title || `Zona ${zone.id || ''}`.trim();
-};
-
-const getVehicleLabel = (vehicle) => {
-  if (!vehicle) return 'N/A';
-
-  return vehicle.vehicle_number || vehicle.plate || vehicle.name || vehicle.model || 'N/A';
-};
-
-const getPhotoUrl = (row) => {
-  return row.photo_url || row.photoUrl || row.image_url || row.imageUrl || row.photo || null;
-};
-
-const SummaryCard = ({ icon, label, value }) => (
-  <div
-    className="card h-100"
-    style={{
-      padding: '18px 20px',
-      borderRadius: 14,
-      minHeight: 72,
-      display: 'flex',
-      justifyContent: 'center',
-    }}
-  >
-    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-      <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>{icon}</div>
-
-      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-        <span style={{ fontSize: 14, color: '#6b7280', lineHeight: '18px' }}>{label}</span>
-        <strong style={{ fontSize: 22, lineHeight: '24px', color: '#111827' }}>{value}</strong>
-      </div>
-    </div>
-  </div>
-);
-
-const BinList = () => {
-  const [bins, setBins] = useState([]);
-  const [search, setSearch] = useState('');
-  const [binTypeFilter, setBinTypeFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [deleteId, setDeleteId] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [deleting, setDeleting] = useState(false);
-
-  const fetchBins = async () => {
-    try {
-      setLoading(true);
-
-      const response = await getAllBins();
-
-      if (response?.success) {
-        const list = Array.isArray(response.data) ? response.data : [];
-        setBins(list.map((item, index) => ({ ...item, sn: index + 1 })));
-        return;
-      }
-
-      toast.error(response?.message || 'Não foi possível carregar os PEVs.');
-    } catch (error) {
-      console.error('Erro ao buscar PEVs:', error);
-      toast.error(error?.message || 'Erro ao carregar PEVs.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchBins();
-  }, []);
-
-  const filteredData = useMemo(() => {
-    const term = search.trim().toLowerCase();
-
-    return bins.filter((item) => {
-      const matchesSearch =
-        !term ||
-        String(item.bin_id || '').toLowerCase().includes(term) ||
-        String(item.location || '').toLowerCase().includes(term) ||
-        String(getZoneLabel(item.zone)).toLowerCase().includes(term) ||
-        String(getVehicleLabel(item.vehicle)).toLowerCase().includes(term);
-
-      const matchesType = !binTypeFilter || item.bin_type === binTypeFilter;
-      const matchesStatus = !statusFilter || item.status === statusFilter;
-
-      return matchesSearch && matchesType && matchesStatus;
-    });
-  }, [bins, search, binTypeFilter, statusFilter]);
-
-  const totalPages = Math.max(1, Math.ceil(filteredData.length / rowsPerPage));
-  const startIndex = filteredData.length === 0 ? 0 : (currentPage - 1) * rowsPerPage;
-  const endIndex = Math.min(startIndex + rowsPerPage, filteredData.length);
-  const paginatedData = filteredData.slice(startIndex, endIndex);
-
-  const summary = useMemo(() => {
-    const active = bins.filter((item) => item.status === 'active').length;
-    const full = bins.filter((item) => item.status === 'full').length;
-    const inactive = bins.filter((item) => item.status === 'inactive').length;
-    const maintenance = bins.filter((item) => item.status === 'maintenance').length;
-
-    return {
-      total: bins.length,
-      active,
-      full,
-      unavailable: inactive + maintenance,
-    };
-  }, [bins]);
-
-  const handleClearFilters = () => {
-    setSearch('');
-    setBinTypeFilter('');
-    setStatusFilter('');
-    setCurrentPage(1);
-  };
-
-  const handleDelete = async () => {
-    if (!deleteId) return;
-
-    try {
-      setDeleting(true);
-
-      const response = await deleteBin(deleteId);
-
-      if (response?.success) {
-        setBins((prev) =>
-          prev
-            .filter((item) => item.id !== deleteId)
-            .map((item, index) => ({ ...item, sn: index + 1 }))
-        );
-
-        toast.success(response.message || 'PEV excluído com sucesso.');
-        setDeleteId(null);
-        return;
-      }
-
-      toast.error(response?.message || 'Não foi possível excluir o PEV.');
-    } catch (error) {
-      console.error('Erro ao excluir PEV:', error);
-      toast.error(error?.message || 'Erro ao excluir PEV.');
-    } finally {
-      setDeleting(false);
-    }
-  };
-
+}
+function List() {
+  const resource = useWasteResource(load),
+    [filters, setFilters] = useState(emptyFilters),
+    [page, setPage] = useState(1),
+    [size, setSize] = useState(10),
+    [sort, setSort] = useState("priority"),
+    [params, setParams] = useSearchParams();
+  const mapView = params.get("view") === "map";
+  const rows = useMemo(
+    () =>
+      filterPevs(resource.data || [], filters).sort((a, b) =>
+        sort === "name"
+          ? title(a).localeCompare(title(b), "pt-BR")
+          : sort === "recent"
+            ? new Date(b.createdAt) - new Date(a.createdAt)
+            : Number(b.needsPickup) - Number(a.needsPickup) ||
+              Number(b.openIncidents) - Number(a.openIncidents) ||
+              title(a).localeCompare(title(b), "pt-BR"),
+      ),
+    [resource.data, filters, sort],
+  );
+  const current = Math.min(page, Math.max(1, Math.ceil(rows.length / size))),
+    visible = rows.slice((current - 1) * size, current * size),
+    mapped = useMemo(() => rows.filter(hasPosition), [rows]);
+  function filter(key, value) {
+    setFilters((f) => ({ ...f, [key]: value }));
+    setPage(1);
+  }
+  function exported() {
+    downloadCsv(
+      "katua-pevs-filtrados.csv",
+      [
+        "ID",
+        "Código",
+        "Nome",
+        "Modalidade",
+        "Endereço",
+        "Município",
+        "Bairro",
+        "Regional",
+        "Latitude",
+        "Longitude",
+        "Materiais aceitos",
+        "Funcionamento",
+        "Precisa de retirada",
+        "Capacidade",
+        "Unidade",
+        "Veículo",
+        "Última coleta",
+        "Origem da data",
+      ],
+      rows.map((b) => [
+        b.id,
+        b.bin_id,
+        title(b),
+        b.pointKind,
+        address(b),
+        b.city,
+        b.neighborhood,
+        b.regional,
+        b.latitude,
+        b.longitude,
+        accepted(b).join(" | "),
+        STATES[b.status],
+        b.needsPickup ? "Sim" : "Não",
+        b.capacityValue,
+        b.capacityUnit,
+        b.vehicle?.plate,
+        b.last_collection_date,
+        b.lastCollectionSource,
+      ]),
+    );
+  }
+  const values = (key) =>
+    [
+      ...new Set((resource.data || []).map((b) => b[key]).filter(Boolean)),
+    ].sort();
   return (
-    <>
-      <HeadTags title="PEVs | KATUÁ" />
-      <TopProgressBar loading={loading || deleting} />
-
-      <div className="page-header mb-30 px-2">
-        <div className="page-title mb-3">
-          <h3 className="fs-30">PEVs (Eco Pontos)</h3>
-          <p className="mb-0 text-muted">
-            Gerencie PEVs, pontos de coleta voluntária, vínculo com zonas e veículos.
-          </p>
+    <PevPage
+      title="Gestão de PEVs"
+      description="Acompanhe os pontos de entrega, suas localizações e as prioridades de retirada."
+      actions={
+        <>
+          <button
+            className="btn btn-outline-secondary"
+            onClick={exported}
+            disabled={resource.loading || !!resource.error || !rows.length}
+          >
+            Exportar filtrados (CSV)
+          </button>
+          <button
+            className="btn btn-outline-success"
+            onClick={resource.refresh}
+            disabled={resource.loading}
+          >
+            Atualizar PEVs
+          </button>
+          <Link className="btn btn-success" to="/create-bin">
+            Cadastrar PEV
+          </Link>
+        </>
+      }
+    >
+      <PevGuide>
+        <strong>Rede de pontos, informações para agir.</strong>
+        <div className="small mt-1">
+          Os indicadores e o mapa acompanham os filtros. “Precisa de retirada” é
+          uma informação operacional registrada pela equipe.
         </div>
-
-        <div className="page-tool d-flex justify-content-between flex-wrap gap-20 align-items-center">
-          <div className="breadcrumb-wrap">
-            <nav aria-label="breadcrumb">
-              <ol className="breadcrumb pb-0 mb-0">
-                <li className="breadcrumb-item">
-                  <Link to="/" className="d-flex align-items-center gap-8">
-                    <House /> Dashboard
-                  </Link>
-                </li>
-                <li className="breadcrumb-item">
-                  <ChevronRight />
-                </li>
-                <li className="breadcrumb-item active">PEVs</li>
-              </ol>
-            </nav>
+      </PevGuide>
+      <Summary
+        cards={[
+          ["Pontos encontrados", resource.data ? rows.length : "—"],
+          [
+            "Ativos",
+            resource.data
+              ? rows.filter((b) => b.status === "active").length
+              : "—",
+          ],
+          [
+            "Precisam de retirada",
+            resource.data ? rows.filter((b) => b.needsPickup).length : "—",
+          ],
+          [
+            "Em manutenção",
+            resource.data
+              ? rows.filter((b) => b.status === "maintenance").length
+              : "—",
+          ],
+        ]}
+      />
+      <section className="card p-3 mb-4">
+        <h2 className="fs-18">Filtros dos pontos</h2>
+        <div className="row g-3">
+          <div className="col-md-4">
+            <label htmlFor="pevs-search" className="form-label">
+              Nome, código, endereço ou material
+            </label>
+            <input
+              id="pevs-search"
+              type="search"
+              className="form-control"
+              value={filters.search}
+              onChange={(e) => filter("search", e.target.value)}
+            />
           </div>
-
-          <div className="d-flex align-items-center gap-10 flex-wrap">
-            <button
-              type="button"
-              className="outline-btn btn-sm"
-              onClick={fetchBins}
-              disabled={loading}
-            >
-              <RefreshCw size={16} /> Atualizar
-            </button>
-
-            <Link to="/create-bin" className="primary-btn btn-sm">
-              <CirclePlus /> Cadastrar PEV
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      <div className="row g-4 mb-4">
-        <div className="col-md-6 col-xl-3">
-          <SummaryCard icon={<Archive size={24} />} label="Total de PEVs" value={summary.total} />
-        </div>
-
-        <div className="col-md-6 col-xl-3">
-          <SummaryCard icon={<MapPin size={24} />} label="Ativos" value={summary.active} />
-        </div>
-
-        <div className="col-md-6 col-xl-3">
-          <SummaryCard icon={<Archive size={24} />} label="Cheios" value={summary.full} />
-        </div>
-
-        <div className="col-md-6 col-xl-3">
-          <SummaryCard
-            icon={<Truck size={24} />}
-            label="Manutenção/Inativos"
-            value={summary.unavailable}
-          />
-        </div>
-      </div>
-
-      <div className="card p-25">
-        <div className="filter row g-4 mb-4">
-          <div className="col-md-7">
-            <div className="d-flex justify-content-start align-items-center flex-wrap gap-15">
+          {[
+            [
+              "status",
+              "Funcionamento",
+              Object.entries(STATES).map(([value, label]) => ({
+                value,
+                label,
+              })),
+            ],
+            [
+              "city",
+              "Município",
+              values("city").map((v) => ({ value: v, label: v })),
+            ],
+            [
+              "neighborhood",
+              "Bairro",
+              values("neighborhood").map((v) => ({ value: v, label: v })),
+            ],
+            [
+              "material",
+              "Material",
+              [...new Set((resource.data || []).flatMap(accepted))]
+                .sort()
+                .map((v) => ({ value: v, label: v })),
+            ],
+          ].map(([key, label, options]) => (
+            <div className="col-md-2" key={key}>
+              <label htmlFor={`pevs-${key}`} className="form-label">
+                {label}
+              </label>
               <select
+                id={`pevs-${key}`}
                 className="form-select"
-                style={{ maxWidth: 180 }}
-                value={binTypeFilter}
-                onChange={(event) => {
-                  setBinTypeFilter(event.target.value);
-                  setCurrentPage(1);
-                }}
+                value={filters[key]}
+                onChange={(e) => filter(key, e.target.value)}
               >
-                <option value="">Todos os tipos</option>
-                {BIN_TYPES.map((type) => (
-                  <option key={type.value} value={type.value}>
-                    {type.label}
+                <option value="">Todos</option>
+                {options.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
                   </option>
                 ))}
               </select>
-
-              <select
-                className="form-select"
-                style={{ maxWidth: 190 }}
-                value={statusFilter}
-                onChange={(event) => {
-                  setStatusFilter(event.target.value);
-                  setCurrentPage(1);
-                }}
-              >
-                <option value="">Todos os status</option>
-                {BIN_STATUS.map((status) => (
-                  <option key={status.value} value={status.value}>
-                    {status.label}
-                  </option>
-                ))}
-              </select>
-
-              <button type="button" className="outline-btn btn-sm" onClick={handleClearFilters}>
-                Limpar filtros
-              </button>
             </div>
-          </div>
-
-          <div className="col-md-5">
-            <div className="d-flex justify-content-lg-end align-items-center">
-              <div className="filter-section search">
-                <div className="icon">
-                  <Search />
+          ))}
+        </div>
+        <div className="d-flex flex-wrap align-items-center gap-3 mt-3">
+          <label>
+            <input
+              type="checkbox"
+              className="form-check-input me-2"
+              checked={filters.pickup}
+              onChange={(e) => filter("pickup", e.target.checked)}
+            />
+            Precisam de retirada
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              className="form-check-input me-2"
+              checked={filters.unmapped}
+              onChange={(e) => filter("unmapped", e.target.checked)}
+            />
+            Sem localização no mapa
+          </label>
+          <button
+            className="btn btn-sm btn-outline-secondary"
+            onClick={() => {
+              setFilters(emptyFilters);
+              setPage(1);
+            }}
+          >
+            Limpar filtros
+          </button>
+        </div>
+      </section>
+      <div className="d-flex justify-content-between gap-3 flex-wrap mb-3">
+        <div className="d-flex gap-2">
+          <button
+            className={`btn ${!mapView ? "btn-success" : "btn-outline-secondary"}`}
+            aria-pressed={!mapView}
+            onClick={() => setParams({})}
+          >
+            Lista de PEVs
+          </button>
+          <button
+            className={`btn ${mapView ? "btn-success" : "btn-outline-secondary"}`}
+            aria-pressed={mapView}
+            onClick={() => setParams({ view: "map" })}
+          >
+            Mapa dos PEVs
+          </button>
+        </div>
+        <label className="d-flex align-items-center gap-2">
+          Ordenar
+          <select
+            className="form-select w-auto"
+            value={sort}
+            onChange={(e) => {
+              setSort(e.target.value);
+              setPage(1);
+            }}
+          >
+            <option value="priority">Prioridade operacional</option>
+            <option value="name">Nome do ponto</option>
+            <option value="recent">Mais recentes</option>
+          </select>
+        </label>
+      </div>
+      <PevState resource={resource}>
+        {mapView ? (
+          <section className="card p-3">
+            <h2 className="fs-18">Localização dos pontos filtrados</h2>
+            <p className="small">
+              {mapped.length} com marcador · {rows.length - mapped.length} sem
+              localização. Verde: ativo · Laranja: precisa de retirada · Cinza:
+              inativo ou em manutenção.
+            </p>
+            <PevMap items={mapped} />
+            {rows.some((b) => !hasPosition(b)) && (
+              <div className="mt-3">
+                <strong className="small">
+                  Pontos com localização pendente
+                </strong>
+                <div className="d-flex gap-2 flex-wrap mt-2">
+                  {rows
+                    .filter((b) => !hasPosition(b))
+                    .map((b) => (
+                      <Link
+                        key={b.id}
+                        to={`/edit-bin/${encodeURIComponent(b.id)}`}
+                      >
+                        {title(b)}
+                      </Link>
+                    ))}
                 </div>
-                <input
-                  className="form-control"
-                  type="text"
-                  value={search}
-                  onChange={(event) => {
-                    setSearch(event.target.value);
-                    setCurrentPage(1);
-                  }}
-                  placeholder="Buscar por código, local, zona ou veículo..."
-                />
               </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="table-responsive">
-          <table className="table align-middle">
-            <thead>
-              <tr>
-                <th>SN</th>
-                <th>Foto</th>
-                <th>Código</th>
-                <th>Tipo</th>
-                <th>Localização</th>
-                <th>Zona</th>
-                <th>Veículo</th>
-                <th>Capacidade</th>
-                <th>Última Coleta</th>
-                <th>Status</th>
-                <th className="text-center">Ações</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {paginatedData.length === 0 ? (
-                <tr>
-                  <td colSpan="11" className="text-center py-4 text-muted">
-                    Nenhum PEV encontrado.
-                  </td>
-                </tr>
-              ) : (
-                paginatedData.map((row) => {
-                  const photoUrl = getPhotoUrl(row);
-                  const status = getStatusConfig(row.status);
-
-                  return (
-                    <tr key={row.id}>
-                      <td>{row.sn}</td>
-                      <td>
-                        {photoUrl ? (
-                          <img
-                            src={photoUrl}
-                            alt={`PEV ${row.bin_id || ''}`}
-                            style={{
-                              width: 44,
-                              height: 44,
-                              objectFit: 'cover',
-                              borderRadius: 10,
-                              border: '1px solid #e5e7eb',
-                            }}
-                          />
-                        ) : (
-                          <div
-                            className="d-flex align-items-center justify-content-center"
-                            style={{
-                              width: 44,
-                              height: 44,
-                              borderRadius: 10,
-                              background: '#f3f4f6',
-                            }}
-                          >
-                            <ImageIcon size={18} />
-                          </div>
-                        )}
-                      </td>
-                      <td>{row.bin_id || 'N/A'}</td>
-                      <td>{getBinTypeLabel(row.bin_type)}</td>
-                      <td>{row.location || 'N/A'}</td>
-                      <td>{getZoneLabel(row.zone)}</td>
-                      <td>{getVehicleLabel(row.vehicle)}</td>
-                      <td>
-                        {row.capacity_kg
-                          ? `${Number(row.capacity_kg).toLocaleString('pt-BR')} kg`
-                          : 'N/A'}
-                      </td>
-                      <td>{formatDate(row.last_collection_date)}</td>
-                      <td>
-                        <span className={`status ${status.className}`}>{status.label}</span>
-                      </td>
-                      <td>
-                        <div className="actions d-flex justify-content-center align-items-center gap-10">
-                          <Link
-                            to={`/edit-bin/${row.id}`}
-                            className="action-button edit"
-                            title="Editar"
-                          >
-                            <Pencil />
-                          </Link>
-
-                          <button
-                            type="button"
-                            className="action-button delete"
-                            title="Excluir"
-                            data-bs-toggle="modal"
-                            data-bs-target="#deleteModal"
-                            onClick={() => setDeleteId(row.id)}
-                            disabled={deleting}
-                          >
-                            <Trash2 />
-                          </button>
-                        </div>
-                      </td>
+            )}
+          </section>
+        ) : (
+          <section className="card p-3">
+            <h2 className="fs-18">Pontos cadastrados</h2>
+            {!rows.length ? (
+              <div className="py-4 text-center">
+                <p>
+                  {resource.data?.length
+                    ? "Nenhum PEV corresponde aos filtros."
+                    : "Sua cooperativa ainda não possui PEVs cadastrados."}
+                </p>
+                <Link to="/create-bin" className="btn btn-outline-success">
+                  Cadastrar um ponto
+                </Link>
+              </div>
+            ) : (
+              <div className="table-responsive">
+                <table className="table align-middle">
+                  <thead>
+                    <tr>
+                      <th>Ponto / Identificação</th>
+                      <th>Localização / Materiais</th>
+                      <th>Operação</th>
+                      <th>Última coleta</th>
+                      <th>Ações</th>
                     </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="d-flex justify-content-between align-items-center flex-wrap gap-15 mt-3">
-          <div className="d-flex align-items-center gap-10">
-            <span>
-              Exibindo {filteredData.length === 0 ? 0 : startIndex + 1} - {endIndex} de{' '}
-              {filteredData.length}
-            </span>
-
-            <select
-              className="form-select"
-              style={{ width: 80 }}
-              value={rowsPerPage}
-              onChange={(event) => {
-                setRowsPerPage(Number(event.target.value));
-                setCurrentPage(1);
+                  </thead>
+                  <tbody>
+                    {visible.map((b) => (
+                      <tr key={b.id}>
+                        <td>
+                          <div className="d-flex gap-3 align-items-center">
+                            {b.photo_url && (
+                              <img
+                                className="pev-photo"
+                                src={photoUrl(b.photo_url)}
+                                alt={`PEV ${title(b)}`}
+                              />
+                            )}
+                            <div>
+                              <strong>{title(b)}</strong>
+                              <div className="small text-muted">{b.bin_id}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          {address(b)}
+                          <div className="small text-muted mt-1">
+                            {accepted(b).join(" · ") ||
+                              "Materiais ainda não informados"}
+                          </div>
+                          <small>
+                            {hasPosition(b)
+                              ? "Localização registrada"
+                              : "Sem localização no mapa"}
+                          </small>
+                        </td>
+                        <td>
+                          <PevBadge bin={b} />
+                          <div className="small mt-2">
+                            Capacidade: {capacity(b)}
+                          </div>
+                          <div className="small">
+                            {b.vehicle
+                              ? `${b.vehicle.plate} · ${b.vehicle.model}`
+                              : "Sem veículo de referência"}
+                          </div>
+                          {b.openIncidents > 0 && (
+                            <div className="small text-danger">
+                              {b.openIncidents} ocorrência(s) em aberto
+                            </div>
+                          )}
+                        </td>
+                        <td>
+                          {dateLabel(b.last_collection_date)}
+                          {b.lastCollectionSource === "LEGACY" && (
+                            <div className="small text-muted">
+                              Informação legada, sem coleta vinculada
+                            </div>
+                          )}
+                        </td>
+                        <td>
+                          <div className="d-flex gap-2 flex-wrap">
+                            <Link
+                              to={`/bin-list/${encodeURIComponent(b.id)}`}
+                              className="btn btn-sm btn-outline-success"
+                            >
+                              Ver ficha
+                            </Link>
+                            <Link
+                              to={`/edit-bin/${encodeURIComponent(b.id)}`}
+                              className="btn btn-sm btn-outline-secondary"
+                            >
+                              Editar
+                            </Link>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            <WorkspacePagination
+              page={current}
+              size={size}
+              total={rows.length}
+              onPage={setPage}
+              onSize={(n) => {
+                setSize(n);
+                setPage(1);
               }}
-            >
-              <option value={10}>10</option>
-              <option value={25}>25</option>
-              <option value={50}>50</option>
-            </select>
-          </div>
-
-          <div className="d-flex align-items-center gap-10">
-            <button
-              type="button"
-              className="btn btn-light"
-              disabled={currentPage <= 1}
-              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-            >
-              Anterior
-            </button>
-
-            <button
-              type="button"
-              className="btn btn-light"
-              disabled={currentPage >= totalPages || filteredData.length === 0}
-              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-            >
-              Próximo
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <DeleteModal handleDelete={handleDelete} />
-    </>
+            />
+          </section>
+        )}
+      </PevState>
+    </PevPage>
   );
-};
-
-export default BinList;
+}

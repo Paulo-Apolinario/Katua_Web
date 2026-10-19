@@ -39,14 +39,28 @@ export const personName = (person) =>
   person?.user?.displayName ||
   person?.user?.name ||
   "Não informado";
-export const generatorName = (item) =>
-  personName(
-    item.generator ||
-      item.schedule?.generator ||
-      item.requestedBy ||
-      item.schedule?.requestedBy,
-  );
+const originPev = (item) => item.bin || item.collection?.bin;
+export const generatorName = (item) => {
+  const bin = originPev(item);
+  return bin
+    ? `PEV · ${bin.name || bin.binId || "Ponto de entrega"}`
+    : personName(
+        item.generator ||
+          item.schedule?.generator ||
+          item.requestedBy ||
+          item.schedule?.requestedBy,
+      );
+};
 export const location = (item) => {
+  const bin = originPev(item);
+  if (bin)
+    return (
+      [bin.street, bin.number, bin.neighborhood, bin.city, bin.state]
+        .filter(Boolean)
+        .join(", ") ||
+      bin.location ||
+      "Endereço do PEV não informado"
+    );
   const g = item.generator || item.schedule?.generator || {};
   return (
     [
@@ -60,9 +74,12 @@ export const location = (item) => {
   );
 };
 export const city = (item) =>
-  text((item.generator || item.schedule?.generator)?.city);
+  text((originPev(item) || item.generator || item.schedule?.generator)?.city);
 export const neighborhood = (item) =>
-  text((item.generator || item.schedule?.generator)?.neighborhood);
+  text(
+    (originPev(item) || item.generator || item.schedule?.generator)
+      ?.neighborhood,
+  );
 export function dateKey(value) {
   if (!value) return "";
   const d = new Date(value);

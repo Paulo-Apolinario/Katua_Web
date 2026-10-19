@@ -49,6 +49,7 @@ import EditMaintenanceLog from "../pages/vehicle-management/EditMaintenanceLog";
 import BinList from "../pages/bin-management/BinList";
 import AddBin from "../pages/bin-management/AddBin";
 import EditBin from "../pages/bin-management/EditBin";
+import PevDetail from "../components/pevs/PevDetail";
 
 // Route Management
 import RouteList from "../pages/route-management/RouteList";
@@ -242,6 +243,8 @@ const Router = () => {
               path="edit-maintenance/:id"
               element={<EditMaintenanceLog />}
             />
+
+            <Route path="bin-list/:id" element={<PevDetail />} />
 
             {/* PEV Management */}
             <Route

@@ -905,6 +905,14 @@ function EntryDetail({ id }) {
                 {COLLECTION_STAGES[e.collection?.status] || "Não informada"}
               </p>
               <div className="d-flex flex-wrap gap-2">
+                {e.collection?.bin?.id && (
+                  <Link
+                    to={`/bin-list/${encodeURIComponent(e.collection.bin.id)}`}
+                    className="btn btn-outline-success"
+                  >
+                    Ver PEV de origem
+                  </Link>
+                )}
                 {e.collectionId && (
                   <Link
                     to={`/waste-list?coleta=${encodeURIComponent(e.collectionId)}`}
