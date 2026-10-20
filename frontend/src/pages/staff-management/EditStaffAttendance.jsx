@@ -1,3 +1,4 @@
+import { ManagementHeader } from "../../components/management/ManagementWorkspace";
 import { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router';
 import { House, ChevronRight, User, Route } from 'lucide-react';
@@ -9,7 +10,7 @@ import HeadTags from '../../components/HeadTags';
 import TopProgressBar from '../../components/TopProgressBar';
 
 const EditStaffAttendance = () => {
-  const { id } = useParams(); 
+  const { id } = useParams();
   // Initial form state
   const initialFormState = {
     staff_id: '',
@@ -122,36 +123,7 @@ const EditStaffAttendance = () => {
     <>
      <HeadTags title="Edit Staff Attendance" />
      <TopProgressBar loading={loading} />
-      <div className="page-header mb-30 px-2">
-        <div className="page-title mb-3">
-          <h3 className="fs-30">Edit Staff Attendance</h3>
-        </div>
-        <div className="page-tool d-flex justify-content-between align-items-center">
-          <div className="breadcrumb-wrap">
-            <nav aria-label="breadcrumb">
-              <ol className="breadcrumb pb-0 mb-0">
-                <li className="breadcrumb-item">
-                  <Link to="/" className="d-flex align-items-center gap-8">
-                    <House /> Dashboard
-                  </Link>
-                </li>
-                <li className="breadcrumb-item">
-                  <ChevronRight />
-                </li>
-                <li className="breadcrumb-item">
-                  <Link to="/attendance-list">Staff Attendance</Link>
-                </li>
-                <li className="breadcrumb-item">
-                  <ChevronRight />
-                </li>
-                <li className="breadcrumb-item active" aria-current="page">
-                  Edit Attendance
-                </li>
-              </ol>
-            </nav>
-          </div>
-        </div>
-      </div>
+      <ManagementHeader title="Editar frequência" />
       <div className="row justify-content-center mb-5">
         <div className="col-lg-10 col-xl-8">
           <div className="card p-25">

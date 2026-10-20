@@ -1,3 +1,4 @@
+import { ManagementHeader } from "../../components/management/ManagementWorkspace";
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import {
@@ -193,36 +194,13 @@ const DocumentList = () => {
     <>
       <HeadTags title="Documentos | KATUÁ" />
       <TopProgressBar loading={loading || deleting} />
-      <DeleteModal handleDelete={handleDelete} />
+      <DeleteModal handleDelete={handleDelete} title="Excluir documento" message="Deseja excluir este documento?" confirmLabel="Excluir" cancelLabel="Cancelar" />
 
-      <div className="page-header mb-30 px-2">
-        <div className="page-title mb-3">
-          <h3 className="fs-30">Documentos</h3>
-          <p className="mb-0 text-muted">
-            Gerencie documentos, licenças, registros e anexos vinculados aos veículos.
-          </p>
-        </div>
-
-        <div className="page-tool d-flex justify-content-between flex-wrap gap-20 align-items-center">
-          <div className="breadcrumb-wrap">
-            <nav aria-label="breadcrumb">
-              <ol className="breadcrumb pb-0 mb-0">
-                <li className="breadcrumb-item">
-                  <Link to="/" className="d-flex align-items-center gap-8">
-                    <House /> Dashboard
-                  </Link>
-                </li>
-
-                <li className="breadcrumb-item">
-                  <ChevronRight />
-                </li>
-
-                <li className="breadcrumb-item active">Documentos</li>
-              </ol>
-            </nav>
-          </div>
-
-          <div className="d-flex align-items-center gap-10 flex-wrap">
+      <ManagementHeader
+        title="Documentos"
+        description="Gerencie documentos, licenças, registros e anexos vinculados aos veículos."
+        actions={
+          <>
             <button
               type="button"
               className="outline-btn btn-sm"
@@ -231,13 +209,12 @@ const DocumentList = () => {
             >
               <RefreshCw size={16} /> Atualizar
             </button>
-
             <Link to="/create-document" className="primary-btn btn-sm">
               <CirclePlus /> Criar Documento
             </Link>
-          </div>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       <div className="row g-4 mb-4">
         <div className="col-md-6 col-xl-3">
@@ -313,7 +290,7 @@ const DocumentList = () => {
                     setCurrentPage(1);
                   }}
                   placeholder="Buscar por veículo, número ou tipo..."
-                />
+                 aria-label="Buscar por veículo, número ou tipo..." />
               </div>
             </div>
           </div>

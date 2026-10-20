@@ -1,3 +1,4 @@
+import { ManagementHeader } from "../../components/management/ManagementWorkspace";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import {
@@ -317,33 +318,7 @@ const OperationalCalendar = () => {
       <HeadTags title="Calendário Operacional" />
       <TopProgressBar loading={loading} />
 
-      <div className="page-header mb-30 px-2">
-        <div className="page-title mb-3">
-          <h3 className="fs-30">Calendário Operacional</h3>
-
-          <div className="page-tool d-flex justify-content-between flex-wrap gap-20 align-items-center">
-            <div className="breadcrumb-wrap">
-              <nav aria-label="breadcrumb">
-                <ol className="breadcrumb pb-0 mb-0">
-                  <li className="breadcrumb-item">
-                    <Link to="/" className="d-flex align-items-center gap-8">
-                      <House /> Painel
-                    </Link>
-                  </li>
-
-                  <li className="breadcrumb-item">
-                    <ChevronRight />
-                  </li>
-
-                  <li className="breadcrumb-item active">
-                    Calendário Operacional
-                  </li>
-                </ol>
-              </nav>
-            </div>
-          </div>
-        </div>
-      </div>
+      <ManagementHeader title="Calendário Operacional" />
 
       <div className="row g-4 mb-4">
         <div className="col-xl-3 col-md-6">
@@ -388,7 +363,7 @@ const OperationalCalendar = () => {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Buscar por gerador, rota ou responsável..."
-              />
+               aria-label="Buscar por gerador, rota ou responsável..." />
             </div>
           </div>
 

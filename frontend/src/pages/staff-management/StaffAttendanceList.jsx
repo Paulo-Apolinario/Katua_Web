@@ -1,3 +1,4 @@
+import { ManagementHeader } from "../../components/management/ManagementWorkspace";
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router';
 import { House, ChevronRight, CirclePlus, Pencil, Trash2, Search } from 'lucide-react';
@@ -131,31 +132,16 @@ const StaffAttendanceList = () => {
     <>
       <HeadTags title="Staff Attendance" />
       <TopProgressBar loading={loading} />
-      <div className="page-header mb-30 px-2">
-        <div className="page-title mb-3">
-          <h3 className="fs-30">Staff Attendance</h3>
-          <div className="page-tool d-flex justify-content-between flex-wrap gap-20 align-items-center">
-            <div className="breadcrumb-wrap">
-              <nav aria-label="breadcrumb">
-                <ol className="breadcrumb pb-0 mb-0">
-                  <li className="breadcrumb-item">
-                    <Link to="/" className="d-flex align-items-center gap-8">
-                      <House /> Dashboard
-                    </Link>
-                  </li>
-                  <li className="breadcrumb-item">
-                    <ChevronRight />
-                  </li>
-                  <li className="breadcrumb-item active">Staff Attendance</li>
-                </ol>
-              </nav>
-            </div>
+      <ManagementHeader
+        title="Frequência da equipe"
+        actions={
+          <>
             <Link to="/create-attendance" className="primary-btn btn-sm">
-              <CirclePlus /> Create Attendance
+              <CirclePlus /> Registrar frequência
             </Link>
-          </div>
-        </div>
-      </div>
+          </>
+        }
+      />
       <div className="row mb-4">
         <div className="col-12">
           <div className="card p-25">
@@ -202,7 +188,7 @@ const StaffAttendanceList = () => {
           </div>
         </div>
       </div>
-      <DeleteModal handleDelete={handleDelete} />
+      <DeleteModal handleDelete={handleDelete} title="Excluir registro de frequência" message="Deseja excluir este registro de frequência?" confirmLabel="Excluir" cancelLabel="Cancelar" />
     </>
   );
 };

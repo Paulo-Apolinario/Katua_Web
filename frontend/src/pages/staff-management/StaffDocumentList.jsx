@@ -1,3 +1,4 @@
+import { ManagementHeader } from "../../components/management/ManagementWorkspace";
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router';
 import { House, ChevronRight, CirclePlus, Pencil, Trash2, Search } from 'lucide-react';
@@ -105,31 +106,16 @@ const StaffDocumentList = () => {
     <>
       <HeadTags title="Staff Document" />
       <TopProgressBar loading={loading} />
-      <div className="page-header mb-30 px-2">
-        <div className="page-title mb-3">
-          <h3 className="fs-30">Staff Document</h3>
-          <div className="page-tool d-flex justify-content-between flex-wrap gap-20 align-items-center">
-            <div className="breadcrumb-wrap">
-              <nav aria-label="breadcrumb">
-                <ol className="breadcrumb pb-0 mb-0">
-                  <li className="breadcrumb-item">
-                    <Link to="/" className="d-flex align-items-center gap-8">
-                      <House /> Dashboard
-                    </Link>
-                  </li>
-                  <li className="breadcrumb-item">
-                    <ChevronRight />
-                  </li>
-                  <li className="breadcrumb-item active">Staff Document</li>
-                </ol>
-              </nav>
-            </div>
+      <ManagementHeader
+        title="Documentos da equipe"
+        actions={
+          <>
             <Link to="/create-staff-document" className="primary-btn btn-sm">
-              <CirclePlus /> Create Document
+              <CirclePlus /> Cadastrar documento
             </Link>
-          </div>
-        </div>
-      </div>
+          </>
+        }
+      />
       <div className="row">
         <div className="col-12">
           <div className="card p-25">
@@ -176,7 +162,7 @@ const StaffDocumentList = () => {
           </div>
         </div>
       </div>
-      <DeleteModal handleDelete={handleDelete} />
+      <DeleteModal handleDelete={handleDelete} title="Excluir documento" message="Deseja excluir este documento?" confirmLabel="Excluir" cancelLabel="Cancelar" />
     </>
   );
 };

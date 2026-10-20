@@ -1,3 +1,4 @@
+import { ManagementHeader } from "../../components/management/ManagementWorkspace";
 import { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import {
@@ -357,63 +358,18 @@ const AddCollector = () => {
       <HeadTags title="Adicionar Catador | KATUÁ" />
       <TopProgressBar loading={saving} />
 
-      <div className="page-header mb-30 px-2">
-        <div className="page-title mb-3">
-          <div className="page-tool d-flex justify-content-between flex-wrap gap-3 align-items-center">
-            <div>
-              <h3 className="fs-30">
-                Adicionar Catador
-              </h3>
-
-              <p className="mb-0 text-muted">
-                Cadastre dados pessoais, cooperativos,
-                socioeconômicos e documentos do catador.
-              </p>
-            </div>
-
-            <Link
-              to="/collector-list"
-              className="secondary-btn btn-sm"
-            >
+      <ManagementHeader
+        title="Adicionar Catador"
+        description="Cadastre dados pessoais, cooperativos, socioeconômicos e documentos do catador."
+        actions={
+          <>
+            <Link to="/collector-list" className="secondary-btn btn-sm">
               <ArrowLeft size={16} />
               Voltar
             </Link>
-          </div>
-        </div>
-
-        <div className="breadcrumb-wrap">
-          <nav aria-label="breadcrumb">
-            <ol className="breadcrumb mb-0">
-              <li className="breadcrumb-item">
-                <Link to="/">
-                  <House size={16} /> Painel
-                </Link>
-              </li>
-
-              <li className="breadcrumb-item">
-                <ChevronRight size={16} />
-              </li>
-
-              <li className="breadcrumb-item">
-                <Link to="/collector-list">
-                  Catadores
-                </Link>
-              </li>
-
-              <li className="breadcrumb-item">
-                <ChevronRight size={16} />
-              </li>
-
-              <li
-                className="breadcrumb-item active"
-                aria-current="page"
-              >
-                Adicionar Catador
-              </li>
-            </ol>
-          </nav>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       <form onSubmit={handleSubmit}>
         <div className="card p-25 mb-4">

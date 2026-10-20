@@ -1,3 +1,4 @@
+import { ManagementHeader } from "../../components/management/ManagementWorkspace";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import {
@@ -153,36 +154,11 @@ const AssignRouteList = () => {
       <HeadTags title="Rotas Delegadas" />
       <TopProgressBar loading={loading} />
 
-      <div className="page-header mb-30 px-2">
-        <div className="page-title mb-3">
-          <h3 className="fs-30">Rotas Delegadas</h3>
-          <p className="text-muted mb-0">
-            Acompanhe as rotas que já possuem motorista ou veículo vinculado.
-          </p>
-        </div>
-
-        <div className="page-tool d-flex justify-content-between align-items-center flex-wrap gap-3">
-          <div className="breadcrumb-wrap">
-            <nav aria-label="breadcrumb">
-              <ol className="breadcrumb pb-0 mb-0">
-                <li className="breadcrumb-item">
-                  <Link to="/" className="d-flex align-items-center gap-8">
-                    <House /> Painel
-                  </Link>
-                </li>
-
-                <li className="breadcrumb-item">
-                  <ChevronRight />
-                </li>
-
-                <li className="breadcrumb-item active" aria-current="page">
-                  Rotas Delegadas
-                </li>
-              </ol>
-            </nav>
-          </div>
-
-          <div className="d-flex gap-2">
+      <ManagementHeader
+        title="Rotas Delegadas"
+        description="Acompanhe as rotas que já possuem motorista ou veículo vinculado."
+        actions={
+          <>
             <button
               type="button"
               className="secondary-btn btn-sm border-0"
@@ -192,14 +168,13 @@ const AssignRouteList = () => {
               <RefreshCw size={16} />
               Atualizar
             </button>
-
             <Link to="/route-list" className="primary-btn btn-sm border-0">
               <Route size={16} />
               Ver Rotas
             </Link>
-          </div>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       <div className="row gy-4 mb-4">
         <div className="col-md-4">
@@ -263,26 +238,14 @@ const AssignRouteList = () => {
             </p>
           </div>
 
-          <div
-            className="d-flex align-items-center gap-2"
-            style={{
-              border: "1px solid #e5e7eb",
-              borderRadius: "10px",
-              padding: "8px 12px",
-              minWidth: "280px",
-            }}
-          >
+          <div className="management-search">
             <Search size={18} />
             <input
               value={searchText}
               onChange={(event) => setSearchText(event.target.value)}
               placeholder="Buscar rota, motorista ou veículo..."
-              style={{
-                border: "none",
-                outline: "none",
-                width: "100%",
-                background: "transparent",
-              }}
+
+              aria-label="Buscar rota, motorista ou veículo..."
             />
           </div>
         </div>

@@ -1,3 +1,4 @@
+import { ManagementHeader } from "../../components/management/ManagementWorkspace";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { ArrowLeft, CheckCircle, MapPin, Save, Search } from "lucide-react";
@@ -437,23 +438,18 @@ const AddGenerator = () => {
       <HeadTags title="Novo Gerador" />
       <TopProgressBar loading={loading || loadingCep} />
 
-      <div className="page-header mb-30 px-2">
-        <div className="page-title mb-3">
-          <div className="page-tool d-flex justify-content-between flex-wrap gap-20 align-items-center">
-            <div>
-              <h3 className="fs-30">Novo Gerador</h3>
-              <p className="mb-0 text-muted">
-                Cadastre um pequeno ou grande gerador vinculado à cooperativa.
-              </p>
-            </div>
-
+      <ManagementHeader
+        title="Novo Gerador"
+        description="Cadastre um pequeno ou grande gerador vinculado à cooperativa."
+        actions={
+          <>
             <Link to="/generator-list" className="secondary-btn btn-sm">
               <ArrowLeft />
               Voltar
             </Link>
-          </div>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       <form onSubmit={handleSubmit}>
         <div className="card p-25 mb-4">

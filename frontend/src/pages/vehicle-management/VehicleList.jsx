@@ -1,3 +1,4 @@
+import { ManagementHeader } from "../../components/management/ManagementWorkspace";
 import { useState, useEffect } from "react";
 import { Link } from "react-router";
 import {
@@ -148,37 +149,16 @@ const VehicleList = () => {
       <TopProgressBar loading={loading} />
       <DeleteModal handleDelete={handleDelete} title="Inativar veículo" message="Deseja inativar este veículo? O cadastro e o histórico serão preservados." confirmLabel="Inativar" cancelLabel="Cancelar" />
 
-      <div className="page-header mb-30 px-2">
-        <div className="page-title mb-3">
-          <h3 className="fs-30">Lista de Veículos</h3>
-
-          <div className="page-tool d-flex justify-content-between flex-wrap gap-20 align-items-center">
-            <div className="breadcrumb-wrap">
-              <nav aria-label="breadcrumb">
-                <ol className="breadcrumb pb-0 mb-0">
-                  <li className="breadcrumb-item">
-                    <Link to="/" className="d-flex align-items-center gap-8">
-                      <House /> Painel
-                    </Link>
-                  </li>
-
-                  <li className="breadcrumb-item">
-                    <ChevronRight />
-                  </li>
-
-                  <li className="breadcrumb-item active">
-                    Lista de Veículos
-                  </li>
-                </ol>
-              </nav>
-            </div>
-
+      <ManagementHeader
+        title="Lista de Veículos"
+        actions={
+          <>
             <Link to="/create-vehicle" className="primary-btn btn-sm">
               <CirclePlus /> Criar Veículo
             </Link>
-          </div>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       <div className="row">
         <div className="col-12">
@@ -195,7 +175,7 @@ const VehicleList = () => {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Buscar por placa, modelo ou motorista..."
-                />
+                 aria-label="Buscar por placa, modelo ou motorista..." />
               </div>
             </div>
 
@@ -214,6 +194,7 @@ const VehicleList = () => {
                   <Link
                     to={`/edit-vehicle/${row.id}`}
                     className="action-button edit"
+                    title="Editar veículo" aria-label="Editar veículo"
                   >
                     <Pencil />
                   </Link>

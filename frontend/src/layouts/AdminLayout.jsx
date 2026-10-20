@@ -4,6 +4,7 @@ import Header from "../components/Header";
 import { Outlet } from 'react-router';
 import { getAllCompanySettings } from "../services/settingService";
 import HeadTags from "../components/HeadTags";
+import { ManagementWorkspace } from "../components/management/ManagementWorkspace";
 
 const AdminLayout = () => {
     const [active, setActive] = useState(true);
@@ -32,7 +33,7 @@ const AdminLayout = () => {
         <Header active={active} setActive={setActive} />
         <main className="page-content mt-5">
             <div className="custom-container">
-                <Outlet />
+                <ManagementWorkspace><Outlet /></ManagementWorkspace>
             </div>
         </main>
         </>

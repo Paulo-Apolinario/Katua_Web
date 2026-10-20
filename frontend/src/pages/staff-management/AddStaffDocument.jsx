@@ -1,3 +1,4 @@
+import { ManagementHeader } from "../../components/management/ManagementWorkspace";
 import { useState, useEffect,useRef } from 'react';
 import { Link } from 'react-router';
 import { House, ChevronRight, User } from 'lucide-react';
@@ -90,36 +91,7 @@ const AddStaffDocument = () => {
   return (
     <>
       <HeadTags title="Create Staff Document" />
-      <div className="page-header mb-30 px-2">
-        <div className="page-title mb-3">
-          <h3 className="fs-30">Create Staff Document</h3>
-        </div>
-        <div className="page-tool d-flex justify-content-between align-items-center">
-          <div className="breadcrumb-wrap">
-            <nav aria-label="breadcrumb">
-              <ol className="breadcrumb pb-0 mb-0">
-                <li className="breadcrumb-item">
-                  <Link to="/" className="d-flex align-items-center gap-8">
-                    <House /> Dashboard
-                  </Link>
-                </li>
-                <li className="breadcrumb-item">
-                  <ChevronRight />
-                </li>
-                <li className="breadcrumb-item">
-                  <Link to="/staff-document-list">Staff Document</Link>
-                </li>
-                <li className="breadcrumb-item">
-                  <ChevronRight />
-                </li>
-                <li className="breadcrumb-item active" aria-current="page">
-                  Create New
-                </li>
-              </ol>
-            </nav>
-          </div>
-        </div>
-      </div>
+      <ManagementHeader title="Cadastrar documento da equipe" />
       <div className="row justify-content-center mb-5">
         <div className="col-lg-10 col-xl-8">
           <div className="card p-25">
@@ -222,7 +194,7 @@ const AddStaffDocument = () => {
                     ref={fileRef}
                     label="Document File"
                     required
-                    onChange={(file) => setErrors((prev) => ({ ...prev, file: '' }))}
+                    onChange={() => setErrors((prev) => ({ ...prev, file: '' }))}
                 />
                 {errors.file && <div className="text-danger small mt-1">{errors.file[0]}</div>}
               </div>

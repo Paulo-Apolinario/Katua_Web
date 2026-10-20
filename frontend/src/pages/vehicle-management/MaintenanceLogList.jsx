@@ -1,3 +1,4 @@
+import { ManagementHeader } from "../../components/management/ManagementWorkspace";
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import {
@@ -201,36 +202,13 @@ const MaintenanceLogList = () => {
     <>
       <HeadTags title="Manutenções | KATUÁ" />
       <TopProgressBar loading={loading || deleting} />
-      <DeleteModal handleDelete={handleDelete} />
+      <DeleteModal handleDelete={handleDelete} title="Excluir manutenção" message="Deseja excluir esta manutenção?" confirmLabel="Excluir" cancelLabel="Cancelar" />
 
-      <div className="page-header mb-30 px-2">
-        <div className="page-title mb-3">
-          <h3 className="fs-30">Manutenções</h3>
-          <p className="mb-0 text-muted">
-            Acompanhe manutenções realizadas, agendadas, pendentes e documentos anexados.
-          </p>
-        </div>
-
-        <div className="page-tool d-flex justify-content-between flex-wrap gap-20 align-items-center">
-          <div className="breadcrumb-wrap">
-            <nav aria-label="breadcrumb">
-              <ol className="breadcrumb pb-0 mb-0">
-                <li className="breadcrumb-item">
-                  <Link to="/" className="d-flex align-items-center gap-8">
-                    <House /> Dashboard
-                  </Link>
-                </li>
-
-                <li className="breadcrumb-item">
-                  <ChevronRight />
-                </li>
-
-                <li className="breadcrumb-item active">Manutenções</li>
-              </ol>
-            </nav>
-          </div>
-
-          <div className="d-flex align-items-center gap-10 flex-wrap">
+      <ManagementHeader
+        title="Manutenções"
+        description="Acompanhe manutenções realizadas, agendadas, pendentes e documentos anexados."
+        actions={
+          <>
             <button
               type="button"
               className="outline-btn btn-sm"
@@ -239,13 +217,12 @@ const MaintenanceLogList = () => {
             >
               <RefreshCw size={16} /> Atualizar
             </button>
-
             <Link to="/create-maintenance" className="primary-btn btn-sm">
               <CirclePlus /> Criar Manutenção
             </Link>
-          </div>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       <div className="row g-4 mb-4">
         <div className="col-md-6 col-xl-3">
@@ -341,7 +318,7 @@ const MaintenanceLogList = () => {
                     setCurrentPage(1);
                   }}
                   placeholder="Buscar por veículo, tipo, local ou oficina..."
-                />
+                 aria-label="Buscar por veículo, tipo, local ou oficina..." />
               </div>
             </div>
           </div>

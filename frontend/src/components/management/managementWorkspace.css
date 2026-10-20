@@ -1,0 +1,393 @@
+/* Mesmo vocabulário visual de PEVs e resíduos, restrito às gestões autorizadas. */
+.management-workspace {
+  --management-accent: #176944;
+  --management-border: #dce7df;
+  --management-muted: #52685b;
+  --headline-color: #203b2d;
+  --primary-color: #198754;
+  --input-color: #203b2d;
+  --input-border-color: #dce7df;
+  color: #203b2d;
+  font-family: var(--primary-font);
+  font-size: 1rem;
+  min-width: 0;
+}
+.management-workspace .management-eyebrow {
+  color: var(--management-accent);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.management-workspace .management-heading {
+  min-width: 0;
+  flex: 1 1 360px;
+}
+.management-workspace .management-header h1 {
+  letter-spacing: -0.025em;
+}
+.management-workspace .management-header p {
+  max-width: 780px;
+  line-height: 1.6;
+}
+.management-workspace .management-nav {
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--management-border);
+  flex-wrap: wrap;
+}
+.management-workspace .card {
+  border: 1px solid var(--management-border);
+  border-radius: 14px;
+  box-shadow: 0 3px 16px #20463008;
+  min-width: 0;
+}
+.management-workspace .card:is(.p-25, .p-20) {
+  padding: 1.5rem;
+}
+.management-workspace .card :is(h2, h3, h4, h5) {
+  font-size: 1.125rem;
+  line-height: 1.4;
+}
+.management-workspace .card .content h3 {
+  font-size: 1.75rem;
+  margin-bottom: 0;
+  font-variant-numeric: tabular-nums;
+}
+.management-workspace .card .content .title {
+  color: var(--management-muted);
+  font-size: 0.875rem;
+  margin-bottom: 0.5rem;
+}
+.management-workspace .text-muted {
+  color: var(--management-muted) !important;
+}
+.management-workspace :is(.primary-btn, .secondary-btn, .outline-btn, .btn) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 40px;
+  padding: 0.5rem 0.85rem;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.5;
+  white-space: normal;
+  text-align: center;
+  text-decoration: none;
+  transition:
+    background-color 0.15s,
+    border-color 0.15s,
+    color 0.15s;
+}
+.management-workspace .btn-sm {
+  min-height: 36px;
+  padding: 0.4rem 0.75rem;
+}
+.management-workspace .primary-btn {
+  border: 1px solid #198754;
+  background: #198754;
+  color: white;
+}
+.management-workspace .primary-btn:hover {
+  border-color: #146c43;
+  background: #157347;
+  color: white;
+}
+.management-workspace :is(.secondary-btn, .outline-btn) {
+  border: 1px solid #6c757d;
+  color: #526159;
+  background: white;
+}
+.management-workspace :is(.secondary-btn, .outline-btn):hover {
+  border-color: #526159;
+  background: #f2f7f3;
+  color: #203b2d;
+}
+.management-workspace :is(.btn-success, .btn-primary) {
+  --bs-btn-bg: #198754;
+  --bs-btn-border-color: #198754;
+  --bs-btn-color: #fff;
+  --bs-btn-hover-bg: #157347;
+  --bs-btn-hover-border-color: #146c43;
+  --bs-btn-hover-color: #fff;
+  --bs-btn-active-bg: #146c43;
+  --bs-btn-active-border-color: #13653f;
+  --bs-btn-disabled-bg: #198754;
+  --bs-btn-disabled-border-color: #198754;
+}
+.management-workspace
+  :is(.primary-btn, .secondary-btn, .outline-btn, .btn)
+  .lucide {
+  color: currentColor;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+.management-workspace :is(button, .btn):disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.management-workspace :is(.form-control, .form-select) {
+  font-family: inherit;
+  font-size: 0.9375rem;
+  min-height: 42px;
+  border-color: var(--management-border);
+  border-radius: 8px;
+  color: #203b2d;
+}
+.management-workspace .form-label {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: #304f3c;
+  margin-bottom: 0.5rem;
+}
+.management-workspace .form-control::placeholder {
+  color: #6a7c70;
+  font-size: 0.875rem;
+  opacity: 1;
+}
+.management-workspace textarea.form-control {
+  height: auto;
+  min-height: 110px;
+}
+.management-workspace :is(.form-control, .form-select):focus {
+  border-color: #268550;
+  box-shadow: 0 0 0 3px #26855020;
+}
+.management-workspace .form-check-input:checked {
+  background-color: #198754;
+  border-color: #198754;
+}
+.management-workspace .form-control[readonly],
+.management-workspace :is(.form-control, .form-select):disabled {
+  background-color: #f2f6f3;
+  color: #52685b;
+}
+.management-workspace .filter {
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.management-workspace .filter-section.search {
+  position: relative;
+  width: min(100%, 480px);
+  min-width: 0;
+}
+.management-workspace .filter-section.search .icon {
+  position: absolute;
+  left: 0.8rem;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1;
+  pointer-events: none;
+}
+.management-workspace .filter-section.search .lucide {
+  width: 18px;
+  height: 18px;
+  color: #52685b;
+}
+.management-workspace .filter-section.search input {
+  width: 100%;
+  padding-left: 2.5rem;
+}
+.management-workspace .management-search {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+  width: min(100%, 440px);
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--management-border);
+  border-radius: 8px;
+  background: white;
+}
+.management-workspace .management-search input {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #203b2d;
+  font: inherit;
+  font-size: 0.9375rem;
+}
+.management-workspace .management-search:focus-within {
+  border-color: #268550;
+  box-shadow: 0 0 0 3px #26855020;
+}
+.management-workspace .management-search .lucide {
+  width: 18px;
+  height: 18px;
+  color: #52685b;
+  flex-shrink: 0;
+}
+.management-workspace .table {
+  min-width: 740px;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+.management-workspace .table :is(th, td) {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  vertical-align: middle;
+  padding: 0.9rem 0.75rem;
+  border-color: #e5ece7;
+}
+.management-workspace .table thead th {
+  background: #f2f7f3;
+  color: #496153;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.management-workspace .table tbody td {
+  color: #294535;
+  line-height: 1.5;
+}
+.management-workspace .table tbody tr:hover > td {
+  background: #f8fbf9;
+}
+.management-workspace :is(.table-responsive, [data-simplebar]) {
+  max-width: 100%;
+  min-width: 0;
+}
+.management-workspace .simplebar-content-wrapper {
+  overscroll-behavior-x: contain;
+}
+.management-workspace :is(.actions, .table .d-flex) {
+  flex-wrap: wrap;
+}
+.management-workspace .actions {
+  min-width: 88px;
+}
+.management-workspace .actions :is(.action-button, a, button) {
+  color: var(--management-accent);
+}
+.management-workspace .actions .action-button {
+  border: 1px solid var(--management-border);
+  border-radius: 8px;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+}
+.management-workspace .actions .action-button:hover {
+  background: #edf6f0;
+  border-color: #a9c8b5;
+}
+.management-workspace .actions .delete {
+  color: #a52a35;
+}
+.management-workspace .actions .lucide {
+  color: currentColor;
+}
+.management-workspace :is(.status, .badge) {
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.4;
+  padding: 0.4em 0.65em;
+  white-space: normal;
+}
+.management-workspace .status-success {
+  background: #e4f3e9;
+  color: #17613d;
+}
+.management-workspace .status-warning {
+  background: #fff3cd;
+  color: #755400;
+}
+.management-workspace .status-info {
+  background: #e3f1f6;
+  color: #205c73;
+}
+.management-workspace .status-danger {
+  background: #fbe8e9;
+  color: #942936;
+}
+.management-workspace .page-link {
+  border-color: var(--management-border);
+  border-radius: 8px;
+  font-size: 0.875rem;
+  color: #176944;
+}
+.management-workspace .page-item.active .page-link {
+  background: #198754;
+  border-color: #198754;
+  color: white;
+}
+.management-workspace .pagination {
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+.management-workspace .alert {
+  border-radius: 10px;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+.management-workspace .modal-content {
+  border: 1px solid var(--management-border);
+  border-radius: 14px;
+  box-shadow: 0 12px 40px #203b2d26;
+}
+.management-workspace .modal-title {
+  font-size: 1.25rem;
+}
+.management-workspace :is(button, a, input, select, textarea):focus-visible {
+  outline: 3px solid #268550;
+  outline-offset: 3px;
+}
+@media (max-width: 575px) {
+  .management-workspace .management-header-actions {
+    width: 100%;
+  }
+  .management-workspace .management-header-actions > * {
+    flex: 1 1 140px;
+  }
+  .management-workspace .card:is(.p-25, .p-20) {
+    padding: 1rem;
+  }
+  .management-workspace .management-nav .btn {
+    flex: 1 1 135px;
+  }
+  .management-workspace .filter,
+  .management-workspace .filter-section.search {
+    width: 100%;
+  }
+  .management-workspace .modal-footer {
+    flex-wrap: wrap;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .management-workspace :is(.btn, .primary-btn, .secondary-btn, .outline-btn) {
+    transition: none;
+  }
+}
+.management-workspace .btn-outline-primary {
+  --bs-btn-color: #176944;
+  --bs-btn-border-color: #198754;
+  --bs-btn-hover-color: white;
+  --bs-btn-hover-bg: #198754;
+  --bs-btn-hover-border-color: #198754;
+  --bs-btn-active-color: white;
+  --bs-btn-active-bg: #146c43;
+  --bs-btn-active-border-color: #146c43;
+}
+.management-workspace .badge .lucide {
+  color: currentColor;
+}
+.management-workspace .table thead th {
+  overflow-wrap: normal;
+  word-break: normal;
+}
+.management-workspace .table thead th:first-child {
+  min-width: 3.25rem;
+}
+.management-workspace .filter-section.search .icon {
+  padding: 0;
+}
+.management-workspace :is(.status, .badge) {
+  white-space: nowrap;
+  overflow-wrap: normal;
+  word-break: normal;
+}

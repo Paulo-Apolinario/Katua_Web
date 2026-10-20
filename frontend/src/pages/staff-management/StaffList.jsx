@@ -1,3 +1,4 @@
+import { ManagementHeader } from "../../components/management/ManagementWorkspace";
 import { useState, useEffect } from "react";
 import { Link } from "react-router";
 import {
@@ -126,37 +127,16 @@ const StaffList = () => {
       <HeadTags title="Lista de Motoristas" />
       <TopProgressBar loading={loading} />
 
-      <div className="page-header mb-30 px-2">
-        <div className="page-title mb-3">
-          <h3 className="fs-30">Lista de Motoristas</h3>
-
-          <div className="page-tool d-flex justify-content-between flex-wrap gap-20 align-items-center">
-            <div className="breadcrumb-wrap">
-              <nav aria-label="breadcrumb">
-                <ol className="breadcrumb pb-0 mb-0">
-                  <li className="breadcrumb-item">
-                    <Link to="/" className="d-flex align-items-center gap-8">
-                      <House /> Painel
-                    </Link>
-                  </li>
-
-                  <li className="breadcrumb-item">
-                    <ChevronRight />
-                  </li>
-
-                  <li className="breadcrumb-item active">
-                    Lista de Motoristas
-                  </li>
-                </ol>
-              </nav>
-            </div>
-
+      <ManagementHeader
+        title="Lista de Motoristas"
+        actions={
+          <>
             <Link to="/create-staff" className="primary-btn btn-sm">
               <CirclePlus /> Criar Motorista
             </Link>
-          </div>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       <div className="row">
         <div className="col-12">
@@ -173,7 +153,7 @@ const StaffList = () => {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Buscar por nome, email, CPF ou CNH..."
-                />
+                 aria-label="Buscar por nome, email, CPF ou CNH..." />
               </div>
             </div>
 
@@ -191,7 +171,7 @@ const StaffList = () => {
                 <div className="actions d-flex align-items-center gap-10">
                   <Link
                     to={`/edit-staff/${row.id}`}
-                    className="action-button edit"
+                    className="action-button edit" title="Editar motorista" aria-label="Editar motorista"
                   >
                     <Pencil />
                   </Link>

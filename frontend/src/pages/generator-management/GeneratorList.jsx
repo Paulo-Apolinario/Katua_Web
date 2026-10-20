@@ -1,3 +1,4 @@
+import { ManagementHeader } from "../../components/management/ManagementWorkspace";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import {
@@ -119,23 +120,18 @@ const GeneratorList = () => {
       <HeadTags title="Gestão de Geradores" />
       <TopProgressBar loading={loading} />
 
-      <div className="page-header mb-30 px-2">
-        <div className="page-title mb-3">
-          <div className="page-tool d-flex justify-content-between flex-wrap gap-20 align-items-center">
-            <div>
-              <h3 className="fs-30">Gestão de Geradores</h3>
-              <p className="mb-0 text-muted">
-                Gerencie pequenos e grandes geradores vinculados à cooperativa.
-              </p>
-            </div>
-
+      <ManagementHeader
+        title="Gestão de Geradores"
+        description="Gerencie pequenos e grandes geradores vinculados à cooperativa."
+        actions={
+          <>
             <Link to="/create-generator" className="primary-btn btn-sm">
               <CirclePlus />
               Novo gerador
             </Link>
-          </div>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       <div className="row g-4 mb-4">
         <div className="col-md-6 col-xl-3">
@@ -179,26 +175,14 @@ const GeneratorList = () => {
         <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
           <h4 className="mb-0 fw-600">Lista de Geradores</h4>
 
-          <div
-            className="d-flex align-items-center gap-2"
-            style={{
-              border: "1px solid #e5e7eb",
-              borderRadius: "10px",
-              padding: "8px 12px",
-              minWidth: "280px",
-            }}
-          >
+          <div className="management-search">
             <Search size={18} />
             <input
               value={searchText}
               onChange={(event) => setSearchText(event.target.value)}
               placeholder="Buscar gerador..."
-              style={{
-                border: "none",
-                outline: "none",
-                width: "100%",
-                background: "transparent",
-              }}
+
+              aria-label="Buscar gerador..."
             />
           </div>
         </div>

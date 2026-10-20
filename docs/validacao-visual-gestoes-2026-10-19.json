@@ -1,0 +1,1581 @@
+{
+  "environment": "Chromium local; API simulada com dados fictícios; sem gravação no banco",
+  "initial": {
+    "outcomes": [
+      {
+        "width": 1100,
+        "route": "generator-list",
+        "status": "PASS",
+        "title": "Gestão de Geradores",
+        "font": "24px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 5,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 1
+      },
+      {
+        "width": 1100,
+        "route": "create-generator",
+        "status": "PASS",
+        "title": "Novo Gerador",
+        "font": "24px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 2,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          },
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 11
+      },
+      {
+        "width": 1100,
+        "route": "edit-generator/g1",
+        "status": "PASS",
+        "title": "Editar Gerador",
+        "font": "24px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 3,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 11
+      },
+      {
+        "width": 1100,
+        "route": "generator-documents?generatorId=g1",
+        "status": "PASS",
+        "title": "Documentos do Gerador",
+        "font": "24px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 2,
+        "primary": [],
+        "inputs": 1
+      },
+      {
+        "width": 1100,
+        "route": "vehicle-list",
+        "status": "PASS",
+        "title": "Inativar veículo",
+        "font": "20px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 1,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 1
+      },
+      {
+        "width": 1100,
+        "route": "create-vehicle",
+        "status": "PASS",
+        "title": "Criar Veículo",
+        "font": "24px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 1,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 8
+      },
+      {
+        "width": 1100,
+        "route": "edit-vehicle/v1",
+        "status": "PASS",
+        "title": "Editar Veículo",
+        "font": "24px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 1,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 8
+      },
+      {
+        "width": 1100,
+        "route": "document-list",
+        "status": "PASS",
+        "title": "Delete Confirmation",
+        "font": "20px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 5,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 1
+      },
+      {
+        "width": 1100,
+        "route": "create-document",
+        "status": "PASS",
+        "title": "Criar Documento",
+        "font": "24px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 1,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 4
+      },
+      {
+        "width": 1100,
+        "route": "edit-document/doc1",
+        "status": "PASS",
+        "title": "Editar Documento",
+        "font": "24px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 1,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 4
+      },
+      {
+        "width": 1100,
+        "route": "maintenance-list",
+        "status": "PASS",
+        "title": "Delete Confirmation",
+        "font": "20px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 5,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 1
+      },
+      {
+        "width": 1100,
+        "route": "create-maintenance",
+        "status": "PASS",
+        "title": "Criar Manutenção",
+        "font": "24px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 1,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 11
+      },
+      {
+        "width": 1100,
+        "route": "edit-maintenance/m1",
+        "status": "PASS",
+        "title": "Editar Manutenção",
+        "font": "24px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 1,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 11
+      },
+      {
+        "width": 1100,
+        "route": "route-list",
+        "status": "PASS",
+        "title": "Lista de Rotas",
+        "font": "24px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 1,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 1
+      },
+      {
+        "width": 1100,
+        "route": "create-route",
+        "status": "PASS",
+        "title": "Criar Rota",
+        "font": "24px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 1,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 6
+      },
+      {
+        "width": 1100,
+        "route": "edit-route/r1",
+        "status": "PASS",
+        "title": "Editar Rota",
+        "font": "24px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 3,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 6
+      },
+      {
+        "width": 1100,
+        "route": "mtr-online",
+        "status": "PASS",
+        "title": "MTR e Notas Fiscais",
+        "font": "24px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 5,
+        "primary": [],
+        "inputs": 3
+      },
+      {
+        "width": 1100,
+        "route": "operational-calendar",
+        "status": "PASS",
+        "title": "Calendário Operacional",
+        "font": "24px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 7,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 1
+      },
+      {
+        "width": 1100,
+        "route": "staff-list",
+        "status": "PASS",
+        "title": "Lista de Motoristas",
+        "font": "24px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 1,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 1
+      },
+      {
+        "width": 1100,
+        "route": "create-staff",
+        "status": "PASS",
+        "title": "Criar Motorista",
+        "font": "24px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 1,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 9
+      },
+      {
+        "width": 1100,
+        "route": "edit-staff/d1",
+        "status": "PASS",
+        "title": "Editar Motorista",
+        "font": "24px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 1,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 8
+      },
+      {
+        "width": 1100,
+        "route": "collector-list",
+        "status": "PASS",
+        "title": "Catadores",
+        "font": "24px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 2,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 1
+      },
+      {
+        "width": 1100,
+        "route": "create-collector",
+        "status": "PASS",
+        "title": "Adicionar Catador",
+        "font": "24px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 5,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 12
+      },
+      {
+        "width": 1100,
+        "route": "collector-documents?collectorId=c1",
+        "status": "PASS",
+        "title": "Documentos dos Catadores",
+        "font": "24px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 2,
+        "primary": [],
+        "inputs": 1
+      },
+      {
+        "width": 1100,
+        "route": "assign-list",
+        "status": "PASS",
+        "title": "Rotas Delegadas",
+        "font": "24px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 4,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          },
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 1
+      },
+      {
+        "width": 1100,
+        "route": "create-assign",
+        "status": "PASS",
+        "title": "Delegar rota",
+        "font": "24px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 1,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 6
+      },
+      {
+        "width": 1100,
+        "route": "edit-assign/a1",
+        "status": "PASS",
+        "title": "Editar delegação de rota",
+        "font": "24px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 1,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 6
+      },
+      {
+        "width": 1100,
+        "route": "attendance-list",
+        "status": "PASS",
+        "title": "Frequência da equipe",
+        "font": "24px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 1,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 1
+      },
+      {
+        "width": 1100,
+        "route": "create-attendance",
+        "status": "PASS",
+        "title": "Registrar frequência",
+        "font": "24px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 1,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 11
+      },
+      {
+        "width": 1100,
+        "route": "edit-attendance/at1",
+        "status": "PASS",
+        "title": "Editar frequência",
+        "font": "24px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 1,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 11
+      },
+      {
+        "width": 1100,
+        "route": "staff-document-list",
+        "status": "PASS",
+        "title": "Documentos da equipe",
+        "font": "24px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 1,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 1
+      },
+      {
+        "width": 1100,
+        "route": "create-staff-document",
+        "status": "PASS",
+        "title": "Cadastrar documento da equipe",
+        "font": "24px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 1,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 4
+      },
+      {
+        "width": 1100,
+        "route": "edit-staff-document/doc1",
+        "status": "PASS",
+        "title": "Editar documento da equipe",
+        "font": "24px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 1,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 4
+      },
+      {
+        "width": 406,
+        "route": "generator-list",
+        "status": "PASS",
+        "title": "Gestão de Geradores",
+        "font": "21.69px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 5,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 1
+      },
+      {
+        "width": 406,
+        "route": "create-generator",
+        "status": "PASS",
+        "title": "Novo Gerador",
+        "font": "21.69px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 2,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          },
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 11
+      },
+      {
+        "width": 406,
+        "route": "edit-generator/g1",
+        "status": "PASS",
+        "title": "Editar Gerador",
+        "font": "21.69px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 3,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 11
+      },
+      {
+        "width": 406,
+        "route": "generator-documents?generatorId=g1",
+        "status": "PASS",
+        "title": "Documentos do Gerador",
+        "font": "21.69px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 2,
+        "primary": [],
+        "inputs": 1
+      },
+      {
+        "width": 406,
+        "route": "vehicle-list",
+        "status": "PASS",
+        "title": "Inativar veículo",
+        "font": "20px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 1,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 1
+      },
+      {
+        "width": 406,
+        "route": "create-vehicle",
+        "status": "PASS",
+        "title": "Criar Veículo",
+        "font": "21.69px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 1,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 8
+      },
+      {
+        "width": 406,
+        "route": "edit-vehicle/v1",
+        "status": "PASS",
+        "title": "Editar Veículo",
+        "font": "21.69px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 1,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 8
+      },
+      {
+        "width": 406,
+        "route": "document-list",
+        "status": "PASS",
+        "title": "Delete Confirmation",
+        "font": "20px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 5,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 1
+      },
+      {
+        "width": 406,
+        "route": "create-document",
+        "status": "PASS",
+        "title": "Criar Documento",
+        "font": "21.69px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 1,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 4
+      },
+      {
+        "width": 406,
+        "route": "edit-document/doc1",
+        "status": "PASS",
+        "title": "Editar Documento",
+        "font": "21.69px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 1,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 4
+      },
+      {
+        "width": 406,
+        "route": "maintenance-list",
+        "status": "PASS",
+        "title": "Delete Confirmation",
+        "font": "20px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 5,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 1
+      },
+      {
+        "width": 406,
+        "route": "create-maintenance",
+        "status": "PASS",
+        "title": "Criar Manutenção",
+        "font": "21.69px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 1,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 11
+      },
+      {
+        "width": 406,
+        "route": "edit-maintenance/m1",
+        "status": "PASS",
+        "title": "Editar Manutenção",
+        "font": "21.69px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 1,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 11
+      },
+      {
+        "width": 406,
+        "route": "route-list",
+        "status": "PASS",
+        "title": "Lista de Rotas",
+        "font": "21.69px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 1,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 1
+      },
+      {
+        "width": 406,
+        "route": "create-route",
+        "status": "PASS",
+        "title": "Criar Rota",
+        "font": "21.69px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 1,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 6
+      },
+      {
+        "width": 406,
+        "route": "edit-route/r1",
+        "status": "PASS",
+        "title": "Editar Rota",
+        "font": "21.69px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 3,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 6
+      },
+      {
+        "width": 406,
+        "route": "mtr-online",
+        "status": "PASS",
+        "title": "MTR e Notas Fiscais",
+        "font": "21.69px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 5,
+        "primary": [],
+        "inputs": 3
+      },
+      {
+        "width": 406,
+        "route": "operational-calendar",
+        "status": "PASS",
+        "title": "Calendário Operacional",
+        "font": "21.69px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 7,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 1
+      },
+      {
+        "width": 406,
+        "route": "staff-list",
+        "status": "PASS",
+        "title": "Lista de Motoristas",
+        "font": "21.69px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 1,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 1
+      },
+      {
+        "width": 406,
+        "route": "create-staff",
+        "status": "PASS",
+        "title": "Criar Motorista",
+        "font": "21.69px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 1,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 9
+      },
+      {
+        "width": 406,
+        "route": "edit-staff/d1",
+        "status": "PASS",
+        "title": "Editar Motorista",
+        "font": "21.69px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 1,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 8
+      },
+      {
+        "width": 406,
+        "route": "collector-list",
+        "status": "PASS",
+        "title": "Catadores",
+        "font": "21.69px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 2,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 1
+      },
+      {
+        "width": 406,
+        "route": "create-collector",
+        "status": "PASS",
+        "title": "Adicionar Catador",
+        "font": "21.69px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 5,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 12
+      },
+      {
+        "width": 406,
+        "route": "collector-documents?collectorId=c1",
+        "status": "PASS",
+        "title": "Documentos dos Catadores",
+        "font": "21.69px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 2,
+        "primary": [],
+        "inputs": 1
+      },
+      {
+        "width": 406,
+        "route": "assign-list",
+        "status": "PASS",
+        "title": "Rotas Delegadas",
+        "font": "21.69px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 4,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          },
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 1
+      },
+      {
+        "width": 406,
+        "route": "create-assign",
+        "status": "PASS",
+        "title": "Delegar rota",
+        "font": "21.69px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 1,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 6
+      },
+      {
+        "width": 406,
+        "route": "edit-assign/a1",
+        "status": "PASS",
+        "title": "Editar delegação de rota",
+        "font": "21.69px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 1,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 6
+      },
+      {
+        "width": 406,
+        "route": "attendance-list",
+        "status": "PASS",
+        "title": "Frequência da equipe",
+        "font": "21.69px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 1,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 1
+      },
+      {
+        "width": 406,
+        "route": "create-attendance",
+        "status": "PASS",
+        "title": "Registrar frequência",
+        "font": "21.69px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 1,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 11
+      },
+      {
+        "width": 406,
+        "route": "edit-attendance/at1",
+        "status": "PASS",
+        "title": "Editar frequência",
+        "font": "21.69px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 1,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 11
+      },
+      {
+        "width": 406,
+        "route": "staff-document-list",
+        "status": "PASS",
+        "title": "Documentos da equipe",
+        "font": "21.69px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 1,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 1
+      },
+      {
+        "width": 406,
+        "route": "create-staff-document",
+        "status": "PASS",
+        "title": "Cadastrar documento da equipe",
+        "font": "21.69px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 1,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 4
+      },
+      {
+        "width": 406,
+        "route": "edit-staff-document/doc1",
+        "status": "PASS",
+        "title": "Editar documento da equipe",
+        "font": "21.69px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 1,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 4
+      }
+    ],
+    "errors": [],
+    "mutations": [],
+    "checks": [
+      "66 páginas/viewport",
+      "modal de inativação abre e cancela",
+      "PEVs e resíduos fora do novo escopo"
+    ]
+  },
+  "final": {
+    "outcomes": [
+      {
+        "width": 1100,
+        "route": "generator-list",
+        "status": "PASS",
+        "title": "Gestão de Geradores",
+        "font": "24px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 5,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 1
+      },
+      {
+        "width": 1100,
+        "route": "vehicle-list",
+        "status": "PASS",
+        "title": "Inativar veículo",
+        "font": "20px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 1,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 1
+      },
+      {
+        "width": 1100,
+        "route": "create-vehicle",
+        "status": "PASS",
+        "title": "Criar Veículo",
+        "font": "24px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 1,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 8
+      },
+      {
+        "width": 1100,
+        "route": "route-list",
+        "status": "PASS",
+        "title": "Lista de Rotas",
+        "font": "24px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 1,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 1
+      },
+      {
+        "width": 1100,
+        "route": "staff-list",
+        "status": "PASS",
+        "title": "Lista de Motoristas",
+        "font": "24px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 1,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 1
+      },
+      {
+        "width": 1100,
+        "route": "collector-list",
+        "status": "PASS",
+        "title": "Catadores",
+        "font": "24px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 2,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 1
+      },
+      {
+        "width": 1100,
+        "route": "document-list",
+        "status": "PASS",
+        "title": "Excluir documento",
+        "font": "20px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 5,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 1
+      },
+      {
+        "width": 1100,
+        "route": "maintenance-list",
+        "status": "PASS",
+        "title": "Excluir manutenção",
+        "font": "20px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 5,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 1
+      },
+      {
+        "width": 406,
+        "route": "generator-list",
+        "status": "PASS",
+        "title": "Gestão de Geradores",
+        "font": "21.69px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 5,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 1
+      },
+      {
+        "width": 406,
+        "route": "vehicle-list",
+        "status": "PASS",
+        "title": "Inativar veículo",
+        "font": "20px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 1,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 1
+      },
+      {
+        "width": 406,
+        "route": "create-vehicle",
+        "status": "PASS",
+        "title": "Criar Veículo",
+        "font": "21.69px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 1,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 8
+      },
+      {
+        "width": 406,
+        "route": "route-list",
+        "status": "PASS",
+        "title": "Lista de Rotas",
+        "font": "21.69px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 1,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 1
+      },
+      {
+        "width": 406,
+        "route": "staff-list",
+        "status": "PASS",
+        "title": "Lista de Motoristas",
+        "font": "21.69px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 1,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 1
+      },
+      {
+        "width": 406,
+        "route": "collector-list",
+        "status": "PASS",
+        "title": "Catadores",
+        "font": "21.69px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 2,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 1
+      },
+      {
+        "width": 406,
+        "route": "document-list",
+        "status": "PASS",
+        "title": "Excluir documento",
+        "font": "20px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 5,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 1
+      },
+      {
+        "width": 406,
+        "route": "maintenance-list",
+        "status": "PASS",
+        "title": "Excluir manutenção",
+        "font": "20px",
+        "family": "Geist, sans-serif",
+        "headingCount": 1,
+        "overflow": false,
+        "nav": true,
+        "cards": 5,
+        "primary": [
+          {
+            "color": "rgb(255, 255, 255)",
+            "bg": "rgb(25, 135, 84)"
+          }
+        ],
+        "inputs": 1
+      }
+    ],
+    "errors": [],
+    "mutations": [],
+    "checks": [
+      "16 páginas/viewport após ajustes finais de cabeçalhos da tabela e textos dos modais",
+      "modal de inativação abre e cancela",
+      "PEVs e resíduos fora do novo escopo",
+      "Navegação lista → cadastro de veículo → lista",
+      "Campo de placa editável com borda padronizada",
+      "Busca sem resultados mantém a apresentação"
+    ]
+  },
+  "validation": {
+    "eslint": "PASS nos arquivos de implementação alterados",
+    "viteBuild": "PASS; aviso preexistente de bundle grande",
+    "unitAndContractTests": {
+      "passed": 26,
+      "failed": 0
+    },
+    "limitations": "API simulada, sem banco real ou deploy; mapas externos não homologados"
+  }
+}

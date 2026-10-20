@@ -1,3 +1,4 @@
+import { ManagementHeader } from "../../components/management/ManagementWorkspace";
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import {
@@ -253,48 +254,17 @@ const EditDocument = () => {
       <HeadTags title="Editar Documento | KATUÁ" />
       <TopProgressBar loading={loading || saving} />
 
-      <div className="page-header mb-30 px-2">
-        <div className="page-title mb-3">
-          <h3 className="fs-30">Editar Documento</h3>
-          <p className="mb-0 text-muted">
-            Atualize documentos, licenças, registros e anexos vinculados aos veículos.
-          </p>
-        </div>
-
-        <div className="page-tool d-flex justify-content-between align-items-center flex-wrap gap-20">
-          <div className="breadcrumb-wrap">
-            <nav aria-label="breadcrumb">
-              <ol className="breadcrumb pb-0 mb-0">
-                <li className="breadcrumb-item">
-                  <Link to="/" className="d-flex align-items-center gap-8">
-                    <House /> Dashboard
-                  </Link>
-                </li>
-
-                <li className="breadcrumb-item">
-                  <ChevronRight />
-                </li>
-
-                <li className="breadcrumb-item">
-                  <Link to="/document-list">Documentos</Link>
-                </li>
-
-                <li className="breadcrumb-item">
-                  <ChevronRight />
-                </li>
-
-                <li className="breadcrumb-item active" aria-current="page">
-                  Editar
-                </li>
-              </ol>
-            </nav>
-          </div>
-
-          <Link to="/document-list" className="outline-btn btn-sm">
-            <ArrowLeft /> Voltar
-          </Link>
-        </div>
-      </div>
+      <ManagementHeader
+        title="Editar Documento"
+        description="Atualize documentos, licenças, registros e anexos vinculados aos veículos."
+        actions={
+          <>
+            <Link to="/document-list" className="outline-btn btn-sm">
+              <ArrowLeft /> Voltar
+            </Link>
+          </>
+        }
+      />
 
       <div className="row justify-content-center">
         <div className="col-lg-10 col-xl-8">

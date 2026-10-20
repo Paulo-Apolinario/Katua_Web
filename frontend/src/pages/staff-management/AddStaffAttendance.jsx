@@ -1,3 +1,4 @@
+import { ManagementHeader } from "../../components/management/ManagementWorkspace";
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router';
 import { House, ChevronRight, User, Route } from 'lucide-react';
@@ -100,36 +101,7 @@ const AddStaffAttendance = () => {
   return (
     <>
       <HeadTags title="Create Staff Attendance" />
-      <div className="page-header mb-30 px-2">
-        <div className="page-title mb-3">
-          <h3 className="fs-30">Create Staff Attendance</h3>
-        </div>
-        <div className="page-tool d-flex justify-content-between align-items-center">
-          <div className="breadcrumb-wrap">
-            <nav aria-label="breadcrumb">
-              <ol className="breadcrumb pb-0 mb-0">
-                <li className="breadcrumb-item">
-                  <Link to="/" className="d-flex align-items-center gap-8">
-                    <House /> Dashboard
-                  </Link>
-                </li>
-                <li className="breadcrumb-item">
-                  <ChevronRight />
-                </li>
-                <li className="breadcrumb-item">
-                  <Link to="/attendance-list">Staff Attendance</Link>
-                </li>
-                <li className="breadcrumb-item">
-                  <ChevronRight />
-                </li>
-                <li className="breadcrumb-item active" aria-current="page">
-                  Create New
-                </li>
-              </ol>
-            </nav>
-          </div>
-        </div>
-      </div>
+      <ManagementHeader title="Registrar frequência" />
       <div className="row justify-content-center mb-4">
         <div className="col-lg-10 col-xl-8">
           <div className="card p-25">
@@ -271,7 +243,7 @@ const AddStaffAttendance = () => {
                 />
                 {errors.check_out_time && <div className="text-danger small mt-1">{errors.check_out_time[0]}</div>}
               </div>
-              
+
               <div className="mb-4">
                 <label className="form-label">
                   Leave Type <span className={formData.attendance_status === 'leave' ? 'text-danger' : ''}>*</span>

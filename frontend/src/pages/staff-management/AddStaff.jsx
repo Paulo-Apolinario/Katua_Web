@@ -1,3 +1,4 @@
+import { ManagementHeader } from "../../components/management/ManagementWorkspace";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { House, ChevronRight } from "lucide-react";
@@ -106,41 +107,7 @@ const AddStaff = () => {
     <>
       <HeadTags title="Criar Motorista" />
 
-      <div className="page-header mb-30 px-2">
-        <div className="page-title mb-3">
-          <h3 className="fs-30">Criar Motorista</h3>
-        </div>
-
-        <div className="page-tool d-flex justify-content-between align-items-center">
-          <div className="breadcrumb-wrap">
-            <nav aria-label="breadcrumb">
-              <ol className="breadcrumb pb-0 mb-0">
-                <li className="breadcrumb-item">
-                  <Link to="/" className="d-flex align-items-center gap-8">
-                    <House /> Painel
-                  </Link>
-                </li>
-
-                <li className="breadcrumb-item">
-                  <ChevronRight />
-                </li>
-
-                <li className="breadcrumb-item">
-                  <Link to="/staff-list">Lista de Motoristas</Link>
-                </li>
-
-                <li className="breadcrumb-item">
-                  <ChevronRight />
-                </li>
-
-                <li className="breadcrumb-item active" aria-current="page">
-                  Novo Motorista
-                </li>
-              </ol>
-            </nav>
-          </div>
-        </div>
-      </div>
+      <ManagementHeader title="Criar Motorista" />
 
       <div className="row justify-content-center mb-5">
         <div className="col-lg-10 col-xl-8">

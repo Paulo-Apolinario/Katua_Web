@@ -1,3 +1,4 @@
+import { ManagementHeader } from "../../components/management/ManagementWorkspace";
 import { useState, useEffect } from "react";
 import { Link } from "react-router";
 import {
@@ -131,35 +132,16 @@ const RouteList = () => {
       <HeadTags title="Lista de Rotas" />
       <TopProgressBar loading={loading} />
 
-      <div className="page-header mb-30 px-2">
-        <div className="page-title mb-3">
-          <h3 className="fs-30">Lista de Rotas</h3>
-
-          <div className="page-tool d-flex justify-content-between flex-wrap gap-20 align-items-center">
-            <div className="breadcrumb-wrap">
-              <nav aria-label="breadcrumb">
-                <ol className="breadcrumb pb-0 mb-0">
-                  <li className="breadcrumb-item">
-                    <Link to="/" className="d-flex align-items-center gap-8">
-                      <House /> Painel
-                    </Link>
-                  </li>
-
-                  <li className="breadcrumb-item">
-                    <ChevronRight />
-                  </li>
-
-                  <li className="breadcrumb-item active">Lista de Rotas</li>
-                </ol>
-              </nav>
-            </div>
-
+      <ManagementHeader
+        title="Lista de Rotas"
+        actions={
+          <>
             <Link to="/create-route" className="primary-btn btn-sm">
               <CirclePlus /> Criar Rota
             </Link>
-          </div>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       <div className="row">
         <div className="col-12">
@@ -176,7 +158,7 @@ const RouteList = () => {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Buscar por rota, motorista, veículo ou status..."
-                />
+                 aria-label="Buscar por rota, motorista, veículo ou status..." />
               </div>
             </div>
 
@@ -192,7 +174,7 @@ const RouteList = () => {
               }}
               renderActions={(row) => (
                <div className="actions d-flex align-items-center gap-10">
-    
+
                      <Link
                       to={`/edit-route/${row.id}`}
                       className="d-inline-flex align-items-center gap-2"

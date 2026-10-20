@@ -1,3 +1,4 @@
+import { ManagementHeader } from "../../components/management/ManagementWorkspace";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import {
@@ -165,34 +166,11 @@ const CollectorList = () => {
       <HeadTags title="Catadores" />
       <TopProgressBar loading={loading} />
 
-      <div className="page-header mb-30 px-2">
-        <div className="page-title mb-3">
-          <h3 className="fs-30">Catadores</h3>
-          <p className="text-muted mb-0">
-            Gerencie os catadores vinculados à cooperativa.
-          </p>
-        </div>
-
-        <div className="page-tool d-flex justify-content-between align-items-center flex-wrap gap-3">
-          <div className="breadcrumb-wrap">
-            <nav>
-              <ol className="breadcrumb mb-0">
-                <li className="breadcrumb-item">
-                  <Link to="/">
-                    <House /> Painel
-                  </Link>
-                </li>
-
-                <li className="breadcrumb-item">
-                  <ChevronRight />
-                </li>
-
-                <li className="breadcrumb-item active">Catadores</li>
-              </ol>
-            </nav>
-          </div>
-
-          <div className="d-flex gap-2">
+      <ManagementHeader
+        title="Catadores"
+        description="Gerencie os catadores vinculados à cooperativa."
+        actions={
+          <>
             <button
               className="secondary-btn btn-sm border-0"
               onClick={loadData}
@@ -201,38 +179,23 @@ const CollectorList = () => {
               <RefreshCw size={16} />
               Atualizar
             </button>
-
-            <Link
-              to="/create-collector"
-              className="primary-btn btn-sm border-0"
-            >
+            <Link to="/create-collector" className="primary-btn btn-sm border-0">
               <Plus size={16} />
               Novo Catador
             </Link>
-          </div>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       <div className="card p-20 mb-4">
-        <div
-          className="d-flex align-items-center gap-2"
-          style={{
-            border: "1px solid #e5e7eb",
-            borderRadius: "10px",
-            padding: "8px 12px",
-          }}
-        >
+        <div className="management-search">
           <Search size={18} />
           <input
             value={searchText}
             onChange={(event) => setSearchText(event.target.value)}
             placeholder="Buscar catador..."
-            style={{
-              border: "none",
-              outline: "none",
-              width: "100%",
-              background: "transparent",
-            }}
+
+            aria-label="Buscar catador..."
           />
         </div>
       </div>

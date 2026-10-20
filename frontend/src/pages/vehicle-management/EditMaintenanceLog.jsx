@@ -1,3 +1,4 @@
+import { ManagementHeader } from "../../components/management/ManagementWorkspace";
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import {
@@ -271,48 +272,17 @@ const EditMaintenanceLog = () => {
       <HeadTags title="Editar Manutenção | KATUÁ" />
       <TopProgressBar loading={loading || saving} />
 
-      <div className="page-header mb-30 px-2">
-        <div className="page-title mb-3">
-          <h3 className="fs-30">Editar Manutenção</h3>
-          <p className="mb-0 text-muted">
-            Atualize manutenção, custos, responsáveis, datas e comprovantes dos veículos.
-          </p>
-        </div>
-
-        <div className="page-tool d-flex justify-content-between align-items-center flex-wrap gap-20">
-          <div className="breadcrumb-wrap">
-            <nav aria-label="breadcrumb">
-              <ol className="breadcrumb pb-0 mb-0">
-                <li className="breadcrumb-item">
-                  <Link to="/" className="d-flex align-items-center gap-8">
-                    <House /> Dashboard
-                  </Link>
-                </li>
-
-                <li className="breadcrumb-item">
-                  <ChevronRight />
-                </li>
-
-                <li className="breadcrumb-item">
-                  <Link to="/maintenance-list">Manutenções</Link>
-                </li>
-
-                <li className="breadcrumb-item">
-                  <ChevronRight />
-                </li>
-
-                <li className="breadcrumb-item active" aria-current="page">
-                  Editar
-                </li>
-              </ol>
-            </nav>
-          </div>
-
-          <Link to="/maintenance-list" className="outline-btn btn-sm">
-            <ArrowLeft /> Voltar
-          </Link>
-        </div>
-      </div>
+      <ManagementHeader
+        title="Editar Manutenção"
+        description="Atualize manutenção, custos, responsáveis, datas e comprovantes dos veículos."
+        actions={
+          <>
+            <Link to="/maintenance-list" className="outline-btn btn-sm">
+              <ArrowLeft /> Voltar
+            </Link>
+          </>
+        }
+      />
 
       <div className="row justify-content-center mb-4">
         <div className="col-lg-10 col-xl-8">

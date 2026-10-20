@@ -1,3 +1,4 @@
+import { ManagementHeader } from "../../components/management/ManagementWorkspace";
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { House, ChevronRight, ExternalLink, RefreshCw, Download, Copy, FileText } from 'lucide-react';
@@ -95,15 +96,10 @@ export default function MtrOnlineStatus() {
 
   return <>
     <HeadTags title="MTR e Notas Fiscais" />
-    <div className="page-header mb-4">
-      <h1 className="fs-30">MTR e Notas Fiscais</h1>
-      <p>Prepare os dados da operação e acesse os portais oficiais de manifestos e notas fiscais para Fortaleza e o interior do Ceará.</p>
-      <nav aria-label="Caminho da página"><ol className="breadcrumb">
-        <li className="breadcrumb-item"><Link to="/"><House size={16} /> Painel Geral</Link></li>
-        <li className="breadcrumb-item"><Link to="/route-list">Gestão de Rotas</Link></li>
-        <li className="breadcrumb-item active">MTR Online</li>
-      </ol></nav>
-    </div>
+    <ManagementHeader
+      title="MTR e Notas Fiscais"
+      description="Prepare os dados da operação e acesse os portais oficiais de manifestos e notas fiscais para Fortaleza e o interior do Ceará."
+    />
 
     <section className="card p-4 mb-4" aria-labelledby="mtr-portais">
       <h2 className="fs-20" id="mtr-portais">Gerar MTR no portal oficial</h2>

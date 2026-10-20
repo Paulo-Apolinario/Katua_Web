@@ -1,3 +1,4 @@
+import { ManagementHeader } from "../../components/management/ManagementWorkspace";
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { ArrowLeft, Save, ShieldCheck, ShieldOff } from "lucide-react";
@@ -168,23 +169,18 @@ const EditGenerator = () => {
       <HeadTags title="Editar Gerador" />
       <TopProgressBar loading={loading || saving} />
 
-      <div className="page-header mb-30 px-2">
-        <div className="page-title mb-3">
-          <div className="page-tool d-flex justify-content-between flex-wrap gap-20 align-items-center">
-            <div>
-              <h3 className="fs-30">Editar Gerador</h3>
-              <p className="mb-0 text-muted">
-                Atualize os dados do gerador e controle o acesso ao aplicativo.
-              </p>
-            </div>
-
+      <ManagementHeader
+        title="Editar Gerador"
+        description="Atualize os dados do gerador e controle o acesso ao aplicativo."
+        actions={
+          <>
             <Link to="/generator-list" className="secondary-btn btn-sm">
               <ArrowLeft />
               Voltar
             </Link>
-          </div>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       <form onSubmit={handleSubmit}>
         <div className="card p-25 mb-4">
