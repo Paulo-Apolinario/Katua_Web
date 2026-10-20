@@ -17,12 +17,20 @@ export function ManagementWorkspace({ children }) {
   );
 }
 
-export function ManagementHeader({ title, description, actions }) {
+export function ManagementHeader({
+  title,
+  description,
+  actions,
+  hideNavigation = false,
+  eyebrow,
+}) {
   const { pathname } = useLocation();
   const module = managementModule(pathname);
   return (
     <>
-      <div className="management-eyebrow">KATUÁ · {module?.label}</div>
+      <div className="management-eyebrow">
+        KATUÁ · {eyebrow || module?.label}
+      </div>
       <header className="management-header d-flex justify-content-between align-items-start flex-wrap gap-3 mt-2 mb-4">
         <div className="management-heading">
           <h1 className="h3 fw-bold">{title}</h1>
@@ -36,7 +44,7 @@ export function ManagementHeader({ title, description, actions }) {
           </div>
         )}
       </header>
-      {module && (
+      {module && !hideNavigation && (
         <nav
           className="management-nav d-flex gap-2 mb-4"
           aria-label={module.label}

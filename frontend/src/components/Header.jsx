@@ -11,6 +11,7 @@ const Header = ({ active, setActive }) => {
   const userName =
     admin?.name ||
     admin?.fullName ||
+    admin?.displayName ||
     admin?.companyName ||
     admin?.email ||
     "Cooperativa";
@@ -68,6 +69,7 @@ const Header = ({ active, setActive }) => {
           </a>
 
           <ul className="dropdown-menu border-0 mt-2">
+            {admin?.role !== "MUNICIPAL_MANAGER" && <>
             <li>
               <Link
                 to="/profile-setup"
@@ -88,6 +90,7 @@ const Header = ({ active, setActive }) => {
               </Link>
             </li>
 
+            </>}
             <li className="border-top pt-2 mt-2">
               <button
                 className="dropdown-item d-flex align-items-center gap-10"

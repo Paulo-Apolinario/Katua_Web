@@ -1,0 +1,97 @@
+.environmental-workspace {
+  color: #203b2d;
+}
+.environmental-workspace .env-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+.environmental-workspace .env-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+  flex: 1;
+}
+.environmental-workspace .env-field input,
+.environmental-workspace .env-field textarea,
+.environmental-workspace .env-field select {
+  width: 100%;
+}
+.environmental-workspace .env-fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+.environmental-workspace .env-notice {
+  padding: 1rem 1.25rem;
+  background: #eff7f1;
+  border: 1px solid #d5e7da;
+  border-left: 4px solid #177044;
+  border-radius: 12px;
+  line-height: 1.6;
+}
+.environmental-workspace .env-tabs {
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #dce7df;
+}
+.environmental-workspace .env-row {
+  padding: 1rem 0;
+  border-bottom: 1px solid #dce7df;
+  margin-bottom: 1rem;
+  min-width: 0;
+}
+.environmental-workspace .env-row legend {
+  font-size: 1rem;
+}
+.environmental-workspace .env-bullets {
+  padding-left: 1.25rem;
+  margin-top: 0.75rem;
+}
+.environmental-workspace .env-bullets li {
+  list-style: disc;
+  margin-bottom: 0.45rem;
+}
+.environmental-workspace .env-history {
+  border-left: 3px solid #d5e7da;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.5rem;
+}
+.environmental-workspace .env-hash {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.environmental-workspace .env-definition {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: 0.5rem 1rem;
+  margin-top: 1rem;
+}
+.environmental-workspace .env-definition dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 767px) {
+  .environmental-workspace .env-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .environmental-workspace .env-tabs .btn {
+    flex: 1 1 150px;
+  }
+  .environmental-workspace .env-definition {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.25rem;
+  }
+  .environmental-workspace .env-definition dd {
+    margin-bottom: 0.75rem;
+  }
+}
+.environmental-workspace h2 {
+  font-size: 1.25rem;
+  line-height: 1.4;
+}
+.environmental-workspace h3 {
+  font-size: 1.125rem;
+  line-height: 1.4;
+}

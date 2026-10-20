@@ -15,11 +15,14 @@ import {
   Building2,
 } from "lucide-react";
 
+import MunicipalSidebar from "./environmental/MunicipalSidebar";
+import { useAdminAuth } from "../context/AdminAuthContext";
 import MenuSearch from "./modal/MenuSearch";
 import { NavLink, useLocation } from "react-router";
 
 const Sidebar = ({ active, setActive }) => {
   const location = useLocation();
+  const { admin } = useAdminAuth();
 
   const isWasteSectionActive =
     location.pathname.startsWith("/waste-list") ||
@@ -96,6 +99,8 @@ const Sidebar = ({ active, setActive }) => {
   const closeSidebarOnMobile = () => {
     setActive(true);
   };
+
+  if (admin?.role === "MUNICIPAL_MANAGER") return <MunicipalSidebar active={active} setActive={setActive} />;
 
   return (
     <>
@@ -540,7 +545,7 @@ const Sidebar = ({ active, setActive }) => {
                   </span>
 
                   <span className="submenu-text">
-                    MTR Online
+                    Central ambiental e SINIR
                   </span>
                 </NavLink>
               </li>

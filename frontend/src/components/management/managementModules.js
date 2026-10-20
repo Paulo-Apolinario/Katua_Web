@@ -107,7 +107,7 @@ const modules = [
       link("/operational-calendar", "Calendário operacional", [
         "operational-calendar",
       ]),
-      link("/mtr-online", "MTR e notas fiscais", ["mtr-online"]),
+      link("/mtr-online", "Central ambiental e SINIR", ["mtr-online"]),
     ],
   },
   {

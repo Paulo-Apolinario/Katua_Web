@@ -6,7 +6,10 @@ import { getAllCompanySettings } from "../services/settingService";
 import HeadTags from "../components/HeadTags";
 import { ManagementWorkspace } from "../components/management/ManagementWorkspace";
 
+import { useAdminAuth } from "../context/AdminAuthContext";
+
 const AdminLayout = () => {
+    const { admin } = useAdminAuth();
     const [active, setActive] = useState(true);
     const [settings, setSettings] = useState({
         company_name: '',
@@ -15,6 +18,7 @@ const AdminLayout = () => {
     });
 
     useEffect(() => {
+        if (admin?.role === "MUNICIPAL_MANAGER") return;
         const fetchSettings = async () => {
             try {
                 const response = await getAllCompanySettings();
@@ -24,7 +28,7 @@ const AdminLayout = () => {
             }
         };
         fetchSettings();
-    }, []);
+    }, [admin?.role]);
 
     return (
         <>

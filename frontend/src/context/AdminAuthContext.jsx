@@ -9,8 +9,8 @@ import { getMe } from "../services/authService";
 
 const AdminAuthContext = createContext();
 
-const isCooperativeUser = (user) => {
-  return user?.role === "COOPERATIVE";
+const isPanelUser = (user) => {
+  return ["COOPERATIVE", "MUNICIPAL_MANAGER"].includes(user?.role);
 };
 
 export const AdminAuthProvider = ({ children }) => {
@@ -32,7 +32,7 @@ export const AdminAuthProvider = ({ children }) => {
 
         const user = response?.user || response;
 
-        if (!isCooperativeUser(user)) {
+        if (!isPanelUser(user)) {
           clearAuthData();
           setToken(null);
           setAdmin(null);
@@ -63,8 +63,8 @@ export const AdminAuthProvider = ({ children }) => {
       throw new Error("Resposta de login inválida.");
     }
 
-    if (!isCooperativeUser(user)) {
-      throw new Error("Acesso permitido apenas para cooperativas.");
+    if (!isPanelUser(user)) {
+      throw new Error("Acesso permitido para cooperativas e gestores municipais designados.");
     }
 
     saveAuthData({
