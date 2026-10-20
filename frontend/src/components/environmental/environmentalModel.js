@@ -24,6 +24,11 @@ export const UNITS = { KG: "kg", TON: "t", LITER: "L", CUBIC_METER: "m³" };
 export const emptyMaterial = () => ({
   name: "",
   ibamaCode: "",
+  density: null,
+  unNumber: "",
+  riskClass: "",
+  shippingName: "",
+  packingGroup: "",
   officialMeasureCode: "",
   pev: {
     identification: "",

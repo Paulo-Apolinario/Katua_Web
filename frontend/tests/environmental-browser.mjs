@@ -814,6 +814,104 @@ try {
     );
     return c;
   }
+  await check(
+    "Resíduo (*) em volume persiste e revisão exige densidade e identificação de perigo",
+    async () => {
+      const payload = structuredClone(doc.payload);
+      payload.materials = [
+        {
+          ...payload.materials[0],
+          ibamaCode: "150202(*)",
+          unit: "LITER",
+          officialMeasureCode: "21",
+          density: null,
+        },
+      ];
+      const created = await api("/environmental/documents", "POST", {
+        unitId: unit.id,
+        family: "MTR_REGULAR",
+        title: "Resíduo perigoso QA",
+        referenceYear: null,
+        sourceCollectionId: null,
+        payload,
+      });
+      assert.equal(created.status, 201);
+      let d = (await api("/environmental/documents/" + created.body.data.id))
+        .body.data;
+      assert.equal(d.payload.materials[0].ibamaCode, "150202(*)");
+      assert.equal(d.payload.materials[0].density, null);
+      assert.ok(d.issues.some((s) => s.includes("densidade positiva")));
+      assert.ok(d.issues.some((s) => s.includes("número ONU")));
+      assert.equal(
+        (
+          await api(
+            "/environmental/documents/" + d.id + "/transition",
+            "POST",
+            { version: d.version, action: "REQUEST_REVIEW" },
+          )
+        ).status,
+        422,
+      );
+      payload.materials[0].density = 0;
+      const zero = await api("/environmental/documents/" + d.id, "PUT", {
+        version: d.version,
+        title: d.title,
+        referenceYear: null,
+        payload,
+      });
+      assert.equal(zero.status, 200);
+      d = (await api("/environmental/documents/" + d.id)).body.data;
+      assert.equal(d.payload.materials[0].density, 0);
+      assert.ok(d.issues.some((s) => s.includes("densidade positiva")));
+      Object.assign(payload.materials[0], {
+        density: 0.88,
+        unNumber: "3082",
+        riskClass: "9",
+        shippingName: "Resíduo QA",
+        packingGroup: "III",
+      });
+      assert.equal(
+        (
+          await api("/environmental/documents/" + d.id, "PUT", {
+            version: d.version,
+            title: d.title,
+            referenceYear: null,
+            payload,
+          })
+        ).status,
+        200,
+      );
+      d = (await api("/environmental/documents/" + d.id)).body.data;
+      assert.equal(d.issues.length, 0);
+      assert.equal(
+        (
+          await api(
+            "/environmental/documents/" + d.id + "/transition",
+            "POST",
+            { version: d.version, action: "REQUEST_REVIEW" },
+          )
+        ).status,
+        200,
+      );
+      d = (await api("/environmental/documents/" + d.id)).body.data;
+      const preview = (
+        await api(
+          "/environmental/documents/" + d.id + "/sinir-preview",
+          "POST",
+          { version: d.version },
+        )
+      ).body.data;
+      assert.equal(
+        preview.payload[0].listaManifestoResiduos[0].marDensidade,
+        0.88,
+      );
+      assert.equal(
+        preview.payload[0].listaManifestoResiduos[0].resCodigoIbama,
+        "150202(*)",
+      );
+      assert.equal(preview.canTransmit, false);
+    },
+  );
   const context = await contextFor(f.token, f.owner),
     page = await context.newPage();
   page.setDefaultTimeout(25000);
@@ -920,8 +1018,17 @@ try {
         async (route) => {
           const name = new URL(route.request().url()).pathname.split("/").pop();
           const fixtures = {
-            residues: [{ resCodigoIbama: "150101", resNome: "Papel" }],
-            units: [{ uniCodigo: 1, uniSigla: "kg" }],
+            residues: [
+              { resCodigoIbama: "150101", resNome: "Papel" },
+              {
+                resCodigoIbama: "150202(*)",
+                resDescricao: "Resíduo perigoso QA",
+              },
+            ],
+            units: [
+              { uniCodigo: 1, uniSigla: "kg" },
+              { uniCodigo: 21, uniDescricao: "Litro", uniSigla: "Lt" },
+            ],
             classes: [{ claCodigo: 3, claDescricao: "Classe QA" }],
             physicalStates: [{ tieCodigo: 2, tieDescricao: "Sólido" }],
             packaging: [{ tiaCodigo: 4, tiaDescricao: "Saco" }],
@@ -948,12 +1055,15 @@ try {
         .waitFor();
       await page
         .getByLabel("Grupo 1, resíduo 1 — Código IBAMA", { exact: true })
-        .selectOption("150101");
+        .selectOption("150202(*)");
+      await page
+        .getByLabel("Grupo 1, resíduo 1 — Unidade do KATUÁ", { exact: true })
+        .selectOption("LITER");
       await page
         .getByLabel("Grupo 1, resíduo 1 — Unidade oficial de medida", {
           exact: true,
         })
-        .selectOption("1");
+        .selectOption("21");
       await page
         .getByLabel("Grupo 1, resíduo 1 — Código da classificação", {
           exact: true,
@@ -977,6 +1087,22 @@ try {
       await page
         .getByLabel("Grupo 1, resíduo 1 — Quantidade", { exact: true })
         .fill("3");
+      await page
+        .getByLabel("Grupo 1, resíduo 1 — Densidade", { exact: true })
+        .fill("0.88");
+      await page
+        .getByLabel("Grupo 1, resíduo 1 — Número ONU", { exact: true })
+        .fill("3082");
+      await page
+        .getByLabel("Grupo 1, resíduo 1 — Classe de risco", { exact: true })
+        .fill("9");
+      await page
+        .getByLabel("Grupo 1, resíduo 1 — Nome de embarque", { exact: true })
+        .fill("Resíduo QA");
+      await page
+        .getByLabel("Grupo 1, resíduo 1 — Grupo de embalagem", { exact: true })
+        .fill("III");
+
       await page
         .getByLabel("Sistema de logística reversa", { exact: true })
         .selectOption("7");
@@ -1018,6 +1144,34 @@ try {
         detail.payload.processGroups[0].originManifestNumber,
         "ORIGEM-1",
       );
+      assert.equal(detail.payload.processGroups[0].materials[0].density, 0.88);
+      assert.equal(
+        detail.payload.processGroups[0].materials[0].ibamaCode,
+        "150202(*)",
+      );
+      assert.equal(
+        detail.payload.processGroups[0].materials[0].unNumber,
+        "3082",
+      );
+      await page.setViewportSize({ width: 430, height: 1000 });
+      assert.equal(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth > window.innerWidth,
+        ),
+        false,
+      );
+      await page.screenshot({
+        path: join(outputDir, "sinir-perigo-mobile.png"),
+        fullPage: true,
+      });
+      await page
+        .getByLabel("Grupo 1, resíduo 1 — Densidade", { exact: true })
+        .scrollIntoViewIfNeeded();
+      await page.screenshot({
+        path: join(outputDir, "sinir-perigo-mobile-fields.png"),
+        fullPage: false,
+      });
+      await page.setViewportSize({ width: 1440, height: 1100 });
       await page.screenshot({
         path: join(outputDir, "sinir-processo-desktop.png"),
         fullPage: true,
@@ -1137,7 +1291,7 @@ try {
         .getByRole("button", { name: "Tentar novamente", exact: true })
         .click();
       await page
-        .getByText("Nenhum documento encontrado para este filtro.", {
+        .getByText("Resíduo perigoso QA", {
           exact: true,
         })
         .waitFor();

@@ -91,3 +91,36 @@ test("Importar PEV preserva endereço cadastrado sem inventar IBGE, CNPJ ou coor
   assert.equal(r.materials[0].pev.latitude, undefined);
   assert.equal(r.origin.taxId, "");
 });
+
+test("Normalizar rascunho antigo não inventa densidade ou identificação de perigo", () => {
+  const m = {
+    name: "Resíduo",
+    ibamaCode: "150202(*)",
+    unit: "LITER",
+    quantity: 2,
+  };
+  const payload = normalizePayload("MTR_LR_PROCESS", {
+    ...emptyPayload("MTR_LR_PROCESS"),
+    materials: [m],
+    processGroups: [
+      { originManifestNumber: "001", residueReference: "REF", materials: [m] },
+    ],
+  });
+  for (const item of [
+    payload.materials[0],
+    payload.processGroups[0].materials[0],
+  ]) {
+    assert.equal(item.ibamaCode, "150202(*)");
+    assert.equal(item.density, null);
+    assert.equal(item.unNumber, "");
+    assert.equal(item.riskClass, "");
+    assert.equal(item.shippingName, "");
+    assert.equal(item.packingGroup, "");
+  }
+  payload.processGroups[0].materials[0].density = 0;
+  assert.equal(
+    normalizePayload("MTR_LR_PROCESS", payload).processGroups[0].materials[0]
+      .density,
+    0,
+  );
+});

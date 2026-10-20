@@ -106,6 +106,50 @@ function Materials({
               />
             ))}
           </div>
+          <section className="mt-3">
+            <h3 className="h6">Densidade e identificação de perigo</h3>
+            <p className="small text-muted">
+              Preserve o sufixo (*) do catálogo. Para litros ou m³, informe a
+              densidade conforme a unidade exigida pelo SINIR; o KATUÁ não
+              converte volume em massa.
+            </p>
+            {(/\(\*\)$/.test(material.ibamaCode || "") ||
+              [
+                material.unNumber,
+                material.riskClass,
+                material.shippingName,
+                material.packingGroup,
+              ].some(Boolean)) && (
+              <div className="env-notice mb-3">
+                Confira todos os dados de identificação do resíduo perigoso
+                antes da revisão. O preenchimento não comprova autorização de
+                transporte ou destinação.
+              </div>
+            )}
+            <div className="env-grid">
+              <Field
+                label={`${prefix} ${index + 1} — Densidade`}
+                type="number"
+                value={material.density}
+                onChange={(density) => setMaterial(index, { density })}
+                help="Informe o valor e confira a unidade de densidade no contrato oficial. Vazio permanece desconhecido; zero não atende à conferência."
+              />
+              {Object.entries({
+                unNumber: ["Número ONU", 40],
+                riskClass: ["Classe de risco", 80],
+                shippingName: ["Nome de embarque", 300],
+                packingGroup: ["Grupo de embalagem", 80],
+              }).map(([key, [label, maxLength]]) => (
+                <Field
+                  key={key}
+                  label={`${prefix} ${index + 1} — ${label}`}
+                  maxLength={maxLength}
+                  value={material[key] || ""}
+                  onChange={(v) => setMaterial(index, { [key]: v })}
+                />
+              ))}
+            </div>
+          </section>
           {showPev && (
             <details className="mt-3">
               <summary>Origem em PEV — dados para conferência</summary>

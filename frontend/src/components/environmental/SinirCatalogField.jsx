@@ -3,7 +3,7 @@ import { environmentalService as api } from "../../services/environmentalService
 import { Field, Message } from "./EnvironmentalFields";
 const config = {
   residues: ["resCodigoIbama", "resNome", "resDescricao"],
-  units: ["uniCodigo", "uniNome", "uniSigla"],
+  units: ["uniCodigo", "uniDescricao", "uniNome", "uniSigla"],
   classes: ["claCodigo", "claNome", "claDescricao"],
   physicalStates: ["tieCodigo", "tieNome", "tieDescricao"],
   packaging: ["tiaCodigo", "tiaNome", "tiaDescricao"],
