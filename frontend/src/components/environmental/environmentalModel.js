@@ -24,6 +24,17 @@ export const UNITS = { KG: "kg", TON: "t", LITER: "L", CUBIC_METER: "m³" };
 export const emptyMaterial = () => ({
   name: "",
   ibamaCode: "",
+  officialMeasureCode: "",
+  pev: {
+    identification: "",
+    postalCode: "",
+    street: "",
+    number: "",
+    complement: "",
+    neighborhood: "",
+    municipalityCode: "",
+    state: "",
+  },
   quantity: null,
   unit: "KG",
   physicalStateCode: "",
@@ -81,6 +92,7 @@ export function emptyPayload(family, unit = {}) {
   if (family === "CDF")
     return {
       manifestNumbers: [],
+      generators: [],
       periodStart: "",
       periodEnd: "",
       treatmentDescription: "",
@@ -97,6 +109,10 @@ export function emptyPayload(family, unit = {}) {
       municipalityCode: unit.municipalityCode || "",
       address: unit.address || "",
     },
+    hasTemporaryStorage: false,
+    temporaryStorage: emptyParty(),
+    reverseSystemCode: "",
+    processGroups: [],
     carrier: emptyParty(),
     recipient: emptyParty(),
     vehiclePlate: "",
@@ -144,7 +160,25 @@ export function collectionToDraft(source, payload) {
     const quantity = Number(m.quantity);
     if (!Number.isFinite(quantity) || quantity <= 0)
       throw Error("Quantidade inválida na coleta de origem.");
-    return { ...emptyMaterial(), name: m.name || "", quantity, unit: m.unit };
+    return {
+      ...emptyMaterial(),
+      name: m.name || "",
+      quantity,
+      unit: m.unit,
+      ...(origin.binId
+        ? {
+            pev: {
+              ...emptyMaterial().pev,
+              identification: origin.binId,
+              postalCode: (origin.zipCode || "").replace(/\D/g, ""),
+              street: origin.street || "",
+              number: origin.number || "",
+              neighborhood: origin.neighborhood || "",
+              state: origin.state || "",
+            },
+          }
+        : {}),
+    };
   });
   return {
     ...payload,
@@ -197,3 +231,20 @@ export function downloadDraft(doc) {
 
 export const choices = (object) =>
   Object.entries(object).map(([value, label]) => ({ value, label }));
+
+export function normalizePayload(family, payload, unit = {}) {
+  const result = { ...emptyPayload(family, unit), ...payload };
+  if (family.startsWith("MTR_")) {
+    const normalizeMaterial = (m) => ({
+      ...emptyMaterial(),
+      ...m,
+      pev: { ...emptyMaterial().pev, ...m.pev },
+    });
+    result.materials = (result.materials || []).map(normalizeMaterial);
+    result.processGroups = (result.processGroups || []).map((g) => ({
+      ...g,
+      materials: (g.materials || []).map(normalizeMaterial),
+    }));
+  }
+  return result;
+}

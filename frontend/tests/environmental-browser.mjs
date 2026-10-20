@@ -139,6 +139,8 @@ try {
     serverDir,
     {
       KATUA_LOCAL_VALIDATION: "1",
+      SINIR_ENABLED: "false",
+      SINIR_INTEGRATION_TOKEN: "",
       DATABASE_URL: databaseUrl,
       KATUA_VALIDATION_DIR: outputDir,
     },
@@ -339,6 +341,58 @@ try {
         await api("/environmental/documents/" + doc.id + "/history")
       ).body.data;
       assert.equal(history.total, 4);
+    },
+  );
+  await check(
+    "SINIR: prévia local por versão, conector não configurado e isolamento das novas rotas",
+    async () => {
+      const root = "/environmental/units/" + unit.id + "/sinir";
+      const status = await api(root + "/status");
+      assert.equal(status.status, 200);
+      assert.equal(status.body.data.configured, false);
+      assert.equal((await api(root + "/check", "POST")).status, 503);
+      assert.equal((await api(root + "/catalogs/units")).status, 503);
+      assert.equal(
+        (await api(root + "/status", "GET", null, f.otherToken)).status,
+        404,
+      );
+      assert.equal((await api(root + "/catalogs/not-allowed")).status, 400);
+      const preview = await api(
+        "/environmental/documents/" + doc.id + "/sinir-preview",
+        "POST",
+        { version: doc.version },
+      );
+      assert.equal(preview.status, 200);
+      assert.equal(preview.body.data.canTransmit, false);
+      assert.equal(preview.body.data.officialConfirmed, false);
+      assert.equal(
+        preview.body.data.payload[0].listaManifestoResiduos[0].marQuantidade,
+        3,
+      );
+      assert.ok(
+        preview.body.data.issues.some((s) => s.includes("unidade de medida")),
+      );
+      assert.equal(
+        (
+          await api(
+            "/environmental/documents/" + doc.id + "/sinir-preview",
+            "POST",
+            { version: doc.version + 1 },
+          )
+        ).status,
+        409,
+      );
+      assert.equal(
+        (
+          await api(
+            "/environmental/documents/" + doc.id + "/sinir-preview",
+            "POST",
+            { version: doc.version },
+            f.otherToken,
+          )
+        ).status,
+        404,
+      );
     },
   );
   await check(
@@ -814,6 +868,186 @@ try {
         path: join(outputDir, "central-desktop.png"),
         fullPage: true,
       });
+    },
+  );
+  await check(
+    "Painel SINIR: prévia, erro de conexão, seleção de catálogos simulados e grupos LR persistem",
+    async () => {
+      await page.goto(
+        "http://127.0.0.1:5179/mtr-online?municipality=2312908&unit=" +
+          unit.id +
+          "&tab=reverse",
+      );
+      await page
+        .getByLabel("Filtrar tipo de documento", { exact: true })
+        .selectOption("MTR_LR_PROCESS");
+      await page
+        .getByLabel("Tipo de novo documento", { exact: true })
+        .selectOption("MTR_LR_PROCESS");
+      await page
+        .getByRole("button", { name: "Novo rascunho", exact: true })
+        .click();
+      await page
+        .getByLabel("Título do documento", { exact: true })
+        .fill("Processo LR pelo painel");
+      await page
+        .getByRole("button", {
+          name: "Carregar catálogos oficiais",
+          exact: true,
+        })
+        .click();
+      await page
+        .getByRole("alert")
+        .filter({ hasText: "não configurada" })
+        .waitFor();
+      await page
+        .getByRole("button", { name: "Adicionar grupo de origem", exact: true })
+        .click();
+      await page
+        .getByLabel("Grupo 1 — Manifesto de origem", { exact: true })
+        .fill("ORIGEM-1");
+      await page
+        .getByLabel("Grupo 1 — Referência do resíduo", { exact: true })
+        .fill("REF-1");
+      await page
+        .getByRole("button", { name: "Adicionar resíduo", exact: true })
+        .click();
+      await page
+        .getByLabel("Grupo 1, resíduo 1 — Descrição", { exact: true })
+        .fill("Papel do processo");
+      await page.route(
+        "**/environmental/units/*/sinir/catalogs/*",
+        async (route) => {
+          const name = new URL(route.request().url()).pathname.split("/").pop();
+          const fixtures = {
+            residues: [{ resCodigoIbama: "150101", resNome: "Papel" }],
+            units: [{ uniCodigo: 1, uniSigla: "kg" }],
+            classes: [{ claCodigo: 3, claDescricao: "Classe QA" }],
+            physicalStates: [{ tieCodigo: 2, tieDescricao: "Sólido" }],
+            packaging: [{ tiaCodigo: 4, tiaDescricao: "Saco" }],
+            treatments: [{ traCodigo: 5, traDescricao: "Reciclagem" }],
+            reverseSystems: [{ simCodigo: 7, simDescricao: "Sistema QA" }],
+          };
+          await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({
+              data: { items: fixtures[name] || [], cached: false },
+            }),
+          });
+        },
+      );
+      await page
+        .getByRole("button", {
+          name: "Carregar catálogos oficiais",
+          exact: true,
+        })
+        .click();
+      await page
+        .getByText("Catálogos carregados nesta edição.", { exact: false })
+        .waitFor();
+      await page
+        .getByLabel("Grupo 1, resíduo 1 — Código IBAMA", { exact: true })
+        .selectOption("150101");
+      await page
+        .getByLabel("Grupo 1, resíduo 1 — Unidade oficial de medida", {
+          exact: true,
+        })
+        .selectOption("1");
+      await page
+        .getByLabel("Grupo 1, resíduo 1 — Código da classificação", {
+          exact: true,
+        })
+        .selectOption("3");
+      await page
+        .getByLabel("Grupo 1, resíduo 1 — Código do estado físico", {
+          exact: true,
+        })
+        .selectOption("2");
+      await page
+        .getByLabel("Grupo 1, resíduo 1 — Código do acondicionamento", {
+          exact: true,
+        })
+        .selectOption("4");
+      await page
+        .getByLabel("Grupo 1, resíduo 1 — Código do tratamento", {
+          exact: true,
+        })
+        .selectOption("5");
+      await page
+        .getByLabel("Grupo 1, resíduo 1 — Quantidade", { exact: true })
+        .fill("3");
+      await page
+        .getByLabel("Sistema de logística reversa", { exact: true })
+        .selectOption("7");
+
+      await page
+        .getByRole("button", { name: "Salvar rascunho", exact: true })
+        .click();
+      await page
+        .getByText(
+          "Rascunho salvo no KATUÁ. Nenhum documento oficial foi emitido.",
+          { exact: true },
+        )
+        .waitFor();
+      await page
+        .getByRole("button", {
+          name: "Conferir dados para integração",
+          exact: true,
+        })
+        .click();
+      await page.getByText(/Versão .*emissão bloqueada/).waitFor();
+      const docs = (
+        await api(
+          "/environmental/documents?unitId=" +
+            unit.id +
+            "&family=MTR_LR_PROCESS",
+        )
+      ).body.data;
+      const item = docs.items.find(
+        (d) => d.title === "Processo LR pelo painel",
+      );
+      assert.ok(item);
+      const detail = (await api("/environmental/documents/" + item.id)).body
+        .data;
+      assert.equal(
+        detail.payload.processGroups[0].materials[0].name,
+        "Papel do processo",
+      );
+      assert.equal(
+        detail.payload.processGroups[0].originManifestNumber,
+        "ORIGEM-1",
+      );
+      await page.screenshot({
+        path: join(outputDir, "sinir-processo-desktop.png"),
+        fullPage: true,
+      });
+      await page.goto(
+        "http://127.0.0.1:5179/mtr-online?municipality=2312908&unit=" +
+          unit.id +
+          "&tab=settings",
+      );
+      await page
+        .getByRole("heading", {
+          name: "Conexão de leitura com o SINIR",
+          exact: true,
+        })
+        .waitFor();
+      await page
+        .getByRole("button", {
+          name: "Verificar autenticação no SINIR",
+          exact: true,
+        })
+        .click();
+      await page
+        .getByRole("alert")
+        .filter({ hasText: "não configurada" })
+        .waitFor();
+      await page.goto(
+        "http://127.0.0.1:5179/mtr-online?municipality=2312908&unit=" +
+          unit.id +
+          "&tab=documents",
+      );
     },
   );
   await check(

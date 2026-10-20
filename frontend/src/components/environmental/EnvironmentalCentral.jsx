@@ -1,3 +1,4 @@
+import SinirConnection from "./SinirConnection";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router";
 import { useAdminAuth } from "../../context/AdminAuthContext";
@@ -409,10 +410,18 @@ function Central() {
                       )}
                     </section>
                   )}
+                  {unit?.permissions.write && (
+                    <SinirConnection
+                      key={unit.id + "-" + unit.version}
+                      unit={unit}
+                    />
+                  )}
                   <section className="card p-4 mt-4">
                     <h2>Integração com a API oficial</h2>
                     <div className="alert alert-warning">
-                      <strong>Especificação e habilitação pendentes</strong>
+                      <strong>
+                        Emissão bloqueada; consultas dependem de configuração
+                      </strong>
                       <p className="mb-0">{context.integration.reason}</p>
                     </div>
                     <ul className="env-bullets">

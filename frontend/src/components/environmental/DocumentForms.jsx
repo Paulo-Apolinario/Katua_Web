@@ -1,9 +1,170 @@
-import { choices } from "./environmentalModel";
+import {
+  choices,
+  UNITS,
+  emptyMaterial,
+  emptyParty,
+} from "./environmentalModel";
 import { useState } from "react";
 import { Field } from "./EnvironmentalFields";
-import { UNITS, emptyMaterial } from "./environmentalModel";
-export function ManifestForm({ value, onChange }) {
+import SinirCatalogField from "./SinirCatalogField";
+function PartyFields({ label, value, onChange }) {
+  return (
+    <section className="card p-4 mb-3">
+      <h2>{label}</h2>
+      <div className="env-grid">
+        {Object.entries({
+          name: "Nome ou razão social",
+          taxId: "CPF/CNPJ (somente dígitos)",
+          officialUnitCode: "Unidade oficial SINIR",
+          municipalityCode: "Código IBGE do município",
+          address: "Endereço",
+        }).map(([field, title]) => (
+          <Field
+            key={field}
+            label={`${label} — ${title}`}
+            value={value?.[field] || ""}
+            onChange={(v) => onChange({ ...value, [field]: v })}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+function Materials({
+  value,
+  onChange,
+  catalogs,
+  unitId,
+  prefix = "Resíduo",
+  showPev = true,
+}) {
+  const setMaterial = (index, changes) =>
+    onChange(value.map((m, i) => (i === index ? { ...m, ...changes } : m)));
+  return (
+    <section className="card p-4 mb-3">
+      <h2>{prefix === "Resíduo" ? "Resíduos do documento" : prefix}</h2>
+      <p className="small text-muted">
+        A unidade física do KATUÁ e a unidade oficial selecionada devem
+        representar a mesma medida. Não há conversão automática.
+      </p>
+      {value.map((material, index) => (
+        <fieldset className="env-row" key={index}>
+          <legend className="h6">
+            {prefix} {index + 1}
+          </legend>
+          <div className="env-grid">
+            <Field
+              label={`${prefix} ${index + 1} — Descrição`}
+              value={material.name}
+              onChange={(name) => setMaterial(index, { name })}
+            />
+            <Field
+              label={`${prefix} ${index + 1} — Quantidade`}
+              type="number"
+              value={material.quantity}
+              onChange={(quantity) => setMaterial(index, { quantity })}
+            />
+            <Field
+              label={`${prefix} ${index + 1} — Unidade do KATUÁ`}
+              options={choices(UNITS)}
+              value={material.unit}
+              onChange={(unit) =>
+                setMaterial(index, { unit, officialMeasureCode: "" })
+              }
+            />
+            {Object.entries({
+              ibamaCode: ["Código IBAMA", "residues"],
+              officialMeasureCode: ["Unidade oficial de medida", "units"],
+              classificationCode: ["Código da classificação", "classes"],
+              physicalStateCode: ["Código do estado físico", "physicalStates"],
+              packagingCode: ["Código do acondicionamento", "packaging"],
+              treatmentCode: ["Código do tratamento", "treatments"],
+            }).map(([key, [label, catalog]]) => (
+              <SinirCatalogField
+                key={key}
+                label={`${prefix} ${index + 1} — ${label}`}
+                catalog={catalog}
+                catalogs={catalogs}
+                unitId={unitId}
+                filter={
+                  key === "classificationCode"
+                    ? material.ibamaCode
+                    : key === "packagingCode"
+                      ? material.physicalStateCode
+                      : undefined
+                }
+                value={material[key] || ""}
+                onChange={(v) =>
+                  setMaterial(index, {
+                    [key]: v,
+                    ...(key === "ibamaCode" ? { classificationCode: "" } : {}),
+                    ...(key === "physicalStateCode"
+                      ? { packagingCode: "" }
+                      : {}),
+                  })
+                }
+              />
+            ))}
+          </div>
+          {showPev && (
+            <details className="mt-3">
+              <summary>Origem em PEV — dados para conferência</summary>
+              <p className="small text-muted">
+                Preencha quando a modalidade permitir identificar o PEV.
+                Coordenadas do mapa não são enviadas por estes campos.
+              </p>
+              <div className="env-grid">
+                {Object.entries({
+                  identification: "Identificação do PEV",
+                  postalCode: "CEP do PEV",
+                  street: "Logradouro do PEV",
+                  number: "Número do PEV",
+                  complement: "Complemento do PEV",
+                  neighborhood: "Bairro do PEV",
+                  municipalityCode: "Código IBGE do PEV",
+                  state: "UF do PEV",
+                }).map(([key, label]) => (
+                  <Field
+                    key={key}
+                    label={`${prefix} ${index + 1} — ${label}`}
+                    value={material.pev?.[key] || ""}
+                    onChange={(v) =>
+                      setMaterial(index, {
+                        pev: {
+                          ...emptyMaterial().pev,
+                          ...material.pev,
+                          [key]: v,
+                        },
+                      })
+                    }
+                  />
+                ))}
+              </div>
+            </details>
+          )}
+          <button
+            className="btn btn-outline-danger btn-sm mt-3"
+            type="button"
+            onClick={() => onChange(value.filter((_, i) => i !== index))}
+          >
+            Remover {prefix.toLowerCase()} {index + 1}
+          </button>
+        </fieldset>
+      ))}
+      <button
+        type="button"
+        className="btn btn-outline-success btn-sm"
+        disabled={value.length >= 50}
+        onClick={() => onChange([...value, emptyMaterial()])}
+      >
+        Adicionar resíduo
+      </button>
+    </section>
+  );
+}
+export function ManifestForm({ value, onChange, family, catalogs, unitId }) {
   const set = (key, v) => onChange({ ...value, [key]: v });
+  const process = family === "MTR_LR_PROCESS";
   return (
     <>
       {Object.entries({
@@ -11,26 +172,33 @@ export function ManifestForm({ value, onChange }) {
         carrier: "Transportador",
         recipient: "Destinatário",
       }).map(([key, label]) => (
-        <section className="card p-4 mb-3" key={key}>
-          <h2>{label}</h2>
-          <div className="env-grid">
-            {Object.entries({
-              name: "Nome ou razão social",
-              taxId: "CPF/CNPJ (somente dígitos)",
-              officialUnitCode: "Unidade oficial SINIR",
-              municipalityCode: "Código IBGE do município",
-              address: "Endereço",
-            }).map(([field, title]) => (
-              <Field
-                key={field}
-                label={`${label} — ${title}`}
-                value={value[key][field]}
-                onChange={(v) => set(key, { ...value[key], [field]: v })}
-              />
-            ))}
-          </div>
-        </section>
+        <PartyFields
+          key={key}
+          label={label}
+          value={value[key]}
+          onChange={(v) => set(key, v)}
+        />
       ))}
+      {!process && (
+        <section className="card p-4 mb-3">
+          <h2>Armazenamento temporário</h2>
+          <label className="d-flex gap-2">
+            <input
+              type="checkbox"
+              checked={value.hasTemporaryStorage || false}
+              onChange={(e) => set("hasTemporaryStorage", e.target.checked)}
+            />
+            Existe armazenador temporário nesta operação
+          </label>
+        </section>
+      )}
+      {!process && value.hasTemporaryStorage && (
+        <PartyFields
+          label="Armazenador temporário"
+          value={value.temporaryStorage}
+          onChange={(v) => set("temporaryStorage", v)}
+        />
+      )}
       <section className="card p-4 mb-3">
         <h2>Expedição e transporte</h2>
         <div className="env-grid">
@@ -50,88 +218,139 @@ export function ManifestForm({ value, onChange }) {
             value={value.vehiclePlate}
             onChange={(v) => set("vehiclePlate", v.toUpperCase())}
           />
+          {family !== "MTR_REGULAR" && (
+            <SinirCatalogField
+              label="Sistema de logística reversa"
+              catalog="reverseSystems"
+              catalogs={catalogs}
+              unitId={unitId}
+              value={value.reverseSystemCode || ""}
+              onChange={(v) => set("reverseSystemCode", v)}
+            />
+          )}
         </div>
         <p className="small text-muted mt-3 mb-0">
-          Prepare o manifesto antes do transporte. Os dados importados da coleta
-          exigem conferência.
+          Prepare o manifesto antes do transporte. Os dados importados exigem
+          conferência.
         </p>
       </section>
-      <section className="card p-4 mb-3">
-        <div className="d-flex justify-content-between gap-2 flex-wrap mb-3">
-          <h2>Resíduos do documento</h2>
-          <button
-            type="button"
-            className="btn btn-outline-success btn-sm"
-            disabled={value.materials.length >= 50}
-            onClick={() =>
-              set("materials", [...value.materials, emptyMaterial()])
-            }
-          >
-            Adicionar resíduo
-          </button>
-        </div>
-        <p className="small text-muted">
-          Use os códigos do catálogo oficial vigente. Os códigos não são
-          deduzidos pelo nome do material.
-        </p>
-        {value.materials.map((material, index) => (
-          <fieldset className="env-row" key={index}>
-            <legend className="h6">Resíduo {index + 1}</legend>
-            <div className="env-grid">
-              {Object.entries({
-                name: "Descrição",
-                ibamaCode: "Código IBAMA",
-                quantity: "Quantidade",
-                unit: "Unidade",
-                classificationCode: "Código da classificação",
-                physicalStateCode: "Código do estado físico",
-                packagingCode: "Código do acondicionamento",
-                treatmentCode: "Código do tratamento",
-              }).map(([key, label]) => (
-                <Field
-                  key={key}
-                  label={`Resíduo ${index + 1} — ${label}`}
-                  type={key === "quantity" ? "number" : "text"}
-                  options={key === "unit" ? choices(UNITS) : undefined}
-                  value={material[key]}
+      {process ? (
+        <>
+          <section className="card p-4 mb-3">
+            <h2>Grupos de resíduos do processo</h2>
+            <p>
+              Relacione cada grupo ao manifesto de origem e à referência oficial
+              do resíduo. Não associe materiais por aproximação do nome.
+            </p>
+            {!!value.materials?.length && (
+              <div className="alert alert-warning">
+                Este rascunho contém materiais anteriores ao agrupamento. Eles
+                continuam preservados abaixo; organize-os nos grupos antes da
+                revisão.
+                <details>
+                  <summary>Consultar materiais preservados</summary>
+                  <pre className="text-wrap">
+                    {JSON.stringify(value.materials, null, 2)}
+                  </pre>
+                </details>
+              </div>
+            )}
+            {(value.processGroups || []).map((group, index) => (
+              <section className="env-row" key={index}>
+                <h3>Grupo {index + 1}</h3>
+                <div className="env-grid">
+                  <Field
+                    label={`Grupo ${index + 1} — Manifesto de origem`}
+                    value={group.originManifestNumber}
+                    onChange={(v) =>
+                      set(
+                        "processGroups",
+                        value.processGroups.map((g, i) =>
+                          i === index ? { ...g, originManifestNumber: v } : g,
+                        ),
+                      )
+                    }
+                  />
+                  <Field
+                    label={`Grupo ${index + 1} — Referência do resíduo`}
+                    value={group.residueReference}
+                    onChange={(v) =>
+                      set(
+                        "processGroups",
+                        value.processGroups.map((g, i) =>
+                          i === index ? { ...g, residueReference: v } : g,
+                        ),
+                      )
+                    }
+                  />
+                </div>
+                <Materials
+                  prefix={`Grupo ${index + 1}, resíduo`}
+                  showPev={false}
+                  catalogs={catalogs}
+                  unitId={unitId}
+                  value={group.materials}
                   onChange={(v) =>
                     set(
-                      "materials",
-                      value.materials.map((r, i) =>
-                        i === index ? { ...r, [key]: v } : r,
+                      "processGroups",
+                      value.processGroups.map((g, i) =>
+                        i === index ? { ...g, materials: v } : g,
                       ),
                     )
                   }
                 />
-              ))}
-            </div>
+                <button
+                  type="button"
+                  className="btn btn-outline-danger btn-sm"
+                  onClick={() =>
+                    set(
+                      "processGroups",
+                      value.processGroups.filter((_, i) => i !== index),
+                    )
+                  }
+                >
+                  Remover grupo {index + 1}
+                </button>
+              </section>
+            ))}
             <button
-              className="btn btn-outline-danger btn-sm mt-3"
               type="button"
+              className="btn btn-outline-success"
+              disabled={(value.processGroups || []).length >= 50}
               onClick={() =>
-                set(
-                  "materials",
-                  value.materials.filter((_, i) => i !== index),
-                )
+                set("processGroups", [
+                  ...(value.processGroups || []),
+                  {
+                    originManifestNumber: "",
+                    residueReference: "",
+                    materials: [],
+                  },
+                ])
               }
             >
-              Remover resíduo {index + 1}
+              Adicionar grupo de origem
             </button>
-          </fieldset>
-        ))}
-        {!value.materials.length && <p>Nenhum resíduo informado.</p>}
-      </section>
+          </section>
+        </>
+      ) : (
+        <Materials
+          value={value.materials}
+          onChange={(v) => set("materials", v)}
+          catalogs={catalogs}
+          unitId={unitId}
+        />
+      )}
       <section className="card p-4 mb-3">
         <h2>Referências e observações</h2>
         <div className="env-grid">
           <Field
-            label="Números oficiais dos MTRs LR de origem (um por linha)"
+            label="Números oficiais dos MTRs LR de origem (referência interna, um por linha)"
             type="textarea"
             value={value.originManifestNumbers.join("\n")}
             onChange={(v) => set("originManifestNumbers", v.split("\n"))}
           />
           <Field
-            label="Número da nota fiscal"
+            label="Número da nota fiscal (referência interna)"
             value={value.invoiceNumber}
             onChange={(v) => set("invoiceNumber", v)}
           />
@@ -150,8 +369,8 @@ export function ManifestForm({ value, onChange }) {
           />
         </div>
         <p className="small text-muted mt-2 mb-0">
-          MTR LR Processo exige referências da origem e da nota fiscal.
-          Preencher a referência não emite uma nota fiscal.
+          Informar referência ou chave não emite NF-e. A chave é projetada no
+          modelo de MTR LR Processo quando preenchida.
         </p>
       </section>
     </>
@@ -159,48 +378,96 @@ export function ManifestForm({ value, onChange }) {
 }
 export function CdfForm({ value, onChange }) {
   return (
-    <section className="card p-4 mb-3">
-      <h2>Preparação do CDF</h2>
-      <p className="text-muted">
-        Documento de destinação, distinto do recebimento e da entrada em
-        estoque. Informe os manifestos oficiais correspondentes.
-      </p>
-      <div className="env-grid">
-        {Object.entries({
-          manifestNumbers: "Manifestos oficiais recebidos (um por linha)",
-          periodStart: "Início do período",
-          periodEnd: "Fim do período",
-          technicalResponsible: "Responsável técnico",
-          technicalRegistration: "Registro profissional",
-          treatmentDescription: "Descrição do tratamento",
-          notes: "Observações do CDF",
-        }).map(([key, label]) => (
-          <Field
-            key={key}
-            label={label}
-            type={
-              key.startsWith("period")
-                ? "date"
-                : ["manifestNumbers", "treatmentDescription", "notes"].includes(
-                      key,
-                    )
-                  ? "textarea"
-                  : "text"
-            }
-            maxLength={4000}
-            value={
-              key === "manifestNumbers" ? value[key].join("\n") : value[key]
-            }
+    <>
+      <section className="card p-4 mb-3">
+        <h2>Preparação do CDF</h2>
+        <p>
+          O modelo técnico associa manifestos recebidos e geradores ao
+          destinador. A autorização e a situação dos manifestos precisam ser
+          confirmadas pelo SINIR.
+        </p>
+        <div className="env-grid">
+          {Object.entries({
+            manifestNumbers: "Manifestos oficiais recebidos (um por linha)",
+            periodStart: "Início do período",
+            periodEnd: "Fim do período",
+            technicalResponsible: "Responsável técnico",
+            technicalRegistration: "Registro profissional",
+            treatmentDescription: "Descrição do tratamento",
+            notes: "Observações do CDF",
+          }).map(([key, label]) => (
+            <Field
+              key={key}
+              label={label}
+              type={
+                key.startsWith("period")
+                  ? "date"
+                  : [
+                        "manifestNumbers",
+                        "treatmentDescription",
+                        "notes",
+                      ].includes(key)
+                    ? "textarea"
+                    : "text"
+              }
+              maxLength={4000}
+              value={
+                key === "manifestNumbers" ? value[key].join("\n") : value[key]
+              }
+              onChange={(v) =>
+                onChange({
+                  ...value,
+                  [key]: key === "manifestNumbers" ? v.split("\n") : v,
+                })
+              }
+            />
+          ))}
+        </div>
+        <p className="small text-muted mt-3">
+          Registro profissional e descrição do tratamento são controles
+          internos, sem equivalência presumida a campos do SINIR.
+        </p>
+      </section>
+      {(value.generators || []).map((g, i) => (
+        <div key={i}>
+          <PartyFields
+            label={`Gerador do CDF ${i + 1}`}
+            value={g}
             onChange={(v) =>
               onChange({
                 ...value,
-                [key]: key === "manifestNumbers" ? v.split("\n") : v,
+                generators: value.generators.map((r, j) => (j === i ? v : r)),
               })
             }
           />
-        ))}
-      </div>
-    </section>
+          <button
+            type="button"
+            className="btn btn-outline-danger btn-sm mb-3"
+            onClick={() =>
+              onChange({
+                ...value,
+                generators: value.generators.filter((_, j) => i !== j),
+              })
+            }
+          >
+            Remover gerador {i + 1}
+          </button>
+        </div>
+      ))}
+      <button
+        type="button"
+        className="btn btn-outline-success mb-3"
+        disabled={(value.generators || []).length >= 50}
+        onClick={() =>
+          onChange({
+            ...value,
+            generators: [...(value.generators || []), emptyParty()],
+          })
+        }
+      >
+        Adicionar gerador ao CDF
+      </button>
+    </>
   );
 }
 const SECTIONS = {

@@ -4,6 +4,22 @@ const id = encodeURIComponent;
 const data = async (path, options) =>
   (await apiRequest(root + path, options)).data;
 export const environmentalService = {
+  sinirStatus: (unitId) => data("/units/" + id(unitId) + "/sinir/status"),
+  sinirCheck: (unitId) =>
+    data("/units/" + id(unitId) + "/sinir/check", { method: "POST" }),
+  sinirCatalog: (unitId, catalog, filter) =>
+    data(
+      "/units/" +
+        id(unitId) +
+        "/sinir/catalogs/" +
+        id(catalog) +
+        (filter ? "?filter=" + id(filter) : ""),
+    ),
+  sinirPreview: (docId, version) =>
+    data("/documents/" + id(docId) + "/sinir-preview", {
+      method: "POST",
+      body: { version },
+    }),
   context: () => data("/context"),
   units: () => data("/units"),
   saveUnit: (unitId, body) =>

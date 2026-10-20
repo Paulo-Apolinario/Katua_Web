@@ -6,6 +6,7 @@ import {
   FAMILIES,
   STATUS,
   emptyPayload,
+  normalizePayload,
   collectionToDraft,
   downloadDraft,
 } from "./environmentalModel";
@@ -37,6 +38,10 @@ export default function DocumentEditor({
     [history, setHistory] = useState(null),
     [historyPage, setHistoryPage] = useState(1),
     [historyError, setHistoryError] = useState("");
+  const [catalogs, setCatalogs] = useState(null),
+    [catalogError, setCatalogError] = useState(""),
+    [catalogBusy, setCatalogBusy] = useState(false),
+    [preview, setPreview] = useState(null);
   const dirty = JSON.stringify(form) !== saved;
   const activeFamily = record?.family || family;
   const writable = record
@@ -72,7 +77,7 @@ export default function DocumentEditor({
         const next = {
           title: d.title,
           referenceYear: d.referenceYear,
-          payload: d.payload,
+          payload: normalizePayload(d.family, d.payload),
         };
         setForm(next);
         setSaved(JSON.stringify(next));
@@ -104,14 +109,17 @@ export default function DocumentEditor({
       cancelled = true;
     };
   }, [docId, historyPage, record?.version]);
-  const patch = (key, value) => setForm((p) => ({ ...p, [key]: value }));
+  const patch = (key, value) => {
+    setPreview(null);
+    setForm((p) => ({ ...p, [key]: value }));
+  };
   async function fresh(newId) {
     const d = await api.detail(newId || docId);
     setRecord(d);
     const next = {
       title: d.title,
       referenceYear: d.referenceYear,
-      payload: d.payload,
+      payload: normalizePayload(d.family, d.payload),
     };
     setForm(next);
     setSaved(JSON.stringify(next));
@@ -119,6 +127,7 @@ export default function DocumentEditor({
     onSaved();
   }
   async function operation(fn) {
+    setPreview(null);
     setBusy(true);
     setError("");
     setNotice("");
@@ -167,6 +176,38 @@ export default function DocumentEditor({
       const source = await api.source(unit.id, sourceId.trim());
       patch("payload", collectionToDraft(source, form.payload));
       setNotice(source.warning);
+    });
+  }
+  async function loadCatalogs() {
+    setCatalogBusy(true);
+    setCatalogError("");
+    setCatalogs(null);
+    try {
+      const names = [
+        "residues",
+        "units",
+        "classes",
+        "physicalStates",
+        "packaging",
+        "treatments",
+        "reverseSystems",
+      ];
+      const rows = await Promise.all(
+        names.map(async (name) => [
+          name,
+          (await api.sinirCatalog(unit.id, name)).items,
+        ]),
+      );
+      setCatalogs(Object.fromEntries(rows));
+    } catch (e) {
+      setCatalogError(e);
+    } finally {
+      setCatalogBusy(false);
+    }
+  }
+  async function prepare() {
+    await operation(async () => {
+      setPreview(await api.sinirPreview(docId, record.version));
     });
   }
   if (loading)
@@ -283,6 +324,33 @@ export default function DocumentEditor({
               </section>
             )}
         </fieldset>
+        {activeFamily !== "MUNICIPAL_DECLARATION" && writable && (
+          <section className="card p-4 mb-3">
+            <h2>Catálogos oficiais do SINIR</h2>
+            <p>
+              Consulte os códigos oficiais para preencher os campos. Esta ação
+              só consulta dados e depende da credencial vinculada à unidade no
+              servidor.
+            </p>
+            <Message error={catalogError} />
+            <button
+              type="button"
+              className="btn btn-outline-success"
+              disabled={catalogBusy || busy}
+              onClick={loadCatalogs}
+            >
+              {catalogBusy
+                ? "Consultando catálogos..."
+                : "Carregar catálogos oficiais"}
+            </button>
+            {catalogs && (
+              <p className="small text-success mt-2 mb-0">
+                Catálogos carregados nesta edição. Confira a compatibilidade
+                entre resíduo, classe, estado físico e acondicionamento.
+              </p>
+            )}
+          </section>
+        )}
         {activeFamily === "MUNICIPAL_DECLARATION" ? (
           <MunicipalForm
             disabled={busy || !writable || conflict}
@@ -302,6 +370,9 @@ export default function DocumentEditor({
               />
             ) : (
               <ManifestForm
+                unitId={unit.id}
+                family={activeFamily}
+                catalogs={catalogs}
                 value={form.payload}
                 onChange={(v) => patch("payload", v)}
               />
@@ -320,6 +391,54 @@ export default function DocumentEditor({
       </form>
       {record && (
         <>
+          {activeFamily !== "MUNICIPAL_DECLARATION" &&
+            record.permissions.write && (
+              <section className="card p-4 mt-4">
+                <h2>Prévia técnica sem transmissão</h2>
+                <p>
+                  Gera o modelo de integração a partir da versão salva. Não
+                  valida os códigos no SINIR nem emite documento.
+                </p>
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary"
+                  disabled={busy || dirty || conflict}
+                  onClick={prepare}
+                >
+                  Conferir dados para integração
+                </button>
+                {dirty && (
+                  <p className="small text-muted mt-2">
+                    Salve as alterações antes de gerar a prévia.
+                  </p>
+                )}
+                {preview && (
+                  <div className="mt-3">
+                    <p className="fw-semibold">
+                      Versão {preview.documentVersion} — emissão bloqueada
+                    </p>
+                    {!!preview.issues.length && (
+                      <ul>
+                        {preview.issues.map((issue, i) => (
+                          <li key={i}>{issue}</li>
+                        ))}
+                      </ul>
+                    )}
+                    <ul className="small text-muted">
+                      {preview.warnings.map((warning, i) => (
+                        <li key={i}>{warning}</li>
+                      ))}
+                    </ul>
+                    <details>
+                      <summary>Consultar modelo JSON preparado</summary>
+                      <pre className="text-wrap mt-3">
+                        {JSON.stringify(preview.payload, null, 2)}
+                      </pre>
+                    </details>
+                  </div>
+                )}
+              </section>
+            )}
           <section className="card p-4 mt-4">
             <h2>Revisão e emissão</h2>
             <p className="text-muted">
