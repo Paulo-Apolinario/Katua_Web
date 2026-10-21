@@ -7,8 +7,9 @@ import toast from "react-hot-toast";
 import HeadTags from "../../components/HeadTags";
 import TopProgressBar from "../../components/TopProgressBar";
 import generatorService from "../../services/generatorService";
+import { hasCoordinates } from "../../components/maps/mapPin";
 
-const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+import { geocodeAddressWithGoogle, loadGoogleMapsScript } from "../../components/generators/geocodeAddress";
 
 const initialForm = {
   type: "SMALL",
@@ -51,71 +52,6 @@ function buildFullAddress(form) {
   ]
     .filter(Boolean)
     .join(", ");
-}
-
-function loadGoogleMapsScript() {
-  return new Promise((resolve, reject) => {
-    if (window.google?.maps) {
-      resolve(window.google.maps);
-      return;
-    }
-
-    if (!GOOGLE_MAPS_API_KEY) {
-      reject(new Error("VITE_GOOGLE_MAPS_API_KEY não configurada no .env."));
-      return;
-    }
-
-    const existingScript = document.getElementById("google-maps-script");
-
-    if (existingScript) {
-      existingScript.addEventListener("load", () => resolve(window.google.maps));
-      existingScript.addEventListener("error", reject);
-      return;
-    }
-
-    const script = document.createElement("script");
-    script.id = "google-maps-script";
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places`;
-    script.async = true;
-    script.defer = true;
-    script.onload = () => resolve(window.google.maps);
-    script.onerror = reject;
-
-    document.body.appendChild(script);
-  });
-}
-
-async function geocodeAddressWithGoogle(form) {
-  const maps = await loadGoogleMapsScript();
-  const query = buildFullAddress(form);
-
-  if (!query.trim()) return null;
-
-  return new Promise((resolve) => {
-    const geocoder = new maps.Geocoder();
-
-    geocoder.geocode(
-      {
-        address: query,
-        componentRestrictions: {
-          country: "BR",
-        },
-      },
-      (results, status) => {
-        if (status !== "OK" || !results?.[0]) {
-          resolve(null);
-          return;
-        }
-
-        const location = results[0].geometry.location;
-
-        resolve({
-          latitude: location.lat(),
-          longitude: location.lng(),
-        });
-      }
-    );
-  });
 }
 
 function GoogleLocationPicker({
@@ -405,7 +341,7 @@ const AddGenerator = () => {
       return false;
     }
 
-    if (!selectedLocation?.latitude || !selectedLocation?.longitude) {
+    if (!hasCoordinates(selectedLocation)) {
       toast.error("Clique no mapa e confirme a localização do gerador.");
       return false;
     }

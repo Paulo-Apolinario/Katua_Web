@@ -1,0 +1,11 @@
+.katua-map-pin { background: transparent; border: 0; color: #176944; }
+.katua-map-pin svg { display: block; width: 40px; height: 50px; overflow: visible; filter: drop-shadow(0 3px 3px #102f3545); }
+.katua-pin-body { fill: currentColor; stroke: white; stroke-width: 2; }
+.katua-map-pin--pev { color: #a65d0d; }
+.katua-map-pin--base { color: #245b89; }
+.katua-map-pin--device { color: #7845a1; }
+.katua-map-pin:focus-visible { outline: 3px solid #172d22; outline-offset: 3px; border-radius: 8px; }
+.katua-map-legend { display: flex; gap: 1rem; flex-wrap: wrap; font-size: .82rem; margin: .75rem 0; }
+.katua-map-legend span { display: inline-flex; align-items: center; gap: .35rem; }
+.katua-map-legend svg { width: 17px; height: 17px; }
+.generator-location-map { height: 360px; border-radius: 12px; z-index: 0; }

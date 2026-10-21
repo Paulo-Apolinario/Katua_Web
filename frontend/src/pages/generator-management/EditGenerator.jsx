@@ -1,12 +1,16 @@
 import { ManagementHeader } from "../../components/management/ManagementWorkspace";
-import { useCallback, useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router";
-import { ArrowLeft, Save, ShieldCheck, ShieldOff } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router";
+import { ArrowLeft, Save, ShieldCheck, ShieldOff, Search } from "lucide-react";
 import toast from "react-hot-toast";
 
 import HeadTags from "../../components/HeadTags";
 import TopProgressBar from "../../components/TopProgressBar";
 import generatorService from "../../services/generatorService";
+
+import GeneratorLocationEditor from "../../components/generators/GeneratorLocationEditor";
+import { geocodeAddressWithGoogle } from "../../components/generators/geocodeAddress";
+import { hasCoordinates } from "../../components/maps/mapPin";
 
 const accessStatusOptions = [
   { value: "PENDING_ACTIVATION", label: "Pendente de ativação" },
@@ -28,6 +32,8 @@ const initialForm = {
   city: "",
   state: "",
   address: "",
+  latitude: "",
+  longitude: "",
   accessStatus: "PENDING_ACTIVATION",
   accessReleased: false,
 };
@@ -35,6 +41,14 @@ const initialForm = {
 const EditGenerator = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const fromDashboard = params.get("origem") === "painel";
+  const focusLocation = params.get("localizacao") === "1";
+  const locationSection = useRef(null);
+  const revision = useRef(0);
+  const alive = useRef(true);
+  const [searching, setSearching] = useState(false);
+  useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
 
   const [form, setForm] = useState(initialForm);
   const [generator, setGenerator] = useState(null);
@@ -63,6 +77,8 @@ const EditGenerator = () => {
         city: data.city || "",
         state: data.state || "",
         address: data.address || "",
+        latitude: data.latitude ?? "",
+        longitude: data.longitude ?? "",
         accessStatus: data.accessStatus || "PENDING_ACTIVATION",
         accessReleased: Boolean(data.accessReleased),
       });
@@ -79,7 +95,15 @@ const EditGenerator = () => {
     loadGenerator();
   }, [loadGenerator]);
 
+  useEffect(() => {
+    if (!loading && focusLocation) {
+      locationSection.current?.scrollIntoView({ block: "start" });
+      locationSection.current?.focus({ preventScroll: true });
+    }
+  }, [loading, focusLocation]);
+
   const handleChange = (event) => {
+    revision.current += 1;
     const { name, value } = event.target;
 
     setForm((prev) => ({
@@ -100,6 +124,7 @@ const EditGenerator = () => {
     city: form.city.trim() || undefined,
     state: form.state.trim().toUpperCase() || undefined,
     address: form.address.trim() || undefined,
+    ...(hasCoordinates(form) ? { latitude: Number(form.latitude), longitude: Number(form.longitude) } : {}),
   });
 
   const validate = () => {
@@ -113,6 +138,14 @@ const EditGenerator = () => {
       return false;
     }
 
+    if (hasCoordinates(generator) && form.latitude === "" && form.longitude === "") {
+      toast.error("Este gerador já possui localização. Selecione o novo ponto para substituí-la.");
+      return false;
+    }
+    if ((form.latitude !== "" || form.longitude !== "") && !hasCoordinates(form)) {
+      toast.error("Informe latitude (-90 a 90) e longitude (-180 a 180) válidas, juntas.");
+      return false;
+    }
     return true;
   };
 
@@ -131,7 +164,7 @@ const EditGenerator = () => {
       }
 
       toast.success("Gerador atualizado com sucesso.");
-      navigate("/generator-list");
+      navigate(fromDashboard ? "/" : "/generator-list");
     } catch (error) {
       console.error("Erro ao atualizar gerador:", error);
       toast.error(error?.message || "Não foi possível atualizar o gerador.");
@@ -139,6 +172,44 @@ const EditGenerator = () => {
       setSaving(false);
     }
   };
+
+  const pickLocation = useCallback((latitude, longitude) => {
+    revision.current += 1;
+    setForm((previous) => ({ ...previous, latitude, longitude }));
+  }, []);
+
+  async function searchCep() {
+    const cep = form.zipCode.replace(/\D/g, "");
+    if (cep.length !== 8) return toast.error("Informe um CEP com 8 dígitos.");
+    const request = revision.current;
+    setSearching(true);
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`, { signal: AbortSignal.timeout(12000) });
+      if (!response.ok) throw new Error("Busca de CEP indisponível.");
+      const data = await response.json();
+      if (!alive.current || request !== revision.current) return;
+      if (data.erro) throw new Error("CEP não encontrado.");
+      revision.current += 1;
+      setForm((previous) => ({ ...previous, street: data.logradouro || previous.street, neighborhood: data.bairro || previous.neighborhood, city: data.localidade || previous.city, state: data.uf || previous.state }));
+      toast.success("Endereço preenchido. Confira o número e defina o ponto no mapa.");
+    } catch (error) {
+      if (alive.current && request === revision.current) toast.error(error?.name === "TimeoutError" ? "Busca de CEP demorou demais. Tente novamente." : error?.message || "Não foi possível buscar o CEP.");
+    } finally { if (alive.current) setSearching(false); }
+  }
+
+  async function searchAddress() {
+    const request = revision.current;
+    setSearching(true);
+    try {
+      const location = await geocodeAddressWithGoogle(form);
+      if (!alive.current || request !== revision.current) return;
+      if (!location) throw new Error("Endereço não encontrado. Marque o ponto manualmente no mapa.");
+      pickLocation(location.latitude, location.longitude);
+      toast.success("Confira o ponto sugerido e ajuste se necessário antes de salvar.");
+    } catch (error) {
+      if (alive.current && request === revision.current) toast.error(error?.message || "Busca indisponível. Marque o ponto no mapa.");
+    } finally { if (alive.current) setSearching(false); }
+  }
 
   const handleReleaseAccess = async () => {
     if (!id) return;
@@ -259,12 +330,14 @@ const EditGenerator = () => {
             <div className="col-md-3">
               <label className="form-label">CEP</label>
               <input
+                aria-label="CEP"
                 name="zipCode"
                 value={form.zipCode}
                 onChange={handleChange}
                 className="form-control"
-                disabled={loading}
+                disabled={loading || saving || searching}
               />
+              <button type="button" className="btn btn-sm btn-outline-success mt-2" onClick={searchCep} disabled={loading || saving || searching}>Buscar CEP</button>
             </div>
 
             <div className="col-md-5">
@@ -336,6 +409,22 @@ const EditGenerator = () => {
           </div>
         </div>
 
+        <section className="card p-25 mb-4" id="localizacao" ref={locationSection} tabIndex={-1} aria-labelledby="generator-location-heading">
+          <h4 id="generator-location-heading" className="fw-600 mb-3">Localização do gerador</h4>
+          <p role="status" className={hasCoordinates(form) ? "text-success" : "text-warning"}>
+            {hasCoordinates(form) ? "Ponto definido. Salve as alterações para gravar a localização." : "Este gerador está sem coordenadas. Defina o ponto para aparecer no mapa operacional."}
+          </p>
+          <button type="button" className="btn btn-outline-success mb-3 align-self-start" disabled={loading || saving || searching} onClick={searchAddress}>
+            <Search size={16} className="me-2" />{searching ? "Buscando endereço..." : "Buscar endereço no mapa"}
+          </button>
+          <p className="small text-muted">A busca usa rua, número, bairro, cidade, UF e CEP informados acima e depende da configuração Google Maps existente. O resultado é uma sugestão; confira o acesso correto ao imóvel.</p>
+          <GeneratorLocationEditor latitude={form.latitude} longitude={form.longitude} onChange={pickLocation} disabled={loading || saving} />
+          <div className="row g-3 mt-2">
+            <div className="col-md-6"><label htmlFor="generator-latitude" className="form-label">Latitude</label><input id="generator-latitude" name="latitude" className="form-control" type="number" step="any" min="-90" max="90" value={form.latitude} onChange={handleChange} disabled={loading || saving} /></div>
+            <div className="col-md-6"><label htmlFor="generator-longitude" className="form-label">Longitude</label><input id="generator-longitude" name="longitude" className="form-control" type="number" step="any" min="-180" max="180" value={form.longitude} onChange={handleChange} disabled={loading || saving} /></div>
+          </div>
+        </section>
+
         <div className="card p-25 mb-4">
           <h4 className="fw-600 mb-4">Acesso ao aplicativo</h4>
 
@@ -396,11 +485,11 @@ const EditGenerator = () => {
         </div>
 
         <div className="d-flex justify-content-end gap-3">
-          <Link to="/generator-list" className="secondary-btn">
+          <Link to={fromDashboard ? "/" : "/generator-list"} className="secondary-btn">
             Cancelar
           </Link>
 
-          <button type="submit" className="primary-btn" disabled={saving}>
+          <button type="submit" className="primary-btn" disabled={loading || saving || searching}>
             <Save />
             {saving ? "Salvando..." : "Salvar alterações"}
           </button>

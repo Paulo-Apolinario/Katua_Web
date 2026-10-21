@@ -324,7 +324,7 @@ try {
         .getByRole("button", { name: "Minha posição", exact: true })
         .click();
       await page.waitForFunction(
-        () => document.querySelectorAll(".leaflet-interactive").length >= 3,
+        () => document.querySelectorAll(".katua-map-pin").length >= 3,
       );
       await context.clearPermissions();
       await page.evaluate(() => {
@@ -400,6 +400,78 @@ try {
       assert.deepEqual(errors, []);
     },
   );
+  await check("Gerador: completar localização pelo painel e persistir pino após recarga", async () => {
+    await page.goto("http://127.0.0.1:5179/");
+    await page.getByRole("row").filter({ hasText: "Gerador sem coordenadas QA" }).getByRole("link", { name: "Completar localização" }).click();
+    await page.getByRole("heading", { name: "Localização do gerador", exact: true }).waitFor();
+    await page.getByText("Este gerador está sem coordenadas.", { exact: false }).waitFor();
+    await page.getByRole("region", { name: "Selecionar localização do gerador" }).click({ position: { x: 160, y: 140 } });
+    await page.waitForFunction(() => document.querySelector("#generator-latitude")?.value !== "");
+    await page.getByLabel("Latitude", { exact: true }).fill("-3.735123");
+    await page.getByLabel("Longitude", { exact: true }).fill("-38.526321");
+    await page.screenshot({ path: join(outputDir, "generator-location-desktop.png"), fullPage: true });
+    await page.getByRole("button", { name: "Salvar alterações", exact: true }).click();
+    await page.waitForURL("http://127.0.0.1:5179/");
+    await page.getByRole("row").filter({ hasText: "Gerador sem coordenadas QA" }).getByRole("button", { name: "Localizar no mapa", exact: true }).click();
+    await page.locator(".leaflet-popup-content").waitFor();
+    assert.equal(await page.locator(".katua-map-pin--generator").count(), 2);
+    assert.equal(await page.locator(".katua-map-pin--pev").count(), 1);
+    assert.equal(await page.locator(".katua-map-pin--base").count(), 1);
+    const stored = (await api("/generators")).body.generators.find((g) => g.name === "Gerador sem coordenadas QA");
+    assert.equal(stored.latitude, -3.735123);
+    assert.equal(stored.longitude, -38.526321);
+    await page.reload();
+    await page.getByRole("row").filter({ hasText: "Gerador sem coordenadas QA" }).getByRole("button", { name: "Localizar no mapa", exact: true }).waitFor();
+    await page.screenshot({ path: join(outputDir, "dashboard-new-pins.png"), fullPage: true });
+    assert.deepEqual(errors, []);
+  });
+  await check("Edição: CEP e número na busca, ajuste da sugestão e persistência móvel", async () => {
+    await page.goto("http://127.0.0.1:5179/edit-generator/" + f.gen.id + "?localizacao=1");
+    await page.getByLabel("Latitude", { exact: true }).waitFor();
+    await page.locator('input[name="number"]').fill("123");
+    await page.getByLabel("CEP", { exact: true }).fill("60000000");
+    await context.route("https://viacep.com.br/**", (r) => r.fulfill({ contentType: "application/json", body: JSON.stringify({ logradouro: "Rua QA", bairro: "Centro", localidade: "Sobral", uf: "CE" }) }));
+    await page.getByRole("button", { name: "Buscar CEP", exact: true }).click();
+    await page.waitForFunction(() => document.querySelector('input[name="street"]').value === "Rua QA");
+    await page.evaluate(() => {
+      window.google = { maps: { Geocoder: class { geocode(query, done) { window.qaAddress = query.address; done([{ geometry: { location: { lat: () => -3.72, lng: () => -40.33 } } }], "OK"); } } } };
+    });
+    await page.getByRole("button", { name: "Buscar endereço no mapa", exact: true }).click();
+    await page.waitForFunction(() => document.querySelector("#generator-latitude").value === "-3.72");
+    assert.match(await page.evaluate(() => window.qaAddress), /Rua QA, 123.*Sobral.*60000000/);
+    await page.getByLabel("Latitude", { exact: true }).fill("-3.721");
+    await page.getByRole("button", { name: "Salvar alterações", exact: true }).click();
+    await page.waitForURL("**/generator-list");
+    const stored = (await api("/generators/" + f.gen.id)).body.generator;
+    assert.equal(stored.latitude, -3.721);
+    assert.equal(stored.longitude, -40.33);
+    assert.equal(stored.email, f.gen.email);
+    const mobile = await contextFor(f.token, { id: f.owner.id, role: "COOPERATIVE", displayName: "QA" }, { width: 390, height: 844 });
+    const mp = await mobile.newPage();
+    await mp.goto("http://127.0.0.1:5179/edit-generator/" + f.gen.id + "?localizacao=1");
+    await mp.waitForFunction(() => document.querySelector("#generator-latitude")?.value === "-3.721");
+    assert(await mp.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
+    await mp.screenshot({ path: join(outputDir, "generator-location-mobile.png"), fullPage: true });
+    await mobile.close();
+    assert.deepEqual(errors, []);
+  });
+  await check("API: escopo da cooperativa, coordenadas válidas e preservação sem GPS", async () => {
+    const path = "/generators/" + f.gen.id;
+    assert.equal((await api(path, "PATCH", { latitude: -3, longitude: -38 }, f.otherToken)).status, 404);
+    assert.equal((await api(path, "PATCH", { latitude: -3, longitude: -38 }, f.driverToken)).status, 403);
+    for (const body of [{ latitude: -3 }, { longitude: -38 }, { latitude: 91, longitude: 0 }, { latitude: 0, longitude: -181 }, { latitude: null, longitude: null }, { cooperativeId: "other" }, { email: "other@example.invalid" }, {}]) {
+      assert.equal((await api(path, "PATCH", body)).status, 400, JSON.stringify(body));
+    }
+    const zero = await api(path, "PATCH", { latitude: 0, longitude: 0 });
+    assert.equal(zero.status, 200, JSON.stringify(zero.body));
+    assert.equal(zero.body.generator.latitude, 0);
+    assert.equal(zero.body.generator.longitude, 0);
+    const withoutGps = await api(path, "PATCH", { phone: "85999990000" });
+    assert.equal(withoutGps.status, 200);
+    assert.equal(withoutGps.body.generator.latitude, 0);
+    assert.equal(withoutGps.body.generator.longitude, 0);
+    assert.equal(withoutGps.body.generator.email, f.gen.email);
+  });
 } catch (e) {
   outcomes.push({ name: "Ambiente", status: "FAIL", error: e.message });
   console.error(e.stack);

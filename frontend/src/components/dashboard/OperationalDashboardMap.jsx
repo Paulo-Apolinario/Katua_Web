@@ -2,15 +2,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-const located = (p) =>
-  p?.latitude != null &&
-  p?.longitude != null &&
-  Number.isFinite(Number(p.latitude)) &&
-  Number.isFinite(Number(p.longitude)) &&
-  Math.abs(Number(p.latitude)) <= 90 &&
-  Math.abs(Number(p.longitude)) <= 180;
+import { Building2, House, LocateFixed, Recycle } from "lucide-react";
+import { hasCoordinates as located, mapPin } from "../maps/mapPin";
 const edit = (p) =>
-  p.kind === "PEV" ? "/edit-bin/" + p.id : "/edit-generator/" + p.id;
+  p.kind === "PEV" ? "/edit-bin/" + p.id : "/edit-generator/" + p.id + (!located(p) ? "?localizacao=1&origem=painel" : "");
 export default function OperationalDashboardMap({ points, base, truncated }) {
   const root = useRef(null),
     wrapper = useRef(null),
@@ -70,7 +65,7 @@ export default function OperationalDashboardMap({ points, base, truncated }) {
     layer.current.clearLayers();
     markers.current.clear();
     const bounds = [];
-    const add = (p, color, title) => {
+    const add = (p, kind, title) => {
       const xy = [Number(p.latitude), Number(p.longitude)],
         content = document.createElement("div"),
         heading = document.createElement("strong");
@@ -89,19 +84,19 @@ export default function OperationalDashboardMap({ points, base, truncated }) {
         a.style.display = "block";
         content.append(a);
       }
-      const marker = L.circleMarker(xy, {
-        color,
-        fillColor: color,
-        radius: p.kind ? 8 : 11,
-        fillOpacity: 0.8,
+      const marker = L.marker(xy, {
+        icon: mapPin(kind),
+        title: title || p.name,
+        alt: title || p.name,
+        riseOnHover: true,
       })
         .addTo(layer.current)
         .bindPopup(content);
-      markers.current.set(p.id, marker);
+      markers.current.set((p.kind || "BASE") + p.id, marker);
       bounds.push(xy);
     };
-    for (const p of valid) add(p, p.kind === "PEV" ? "#b86f16" : "#176944");
-    if (located(base)) add(base, "#245b89", "Sede: " + base.name);
+    for (const p of valid) add(p, p.kind);
+    if (located(base)) add(base, "BASE", "Sede: " + base.name);
     if (bounds.length)
       map.current.fitBounds(bounds, { padding: [35, 35], maxZoom: 14 });
   }, [valid, base]);
@@ -145,11 +140,7 @@ export default function OperationalDashboardMap({ points, base, truncated }) {
           return;
         }
         const xy = [p.coords.latitude, p.coords.longitude];
-        own.current = L.circleMarker(xy, {
-          color: "#7845a1",
-          radius: 9,
-          fillOpacity: 0.9,
-        })
+        own.current = L.marker(xy, { icon: mapPin("DEVICE"), title: "Sua posição nesta leitura", alt: "Sua posição nesta leitura" })
           .addTo(map.current)
           .bindPopup(
             "Sua posição nesta leitura · precisão aproximada " +
@@ -279,10 +270,13 @@ export default function OperationalDashboardMap({ points, base, truncated }) {
           aria-label="Mapa de geradores, PEVs e sede"
         />
       </div>
-      <p className="small mt-2">
-        🟢 Gerador · 🟠 PEV · 🔵 Sede · 🟣 Sua posição (apenas nesta leitura).
-        Não representa rastreamento da equipe nem trajeto rodoviário.
-      </p>
+      <div className="katua-map-legend" aria-label="Legenda do mapa">
+        <span style={{ color: "#176944" }}><Building2 aria-hidden="true" /> Gerador</span>
+        <span style={{ color: "#a65d0d" }}><Recycle aria-hidden="true" /> PEV</span>
+        <span style={{ color: "#245b89" }}><House aria-hidden="true" /> Sede</span>
+        <span style={{ color: "#7845a1" }}><LocateFixed aria-hidden="true" /> Sua posição nesta leitura</span>
+      </div>
+      <p className="small">Não representa rastreamento da equipe nem trajeto rodoviário.</p>
       <div className="table-responsive">
         <table className="table">
           <caption>
@@ -315,7 +309,7 @@ export default function OperationalDashboardMap({ points, base, truncated }) {
                     <button
                       className="btn btn-sm btn-outline-success"
                       onClick={() => {
-                        const m = markers.current.get(p.id);
+                        const m = markers.current.get(p.kind + p.id);
                         if (m) {
                           map.current.setView(m.getLatLng(), 16);
                           m.openPopup();
