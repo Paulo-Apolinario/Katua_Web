@@ -65,6 +65,7 @@ const modules = [
     id: "reports",
     label: "Relatórios e Análises",
     paths: [
+      "",
       "analytics-dashboard",
       "waste-collection-reports",
       "waste-type-reports",
