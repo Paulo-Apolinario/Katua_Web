@@ -55,6 +55,19 @@ const teamLinks = [
 ];
 const modules = [
   {
+    id: "reports",
+    label: "Relatórios e Análises",
+    paths: [
+      "analytics-dashboard",
+      "waste-collection-reports",
+      "waste-type-reports",
+      "staff-reports",
+      "vehicle-reports",
+    ],
+    description: "Indicadores e conferência das operações da cooperativa.",
+    links: [],
+  },
+  {
     id: "generators",
     label: "Gestão de geradores",
     paths: generatorRoutes,

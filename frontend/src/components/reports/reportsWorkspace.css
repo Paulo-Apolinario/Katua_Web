@@ -1,0 +1,114 @@
+.reports-workspace {
+  min-width: 0;
+  max-width: 1700px;
+  margin: auto;
+}
+.reports-workspace .report-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(215px, 1fr));
+  gap: 1rem;
+}
+.reports-workspace .report-field {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.reports-workspace .report-field label {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+.reports-workspace .report-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 1rem;
+}
+.reports-workspace .report-kpis strong,
+.reports-workspace .report-kpi-link {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-top: 0.65rem;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+.reports-workspace .report-kpi-link {
+  border: 0;
+  background: none;
+  color: #176944;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 5px;
+}
+.reports-workspace .report-kpi-link:hover {
+  color: #0e4530;
+}
+.reports-workspace .report-definition {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+.reports-workspace .report-definition dd {
+  overflow-wrap: anywhere;
+}
+.reports-workspace .table td {
+  min-width: 120px;
+  max-width: 360px;
+  overflow-wrap: anywhere;
+  vertical-align: top;
+}
+.reports-workspace .table th {
+  white-space: normal;
+}
+.reports-workspace .report-rule {
+  border-top: 1px solid #dce7df;
+  padding-top: 1rem;
+  margin-top: 1rem;
+}
+.reports-workspace .report-map {
+  height: 360px;
+  border-radius: 10px;
+  z-index: 0;
+}
+.report-detail {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  background: #10261a80;
+  display: flex;
+  justify-content: flex-end;
+}
+.report-detail-inner {
+  background: white;
+  width: min(780px, 100%);
+  height: 100%;
+  overflow: auto;
+  padding: 1.5rem;
+}
+.report-detail-inner h2 {
+  font-size: 1.4rem;
+}
+.report-detail-inner h3 {
+  font-size: 1.1rem;
+  margin-top: 1.5rem;
+}
+@media (max-width: 575px) {
+  .reports-workspace .report-grid {
+    grid-template-columns: 1fr;
+  }
+  .reports-workspace .report-kpis {
+    grid-template-columns: 1fr;
+  }
+  .reports-workspace .card {
+    padding: 1rem !important;
+  }
+  .reports-workspace .report-map {
+    height: 290px;
+  }
+  .reports-workspace .management-nav .btn {
+    flex: 1 1 150px;
+  }
+  .report-detail-inner {
+    padding: 1rem;
+  }
+}

@@ -893,7 +893,7 @@ const Sidebar = ({ active, setActive }) => {
                   </span>
 
                   <span className="submenu-text">
-                    Dashboard Analytics
+                    Painel de Indicadores
                   </span>
                 </NavLink>
               </li>
