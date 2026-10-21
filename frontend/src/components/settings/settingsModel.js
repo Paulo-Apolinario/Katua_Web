@@ -1,0 +1,112 @@
+export const SECTIONS = {
+  company: {
+    path: "settings",
+    title: "Dados da cooperativa",
+    description: "Cadastro institucional, identidade e localização da sede.",
+  },
+  account: {
+    path: "account-security",
+    title: "Minha conta e segurança",
+    description: "Defina sua senha com confirmação pelo e-mail da conta.",
+  },
+  smtp: {
+    path: "smtp-config",
+    title: "E-mails e SMTP",
+    description: "Remetente próprio, testes e acompanhamento de envios.",
+  },
+  alerts: {
+    path: "system-alerts",
+    title: "Central de Pendências",
+    description:
+      "Avisos vinculados à operação e ações para resolver cada situação.",
+  },
+  preferences: {
+    path: "operational-preferences",
+    title: "Preferências operacionais",
+    description:
+      "Horários, antecedência dos avisos e notificações da cooperativa.",
+  },
+  history: {
+    path: "settings-history",
+    title: "Histórico de alterações",
+    description:
+      "Acompanhe responsáveis e campos modificados, sem expor credenciais.",
+  },
+};
+export const CATEGORIES = {
+  COLLECTION: "Coletas",
+  WASTE: "Resíduos",
+  DOCUMENT: "Documentos",
+  MAINTENANCE: "Manutenções",
+  PEV: "PEVs",
+  SMTP: "E-mails",
+  PROFILE: "Cadastro",
+};
+export const LABELS = {
+  OPEN: "Pendente",
+  RESOLVED: "Resolvido",
+  INFO: "Informativo",
+  WARNING: "Atenção",
+  CRITICAL: "Prioritário",
+  PENDING: "Na fila",
+  SENDING: "Em envio",
+  SENT: "Aceito pelo provedor",
+  CANCELLED: "Cancelado",
+  FAILED: "Falhou",
+  UNKNOWN: "Confirmação desconhecida",
+  PARTIAL: "Aceite parcial",
+  COMPANY: "Dados da cooperativa",
+  PREFERENCES: "Preferências",
+  SMTP: "SMTP",
+  PASSWORD: "Troca de senha",
+  SMTP_VERIFY: "Teste de conexão",
+  SMTP_TEST: "E-mail de teste",
+  MAIL_RETRY: "Nova tentativa de envio",
+  ALERT_READ: "Leitura de alerta",
+  ALERT_SNOOZE: "Alerta adiado",
+  ALERT_ASSIGN: "Responsável pelo alerta",
+};
+export const FIELD_NAMES = {
+  name: "Nome de exibição",
+  registrationNumber: "CNPJ",
+  email: "E-mail institucional",
+  phone: "Telefone",
+  zipCode: "CEP",
+  street: "Logradouro",
+  number: "Número",
+  neighborhood: "Bairro",
+  city: "Município",
+  state: "UF",
+  address: "Endereço complementar",
+  latitude: "Latitude",
+  longitude: "Longitude",
+  legalName: "Razão social",
+  responsibleName: "Responsável",
+  responsiblePosition: "Cargo",
+  website: "Site",
+  logo: "Logotipo",
+  password: "Credencial alterada",
+  enabled: "Ativação",
+  host: "Servidor",
+  port: "Porta",
+  security: "Conexão segura",
+  username: "Usuário",
+  fromName: "Nome do remetente",
+  fromAddress: "E-mail remetente",
+  replyTo: "Responder para",
+  workingDays: "Dias de funcionamento",
+  openAt: "Abertura",
+  closeAt: "Encerramento",
+  documentAdvanceDays: "Antecedência de documentos",
+  collectionOverdueHours: "Atraso de coleta",
+  pendingWasteDays: "Saldo a destinar",
+  emailEnabled: "Avisos por e-mail",
+  frequency: "Frequência",
+  digestHour: "Horário do resumo",
+  recipients: "Destinatários",
+  categories: "Categorias",
+};
+export const date = (v) =>
+  v
+    ? new Date(v).toLocaleString("pt-BR", { timeZone: "America/Fortaleza" })
+    : "Não informado";

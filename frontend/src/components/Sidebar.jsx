@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+import { apiRequest } from "../services/apiClient";
 import {
   House,
   ChevronRight,
@@ -23,6 +25,22 @@ import { NavLink, useLocation } from "react-router";
 const Sidebar = ({ active, setActive }) => {
   const location = useLocation();
   const { admin } = useAdminAuth();
+  const [brand, setBrand] = useState(null);
+  useEffect(() => {
+    let mounted = true;
+    const load = () => {
+      if (admin?.role !== "COOPERATIVE") return;
+      apiRequest("/settings/branding")
+        .then((response) => { if (mounted) setBrand(response.data); })
+        .catch(() => { if (mounted) setBrand(null); });
+    };
+    load();
+    window.addEventListener("katua-brand-updated", load);
+    return () => {
+      mounted = false;
+      window.removeEventListener("katua-brand-updated", load);
+    };
+  }, [admin?.id, admin?.role]);
 
   const isWasteSectionActive =
     location.pathname.startsWith("/waste-list") ||
@@ -94,7 +112,9 @@ const Sidebar = ({ active, setActive }) => {
   const isSettingSectionActive =
     location.pathname.startsWith("/system-alerts") ||
     location.pathname.startsWith("/settings") ||
-    location.pathname.startsWith("/smtp-config");
+    location.pathname.startsWith("/smtp-config") ||
+    location.pathname.startsWith("/account-security") ||
+    location.pathname.startsWith("/operational-preferences");
 
   const closeSidebarOnMobile = () => {
     setActive(true);
@@ -119,7 +139,7 @@ const Sidebar = ({ active, setActive }) => {
         <div className="logo-wrap">
           <div className="logo-a">
             <img
-              src="/images/logo-1759318675551-812040927.png"
+              src={brand?.logo || "/images/logo-1759318675551-812040927.png"}
               className="logo"
               alt="KATUÁ"
               style={{
@@ -1009,11 +1029,23 @@ const Sidebar = ({ active, setActive }) => {
                   </span>
 
                   <span className="submenu-text">
-                    Configurações da Empresa
+                    Dados da cooperativa
                   </span>
                 </NavLink>
               </li>
 
+              {[
+                ["/account-security", "Minha conta e segurança"],
+                ["/operational-preferences", "Preferências operacionais"],
+                ["/settings-history", "Histórico de alterações"],
+              ].map(([to, label]) => (
+                <li key={to}>
+                  <NavLink to={to} className={({ isActive }) => isActive ? "active" : ""}>
+                    <span className="dot-wrap"><span className="dot" /></span>
+                    <span className="submenu-text">{label}</span>
+                  </NavLink>
+                </li>
+              ))}
               <li>
                 <NavLink
                   to="/smtp-config"
@@ -1043,7 +1075,7 @@ const Sidebar = ({ active, setActive }) => {
                   </span>
 
                   <span className="submenu-text">
-                    Alertas do Sistema
+                    Central de Pendências
                   </span>
                 </NavLink>
               </li>

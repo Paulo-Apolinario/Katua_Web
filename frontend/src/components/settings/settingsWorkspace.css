@@ -1,0 +1,114 @@
+.settings-workspace {
+  max-width: 1500px;
+  margin: auto;
+  min-width: 0;
+}
+.settings-workspace h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #203b2d;
+  margin-bottom: 1rem;
+}
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+}
+.settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 0;
+}
+.settings-field label {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+.settings-check {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.8rem 0;
+  font-size: 0.9rem;
+}
+.settings-check input {
+  width: 18px;
+  height: 18px;
+  accent-color: #176944;
+}
+.settings-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 1.25rem;
+}
+.settings-context {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  border-left: 4px solid #176944;
+  padding: 0.75rem 1rem;
+  background: #f2f7f3;
+  border-radius: 8px;
+  overflow-wrap: anywhere;
+}
+.settings-context span,
+.settings-context small {
+  color: #557063;
+  font-size: 0.85rem;
+}
+.settings-logo {
+  display: block;
+  max-width: 240px;
+  max-height: 130px;
+  object-fit: contain;
+  margin-bottom: 1rem;
+}
+.settings-map {
+  height: 320px;
+  border-radius: 10px;
+  z-index: 0;
+}
+.settings-alert-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 430px), 1fr));
+  gap: 1rem;
+}
+.settings-alert {
+  border-top: 4px solid #d6a13a !important;
+}
+.settings-alert.critical {
+  border-top-color: #bf4545 !important;
+}
+.settings-alert.info {
+  border-top-color: #3782a0 !important;
+}
+.settings-workspace table td {
+  min-width: 140px;
+  max-width: 380px;
+  overflow-wrap: anywhere;
+}
+.settings-workspace fieldset {
+  min-width: 0;
+}
+.settings-workspace .btn {
+  white-space: normal;
+}
+.settings-workspace input:disabled {
+  background: #f2f5f3;
+}
+@media (max-width: 575px) {
+  .settings-grid {
+    grid-template-columns: 1fr;
+  }
+  .settings-workspace .card {
+    padding: 1rem !important;
+  }
+  .settings-map {
+    height: 270px;
+  }
+  .settings-actions .btn {
+    flex: 1 1 160px;
+  }
+}

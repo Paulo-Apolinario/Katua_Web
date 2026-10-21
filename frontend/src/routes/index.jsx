@@ -1,3 +1,4 @@
+import SettingsWorkspace from "../components/settings/SettingsWorkspace";
 import {
   BrowserRouter,
   Routes,
@@ -438,6 +439,9 @@ const Router = () => {
               element={<SystemAlerts />}
             />
 
+            <Route path="account-security" element={<SettingsWorkspace key="account" kind="account"/>}/>
+            <Route path="operational-preferences" element={<SettingsWorkspace key="preferences" kind="preferences"/>}/>
+            <Route path="settings-history" element={<SettingsWorkspace key="history" kind="history"/>}/>
             {/* Profile Setup */}
             <Route
               path="profile-setup"

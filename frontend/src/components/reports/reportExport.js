@@ -95,10 +95,35 @@ export function exportReport(format, kind, report, context) {
     return;
   }
   const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
+  if (context.cooperative.logo) {
+    try {
+      const img = doc.getImageProperties(context.cooperative.logo);
+      const scale = Math.min(65 / img.width, 42 / img.height);
+      doc.addImage(
+        context.cooperative.logo,
+        img.fileType,
+        740,
+        20,
+        img.width * scale,
+        img.height * scale,
+        undefined,
+        "FAST",
+      );
+    } catch {
+      /* Uma imagem indisponível não impede a emissão do relatório. */
+    }
+  }
   doc.setFontSize(18);
   doc.text("KATUÁ | " + REPORTS[kind].title, 36, 38);
   doc.setFontSize(11);
-  doc.text(doc.splitTextToSize(report.meta.cooperative.name, 760), 36, 60);
+  doc.text(
+    doc.splitTextToSize(
+      report.meta.cooperative.name,
+      context.cooperative.logo ? 680 : 760,
+    ),
+    36,
+    60,
+  );
   autoTable(doc, {
     startY: 78,
     head: [["Identificação e recorte", "Informação"]],

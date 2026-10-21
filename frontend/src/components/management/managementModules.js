@@ -55,6 +55,13 @@ const teamLinks = [
 ];
 const modules = [
   {
+    id: "settings",
+    label: "Configurações do sistema",
+    paths: ["settings", "smtp-config", "system-alerts", "account-security", "operational-preferences", "settings-history"],
+    description: "Preferências da cooperativa e segurança da conta.",
+    links: [],
+  },
+  {
     id: "reports",
     label: "Relatórios e Análises",
     paths: [
