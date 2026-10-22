@@ -9,6 +9,7 @@ import {
 } from "../management/ManagementWorkspace";
 import HeadTags from "../HeadTags";
 import LocationPicker from "./LocationPicker";
+import { hasCoordinates } from "../maps/mapPin";
 import {
   SECTIONS,
   CATEGORIES,
@@ -164,6 +165,9 @@ export default function SettingsWorkspace({ kind }) {
       controller.abort();
     };
   }, [kind, refresh, historyPage]);
+  useEffect(() => {
+    if (!loading && kind === "company" && window.location.hash === "#sede") document.getElementById("sede")?.scrollIntoView({ block: "start" });
+  }, [loading, kind]);
   const patch = (k, v) => setForm((p) => ({ ...p, [k]: v }));
   async function perform(fn, reload = true) {
     setBusy(true);
@@ -377,8 +381,9 @@ export default function SettingsWorkspace({ kind }) {
                       </button>
                     )}
                   </section>
-                  <section className="card p-4 mb-4">
+                  <section className="card p-4 mb-4" id="sede" style={{ scrollMarginTop: 90 }}>
                     <h2>Endereço e sede</h2>
+                    <p role="status" className={hasCoordinates(form) ? "text-success" : "text-warning"}>{hasCoordinates(form) ? "Ponto da sede definido. Salve as alterações para atualizar os mapas." : "A sede está sem coordenadas. Clique no mapa ou informe latitude e longitude para exibir o marcador nos mapas."}</p>
                     <div className="settings-grid mb-4">
                       {[
                         "zipCode",
@@ -400,6 +405,7 @@ export default function SettingsWorkspace({ kind }) {
                       ))}
                     </div>
                     <LocationPicker
+                      disabled={busy}
                       latitude={form.latitude}
                       longitude={form.longitude}
                       onChange={(lat, lng) =>

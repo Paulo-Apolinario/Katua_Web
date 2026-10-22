@@ -472,6 +472,71 @@ try {
     assert.equal(withoutGps.body.generator.longitude, 0);
     assert.equal(withoutGps.body.generator.email, f.gen.email);
   });
+  await check("Sede: pino e ação de localização no painel, relatórios e mapa de PEVs", async () => {
+    for (const route of ["/", "/analytics-dashboard", "/bin-list?view=map"]) {
+      await page.goto("http://127.0.0.1:5179" + route);
+      await page.getByRole("button", { name: "Localizar sede", exact: true }).click();
+      await page.locator(".leaflet-popup-content").waitFor();
+      assert((await page.locator(".leaflet-popup-content").innerText()).includes(f.coop.name));
+      assert.equal(await page.locator(".katua-map-pin--base").count(), 1);
+      assert.equal(await page.locator(".katua-hq-tooltip").count(), 1);
+      await page.screenshot({ path: join(outputDir, route === "/" ? "headquarters-dashboard.png" : route.includes("analytics") ? "headquarters-reports.png" : "headquarters-pevs.png"), fullPage: true });
+    }
+    assert.deepEqual(errors, []);
+  });
+  await check("Sede ausente: aviso, acesso às configurações e persistência do ponto", async () => {
+    let c = (await api("/settings/context")).body.data;
+    const removed = await api("/settings/company", "PUT", { ...c.company, version: c.version, latitude: null, longitude: null });
+    assert.equal(removed.status, 200, JSON.stringify(removed.body));
+    for (const route of ["/", "/analytics-dashboard", "/bin-list?view=map"]) {
+      await page.goto("http://127.0.0.1:5179" + route);
+      await page.getByText("Sede sem coordenadas cadastradas.", { exact: true }).waitFor();
+      assert.equal(await page.locator(".katua-map-pin--base").count(), 0);
+    }
+    await page.getByRole("link", { name: "Definir localização da sede", exact: true }).click();
+    await page.waitForURL("**/settings#sede");
+    await page.getByText("A sede está sem coordenadas.", { exact: false }).waitFor();
+    await page.getByLabel("Latitude", { exact: true }).fill("-3.735123");
+    await page.getByLabel("Longitude", { exact: true }).fill("-38.526321");
+    await page.getByRole("button", { name: "Salvar alterações", exact: true }).click();
+    await page.getByText("Alterações salvas.", { exact: true }).waitFor();
+    c = (await api("/settings/context")).body.data;
+    assert.equal(c.company.latitude, -3.735123);
+    assert.equal(c.company.longitude, -38.526321);
+    await page.goto("http://127.0.0.1:5179/");
+    await page.getByRole("button", { name: "Localizar sede", exact: true }).click();
+    // Sede coincidente com gerador fica acima e pode ser aberta pela ação.
+    await page.locator(".leaflet-popup-content").waitFor();
+    assert((await page.locator(".leaflet-popup-content").innerText()).includes(f.coop.name));
+    assert(await page.locator(".katua-map-pin--base").evaluate((element) => Number(element.style.zIndex) >= 1000));
+    const mobile = await contextFor(f.token, { id: f.owner.id, role: "COOPERATIVE", displayName: "QA" }, { width: 390, height: 844 });
+    const mp = await mobile.newPage();
+    await mp.goto("http://127.0.0.1:5179/");
+    await mp.getByRole("button", { name: "Localizar sede", exact: true }).click();
+    await mp.locator(".leaflet-popup-content").waitFor();
+    assert(await mp.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
+    await mp.screenshot({ path: join(outputDir, "headquarters-mobile.png"), fullPage: true });
+    await mobile.close();
+    assert.deepEqual(errors, []);
+  });
+  await check("Sede: falha de consulta explícita sem interromper PEVs e isolamento de cooperativa", async () => {
+    await context.route("**/auth/me", (r) => r.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ error: "Falha simulada" }) }));
+    await page.evaluate(() => {
+      history.pushState({}, "", "/bin-list?view=map");
+      window.dispatchEvent(new PopStateEvent("popstate"));
+    });
+    await page.getByText("Não foi possível consultar a localização da sede.", { exact: false }).waitFor();
+    assert.equal(await page.getByText("Sede sem coordenadas cadastradas.", { exact: true }).count(), 0);
+    assert((await page.locator(".pev-map-icon").count()) >= 1);
+    await context.unroute("**/auth/me");
+    const other = await contextFor(f.otherToken, { id: f.owner.id + "-other", role: "COOPERATIVE", displayName: "Outra QA" });
+    const op = await other.newPage();
+    await op.goto("http://127.0.0.1:5179/");
+    await op.getByText("Sede sem coordenadas cadastradas.", { exact: true }).waitFor();
+    assert.equal(await op.locator(".katua-map-pin--base").count(), 0);
+    assert(!(await op.locator("body").innerText()).includes("Sede: " + f.coop.name));
+    await other.close();
+  });
 } catch (e) {
   outcomes.push({ name: "Ambiente", status: "FAIL", error: e.message });
   console.error(e.stack);

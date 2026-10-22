@@ -1,15 +1,10 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import HeadquartersStatus from "../maps/HeadquartersStatus";
+import { mapPin, hasCoordinates as located } from "../maps/mapPin";
 import { unitsLabel } from "./reportModel";
-const located = (p) =>
-  p.latitude != null &&
-  p.longitude != null &&
-  Number.isFinite(Number(p.latitude)) &&
-  Number.isFinite(Number(p.longitude)) &&
-  Math.abs(Number(p.latitude)) <= 90 &&
-  Math.abs(Number(p.longitude)) <= 180;
-function MapCanvas({ points, base, onInspect }) {
+function MapCanvas({ points, base, onInspect, focusBase }) {
   const el = useRef(null),
     [error, setError] = useState(false);
   useEffect(() => {
@@ -50,19 +45,20 @@ function MapCanvas({ points, base, onInspect }) {
       const xy = [Number(base.latitude), Number(base.longitude)];
       coords.push(xy);
       const el = document.createElement("strong");
-      el.textContent = "Base: " + base.name;
-      L.circleMarker(xy, { radius: 11, color: "#1f4b78", fillOpacity: 0.9 })
-        .addTo(m)
-        .bindPopup(el);
+      el.textContent = "Sede: " + base.name;
+      const marker = L.marker(xy, { icon: mapPin("BASE"), title: "Sede: " + base.name, alt: "Sede: " + base.name, zIndexOffset: 1000 })
+        .addTo(m).bindPopup(el).bindTooltip("Sede da cooperativa", { permanent: true, direction: "top", offset: [0, -40], className: "katua-hq-tooltip" });
+      focusBase.current = () => { m.setView(xy, 16); marker.openPopup(); };
     }
     m.fitBounds(L.latLngBounds(coords), { padding: [25, 25], maxZoom: 14 });
     const observer = new ResizeObserver(() => m.invalidateSize());
     observer.observe(el.current);
     return () => {
+      focusBase.current = null;
       observer.disconnect();
       m.remove();
     };
-  }, [points, base, onInspect]);
+  }, [points, base, onInspect, focusBase]);
   return (
     <>
       {error && (
@@ -79,6 +75,7 @@ function MapCanvas({ points, base, onInspect }) {
   );
 }
 export default function ReportMap({ points, base, onInspect }) {
+  const focusBase = useRef(null);
   const valid = useMemo(() => points.filter(located), [points]);
   return (
     <section className="card p-4 mt-4">
@@ -88,8 +85,9 @@ export default function ReportMap({ points, base, onInspect }) {
         {points.length - valid.length} sem localização. O mapa utiliza os
         cadastros da operação, sem calcular trajeto rodoviário.
       </p>
+      <HeadquartersStatus base={base} onLocate={() => focusBase.current?.()} />
       {valid.length || located(base) ? (
-        <MapCanvas points={valid} base={base} onInspect={onInspect} />
+        <MapCanvas points={valid} base={base} onInspect={onInspect} focusBase={focusBase} />
       ) : (
         <p>Nenhum ponto com coordenadas válidas para exibir.</p>
       )}

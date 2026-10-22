@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { address, hasPosition, title } from "./pevUtils";
+import { useHeadquarters } from "../maps/useHeadquarters";
+import HeadquartersStatus from "../maps/HeadquartersStatus";
+import { hasCoordinates, mapPin } from "../maps/mapPin";
 const CENTER = [-3.7319, -38.5267];
 const pin = (color) =>
   L.divIcon({
@@ -23,6 +26,8 @@ export default function PevMap({
     layer = useRef(null),
     callback = useRef(onPick);
   callback.current = onPick;
+  const headquarters = useHeadquarters(!onPick);
+  const baseMarker = useRef(null);
   const [tileError, setTileError] = useState(false);
   useEffect(() => {
     const m = L.map(container.current, {
@@ -117,17 +122,25 @@ export default function PevMap({
           });
         });
     }
-    if (points.length === 1)
-      m.setView([Number(points[0].latitude), Number(points[0].longitude)], 15);
-    else if (points.length > 1)
-      m.fitBounds(
-        points.map((b) => [Number(b.latitude), Number(b.longitude)]),
-        { padding: [32, 32], maxZoom: 15 },
-      );
+    const bounds = points.map((b) => [Number(b.latitude), Number(b.longitude)]);
+    baseMarker.current = null;
+    if (!editing && hasCoordinates(headquarters.base)) {
+      const b = headquarters.base;
+      const xy = [Number(b.latitude), Number(b.longitude)];
+      const text = document.createElement("strong"); text.textContent = "Sede: " + b.name;
+      baseMarker.current = L.marker(xy, { icon: mapPin("BASE"), title: "Sede: " + b.name, alt: "Sede: " + b.name, zIndexOffset: 1000 }).addTo(g).bindPopup(text)
+        .bindTooltip("Sede da cooperativa", { permanent: true, direction: "top", offset: [0, -40], className: "katua-hq-tooltip" });
+      bounds.push(xy);
+    }
+    if (bounds.length === 1) m.setView(bounds[0], 15);
+    else if (bounds.length > 1) m.fitBounds(bounds, { padding: [40, 45], maxZoom: 15 });
     else m.setView(CENTER, 12);
-  }, [items, latitude, longitude, onPick]);
+  }, [items, latitude, longitude, onPick, headquarters.base]);
   return (
     <div className="pev-map-wrap">
+      {!onPick && <HeadquartersStatus {...headquarters} onLocate={() => {
+        if (baseMarker.current) { map.current.setView(baseMarker.current.getLatLng(), 16); baseMarker.current.openPopup(); }
+      }} />}
       <div
         ref={container}
         className="pev-map"

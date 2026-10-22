@@ -4,6 +4,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Building2, House, LocateFixed, Recycle } from "lucide-react";
 import { hasCoordinates as located, mapPin } from "../maps/mapPin";
+import HeadquartersStatus from "../maps/HeadquartersStatus";
 const edit = (p) =>
   p.kind === "PEV" ? "/edit-bin/" + p.id : "/edit-generator/" + p.id + (!located(p) ? "?localizacao=1&origem=painel" : "");
 export default function OperationalDashboardMap({ points, base, truncated }) {
@@ -89,9 +90,11 @@ export default function OperationalDashboardMap({ points, base, truncated }) {
         title: title || p.name,
         alt: title || p.name,
         riseOnHover: true,
+        zIndexOffset: kind === "BASE" ? 1000 : 0,
       })
         .addTo(layer.current)
         .bindPopup(content);
+      if (kind === "BASE") marker.bindTooltip("Sede da cooperativa", { permanent: true, direction: "top", offset: [0, -40], className: "katua-hq-tooltip" });
       markers.current.set((p.kind || "BASE") + p.id, marker);
       bounds.push(xy);
     };
@@ -263,6 +266,10 @@ export default function OperationalDashboardMap({ points, base, truncated }) {
           Mapa-base indisponível. Os pontos continuam acessíveis pela lista.
         </p>
       )}
+      <HeadquartersStatus base={base} onLocate={() => {
+        const marker = markers.current.get("BASE" + base.id);
+        if (marker) { map.current.setView(marker.getLatLng(), 16); marker.openPopup(); }
+      }} />
       <div className="dashboard-map-wrapper" ref={wrapper}>
         <div
           className="dashboard-live-map"

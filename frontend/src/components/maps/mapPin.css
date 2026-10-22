@@ -9,3 +9,8 @@
 .katua-map-legend span { display: inline-flex; align-items: center; gap: .35rem; }
 .katua-map-legend svg { width: 17px; height: 17px; }
 .generator-location-map { height: 360px; border-radius: 12px; z-index: 0; }
+
+.katua-hq-tooltip { color: #163d63; border-color: #245b89; font-weight: 700; padding: 4px 7px; }
+
+.katua-hq-button { color: #245b89 !important; border: 1px solid #245b89 !important; background: #fff !important; }
+.katua-hq-button:hover, .katua-hq-button:focus-visible { color: #fff !important; background: #245b89 !important; }
