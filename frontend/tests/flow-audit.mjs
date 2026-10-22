@@ -335,13 +335,14 @@ try {
     errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await check("Painel: detalhe da coleta mostra histórico, sem ações de receber/triagem/concluir", async () => {
-    await page.goto("http://127.0.0.1:5179/waste-list?coleta=" + f.a.id);
+    const waiting = await makeEntry();
+    await page.goto("http://127.0.0.1:5179/waste-list?coleta=" + waiting.collection.id);
     await page.getByRole("dialog").waitFor();
     await page.getByRole("heading", { name: "Materiais registrados em campo", exact: true }).waitFor();
     const buttons = await page.getByRole("dialog").getByRole("button").allTextContents();
     assert(!buttons.some((text) => /receber|triagem|concluir/i.test(text)));
     await page.screenshot({ path: join(outputDir, "panel-collection-detail.png"), fullPage: true });
-    record("F_PANEL_RECEIPT", { buttons, dedicatedActions: 0, note: "Confirmado também por busca das chamadas no código de produção do painel." });
+    record("F_PANEL_RECEIPT", { collectionStatus: waiting.collection.status, buttons, dedicatedActions: 0, note: "Confirmado também por busca das chamadas no código de produção do painel." });
   });
   await writeFile(join(outputDir, "evidence.json"), JSON.stringify(evidence, null, 2));
 } catch (e) {
