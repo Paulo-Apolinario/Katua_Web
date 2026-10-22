@@ -6,6 +6,7 @@ import {
   getAllCollections,
   getCollectionById,
 } from "../../services/collectionService";
+import CollectionStageActions from "../../components/collections/CollectionStageActions";
 import CollectionDialog from "../../components/collections/CollectionDialog";
 import {
   CollectionBadge,
@@ -47,6 +48,7 @@ export default function WasteList() {
 }
 function CollectionList() {
   const [params] = useSearchParams();
+  const [operationBusy, setOperationBusy] = useState(false);
   const [items, setItems] = useState([]),
     [loading, setLoading] = useState(true),
     [error, setError] = useState("");
@@ -58,12 +60,14 @@ function CollectionList() {
     [detailError, setDetailError] = useState(""),
     [dialog, setDialog] = useState(false);
   const guard = useRef({ list: 0, detail: 0 });
-  const load = useCallback(async () => {
+  const load = useCallback(async (quiet = false) => {
     const request = ++guard.current.list;
-    setLoading(true);
+    if (!quiet) {
+      setLoading(true);
+      setItems([]);
+      setPage(1);
+    }
     setError("");
-    setItems([]);
-    setPage(1);
     try {
       const res = await getAllCollections();
       if (!Array.isArray(res?.collections))
@@ -99,6 +103,12 @@ function CollectionList() {
       g.detail++;
     };
   }, [load]);
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      if (!document.hidden && !dialog) void load(true);
+    }, 30000);
+    return () => window.clearInterval(timer);
+  }, [load, dialog]);
   const queryId = params.get("coleta");
   useEffect(() => {
     if (queryId) void openDetail(queryId);
@@ -203,7 +213,7 @@ function CollectionList() {
         </div>
         <button
           className="btn btn-outline-success"
-          onClick={load}
+          onClick={() => load()}
           disabled={loading}
         >
           Atualizar coletas
@@ -361,7 +371,7 @@ function CollectionList() {
         ) : error ? (
           <div role="alert" className="alert alert-danger">
             {error}{" "}
-            <button className="btn btn-outline-danger" onClick={load}>
+            <button className="btn btn-outline-danger" onClick={() => load()}>
               Tentar novamente
             </button>
           </div>
@@ -444,6 +454,7 @@ function CollectionList() {
             selected ? `Coleta #${shortId(selected.id)}` : "Detalhes da coleta"
           }
           onClose={close}
+          busy={operationBusy}
         >
           {detailLoading ? (
             <p role="status">Carregando detalhes...</p>
@@ -454,7 +465,30 @@ function CollectionList() {
           ) : (
             selected && (
               <>
-                <CollectionBadge status={selected.status} />
+                <div className="d-flex align-items-center gap-3">
+                  <CollectionBadge status={selected.status} />
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline-secondary"
+                    disabled={operationBusy}
+                    onClick={() => openDetail(selected.id)}
+                  >
+                    Atualizar detalhes
+                  </button>
+                </div>
+                <CollectionStageActions
+                  key={`${selected.id}:${selected.status}`}
+                  collection={selected}
+                  onBusy={setOperationBusy}
+                  onChange={(updated) => {
+                    setSelected(updated);
+                    setItems((current) =>
+                      current.map((item) =>
+                        item.id === updated.id ? updated : item,
+                      ),
+                    );
+                  }}
+                />
                 <h3 className="fs-18 mt-3">{generatorName(selected)}</h3>
                 <p>{location(selected)}</p>
                 <p className="small text-muted text-break">

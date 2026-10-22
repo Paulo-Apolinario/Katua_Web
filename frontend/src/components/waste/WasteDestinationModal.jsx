@@ -265,6 +265,9 @@ const WasteDestinationModal = ({
 
   const isEditMode = mode === "edit" && destinationToEdit;
 
+  const stockBlocked = !["RECEIVED", "SORTING"].includes(
+    entry?.collection?.status,
+  );
   const entryId = useMemo(() => getEntryId(entry), [entry]);
   const unit = useMemo(() => getEntryUnit(entry), [entry]);
   const totalQuantity = useMemo(() => getTotalQuantity(entry), [entry]);
@@ -732,12 +735,21 @@ const WasteDestinationModal = ({
                               value={option.value}
                               className="form-check-input me-2"
                               checked={selected}
-                              disabled={submitting}
+                              disabled={
+                                submitting ||
+                                (option.value === "STOCK" && stockBlocked)
+                              }
                               onChange={handleTypeChange}
                             />
                             <span className="fw-semibold">{option.label}</span>
                             <span className="text-muted small d-block mt-2">
                               {option.description}
+                              {option.value === "STOCK" && stockBlocked && (
+                                <strong className="d-block mt-1">
+                                  Confirme primeiro o recebimento na Lista de
+                                  Coletas.
+                                </strong>
+                              )}
                             </span>
                           </label>
                         </div>

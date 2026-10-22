@@ -59,7 +59,7 @@ const getEntry = (d) => d?.collectionWasteEntry || d?.entry;
 const allowed = (e) =>
   numeric(e?.remainingQuantity) > 0 &&
   e?.status !== "CANCELLED" &&
-  e?.collection?.status !== "CANCELLED";
+  !["CANCELLED", "COMPLETED"].includes(e?.collection?.status);
 const catalogLoader = async () => {
   const r = await getWasteCatalog({ status: "ACTIVE" });
   if (!Array.isArray(r?.items)) throw Error("Catálogo indisponível.");
@@ -468,7 +468,7 @@ function EntryList() {
                             disabled={!allowed(e) || editor.busy}
                             title={
                               !allowed(e)
-                                ? "Entrada sem saldo disponível ou vinculada a uma coleta cancelada"
+                                ? "Entrada sem saldo disponível ou vinculada a uma coleta encerrada"
                                 : "Registrar a destinação do saldo desta entrada"
                             }
                             onClick={() => editor.open(e)}
@@ -778,6 +778,50 @@ function DestinationTable({ rows, edit, cancel, busy = false }) {
                 </div>
                 {d.notes && <p className="small">{d.notes}</p>}
                 <details className="small mt-2">
+                  <summary>Histórico de alterações</summary>
+                  {d.auditEvents?.length ? (
+                    <ol className="mt-2 ps-3">
+                      {d.auditEvents.map((event) => (
+                        <li key={event.id}>
+                          <strong>
+                            {{
+                              CREATED: "Registrada",
+                              UPDATED: "Alterada",
+                              CANCELLED: "Cancelada",
+                            }[event.operation] || event.operation}
+                          </strong>{" "}
+                          · {dateLabel(event.createdAt, true)} ·{" "}
+                          {event.actorName || shortId(event.actorUserId)}
+                          {event.snapshot?.before?.type && (
+                            <div>
+                              {getWasteDestinationTypeLabel(
+                                event.snapshot.before.type,
+                              )}{" "}
+                              →{" "}
+                              {getWasteDestinationTypeLabel(
+                                event.snapshot.after?.type,
+                              )}
+                            </div>
+                          )}
+                          {event.snapshot?.before?.stockLotId &&
+                            event.snapshot.before.stockLotId !==
+                              event.snapshot.after?.stockLotId && (
+                              <div>
+                                Lote anterior preservado: #
+                                {shortId(event.snapshot.before.stockLotId)}
+                              </div>
+                            )}
+                        </li>
+                      ))}
+                    </ol>
+                  ) : (
+                    <p className="mt-2">
+                      Registro anterior à implantação do histórico de
+                      alterações. Consulte os dados da destinação e seus lotes.
+                    </p>
+                  )}
+                </details>
+                <details className="small mt-2">
                   <summary>Identificação e documentos</summary>
                   <p className="text-break">
                     Destinação: {d.id}
@@ -811,7 +855,12 @@ function DestinationTable({ rows, edit, cancel, busy = false }) {
                     {edit && (
                       <button
                         className="btn btn-sm btn-outline-secondary"
-                        disabled={busy}
+                        disabled={
+                          busy ||
+                          ["CANCELLED", "COMPLETED"].includes(
+                            getEntry(d)?.collection?.status,
+                          )
+                        }
                         onClick={() => edit(d)}
                       >
                         Editar destinação
@@ -820,7 +869,12 @@ function DestinationTable({ rows, edit, cancel, busy = false }) {
                     {cancel && (
                       <button
                         className="btn btn-sm btn-outline-danger"
-                        disabled={busy}
+                        disabled={
+                          busy ||
+                          ["CANCELLED", "COMPLETED"].includes(
+                            getEntry(d)?.collection?.status,
+                          )
+                        }
                         onClick={() => cancel(d)}
                       >
                         Cancelar

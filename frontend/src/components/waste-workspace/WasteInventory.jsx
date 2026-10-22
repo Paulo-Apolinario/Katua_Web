@@ -603,6 +603,19 @@ function InventoryRow({ item: i, catalog, expanded, onExpand, onStatus }) {
                       <td>
                         <strong>{l.lotCode || l.code || shortId(l.id)}</strong>
                         <div>{dateLabel(l.receivedAt || l.createdAt)}</div>
+                        {l.originCollectionId && (
+                          <Link
+                            className="small d-block"
+                            to={`/waste-list?coleta=${encodeURIComponent(l.originCollectionId)}`}
+                          >
+                            Coleta #{shortId(l.originCollectionId)}
+                          </Link>
+                        )}
+                        {l.status === "CANCELLED" && (
+                          <small className="d-block text-muted">
+                            Histórico anulado · sem saldo disponível. {l.notes}
+                          </small>
+                        )}
                       </td>
                       <td>
                         {quantity(lotQuantity(l), l.unit)}
