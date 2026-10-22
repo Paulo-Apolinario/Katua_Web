@@ -8,6 +8,7 @@ export const normalizeRoutePayload = (payload = {}) => {
   for (const field of ["driverId", "vehicleId", "description", "scheduledDate"]) {
     if (payload[field] !== undefined) data[field] = payload[field]?.trim() || null;
   }
+  if (payload.collectionIds !== undefined) data.collectionIds = payload.collectionIds;
   if (payload.status !== undefined) data.status = payload.status;
   return data;
 };
