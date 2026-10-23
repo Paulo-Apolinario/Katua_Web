@@ -61,6 +61,7 @@ export const location = (item) => {
       bin.location ||
       "Endereço do PEV não informado"
     );
+  if(!item.generator && !item.schedule?.generator && (item.schedule?.pickupAddress || item.pickupAddress)) return item.schedule?.pickupAddress || item.pickupAddress;
   const g = item.generator || item.schedule?.generator || {};
   return (
     [

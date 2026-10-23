@@ -1,5 +1,5 @@
 export const array = (r, key) => Array.isArray(r) ? r : r?.[key] || r?.data || [];
-export const origin = (c) => c.bin || c.generator || c.schedule?.generator || {};
+export const origin = (c) => c.bin || c.generator || c.schedule?.generator || (c.schedule?.pickupAddress ? { name: c.schedule.requestedBy?.displayName || "Solicitação de pessoa física", address: c.schedule.pickupAddress, latitude: c.schedule.pickupLatitude, longitude: c.schedule.pickupLongitude } : {});
 export const title = (c) => { const o = origin(c); return o.companyName || o.name || o.binId || "Origem não informada"; };
 export const address = (c) => { const o = origin(c); return [o.street, o.number, o.neighborhood, o.city, o.state].filter(Boolean).join(", ") || o.address || "Endereço não informado"; };
 export const status = (s) => ({ SCHEDULED: "Agendada", IN_PROGRESS: "Em andamento", COMPLETED: "Concluída", CANCELLED: "Cancelada", PENDING: "Pendente", COLLECTED: "Finalizada em campo", RECEIVED: "Recebida", SORTING: "Em triagem" })[s] || s;
