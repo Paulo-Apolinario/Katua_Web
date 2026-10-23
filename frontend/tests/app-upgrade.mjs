@@ -1,5 +1,6 @@
 /** Banco descartável, API real e Chromium. Nunca usa banco ou credenciais da VPS. */
 import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
 import { spawn, execFileSync } from "node:child_process";
 import { createRequire } from "node:module";
 import { readFile, writeFile, mkdtemp, unlink } from "node:fs/promises";
@@ -58,7 +59,10 @@ async function child(args, cwd, env, ready) {
     );
     const consume = (b) => {
       logs.push(b.toString());
-      if (b.toString().includes("Falha nos relatórios"))
+      if (
+        b.toString().includes("Falha nos relatórios") ||
+        b.toString().includes("O.C. failed")
+      )
         console.log(b.toString());
       if (ready.test(b.toString())) {
         clearTimeout(t);
@@ -106,6 +110,9 @@ try {
     .replace(/^\s*(?:start|field)Operation(?:Id|Hash)\s+String\?.*$/gm, "")
     .replace(/model CollectionWasteDestinationEvent\s*\{[^}]*\}/, "")
     .replace(/^\s*auditEvents\s+CollectionWasteDestinationEvent\[\].*$/m, "")
+    .replace(/model ExtraCollectionOrder(?:Event)?\s*\{[^}]*\}/g, "")
+    .replace(/^.*extraCollectionOrders\s+ExtraCollectionOrder\[\].*$/gm, "")
+    .replace(/^.*extraOrder\s+ExtraCollectionOrder\?.*$/gm, "")
     .replace(/model CollectionIncident\s*\{[^}]*\}/, "")
     .replace(/^\s*incidents\s+CollectionIncident\[\].*$/m, "")
     .replace(/^\s*pickup(?:Address|Latitude|Longitude)\s+.*$/gm, "");
@@ -166,6 +173,15 @@ try {
       join(
         serverDir,
         "prisma/migrations/20261022230000_collection_incidents/migration.sql",
+      ),
+      "utf8",
+    ),
+  );
+  await db.exec(
+    await readFile(
+      join(
+        serverDir,
+        "prisma/migrations/20261023120000_extra_collection_orders/migration.sql",
       ),
       "utf8",
     ),
@@ -1131,6 +1147,475 @@ try {
     { VITE_API_BASE_URL: "http://127.0.0.1:3339" },
     /Local:/,
   );
+  const ocBase = {
+    mode: "COLLECTED",
+    reason: "WEEKEND",
+    reasonNotes: "Coleta extraordinária realizada no sábado",
+    originType: "PF",
+    originName: "Morador de Validação",
+    pickupAddress: "Rua da Reciclagem, 150, Fortaleza, CE",
+    latitude: -3.73,
+    longitude: -38.52,
+    occurredAt: "2026-10-17T14:30:00-03:00",
+    recordedAt: "2026-10-17T14:35:00-03:00",
+    custody: "COLLECTOR",
+    custodyNotes: "Material sob guarda do catador até entrega",
+    materials: [
+      { wasteTypeId: f.item.id, unit: "KG", quantity: 25 },
+      {
+        proposedMaterial: { name: "Óleo extra QA", unit: "LITER" },
+        unit: "LITER",
+        quantity: 8,
+      },
+    ],
+    photos: [],
+  };
+  const ocCreate = async (payload = ocBase) =>
+    expect(
+      await api(
+        "/extra-collection-orders",
+        "POST",
+        { id: randomUUID(), cooperativeId: f.coop.id, payload },
+        f.collectorToken,
+      ),
+      201,
+    ).order;
+  const ocReview = async (o, decision = "ACCEPT", extra = {}) =>
+    api(`/extra-collection-orders/${o.id}/review`, "POST", {
+      operationId: randomUUID(),
+      expectedRevision: o.revision,
+      decision,
+      notes: "Conferência administrativa realizada pela cooperativa",
+      ...extra,
+    });
+  let ocForPanel, ocContextRoute;
+  await check(
+    "O.C. restringe criação/análise por perfil e cooperativa",
+    async () => {
+      const body = {
+        id: randomUUID(),
+        cooperativeId: f.coop.id,
+        payload: ocBase,
+      };
+      expect(await api("/extra-collection-orders", "POST", body), 403);
+      expect(
+        await api("/extra-collection-orders", "GET", undefined, f.pfToken),
+        403,
+      );
+      expect(
+        await api("/extra-collection-orders", "GET", undefined, f.driverToken),
+        403,
+      );
+      const o = await ocCreate();
+      expect(
+        await api(
+          `/extra-collection-orders/${o.id}`,
+          "GET",
+          undefined,
+          f.otherToken,
+        ),
+        404,
+      );
+      expect(
+        await api(
+          `/extra-collection-orders/${o.id}/review`,
+          "POST",
+          {
+            operationId: randomUUID(),
+            expectedRevision: 1,
+            decision: "ACCEPT",
+            notes: "Tentativa do catador sem autorização",
+          },
+          f.collectorToken,
+        ),
+        403,
+      );
+      ocForPanel = o;
+    },
+  );
+  await check(
+    "O.C. de sábado preserva reenvio e não cria coleta ou lote antes da análise",
+    async () => {
+      const body = {
+        id: randomUUID(),
+        cooperativeId: f.coop.id,
+        payload: ocBase,
+      };
+      const a = expect(
+          await api("/extra-collection-orders", "POST", body, f.collectorToken),
+          201,
+        ).order,
+        b = expect(
+          await api("/extra-collection-orders", "POST", body, f.collectorToken),
+          201,
+        ).order;
+      assert.equal(a.id, b.id);
+      assert.equal(b.events.length, 1);
+      assert.equal(a.collectionId, null);
+      assert.equal(a.payload.occurredAt, ocBase.occurredAt);
+      expect(
+        await api(
+          "/extra-collection-orders",
+          "POST",
+          { ...body, payload: { ...ocBase, originName: "Outro nome" } },
+          f.collectorToken,
+        ),
+        409,
+      );
+      assert.equal(
+        (
+          await db.query(
+            'SELECT COUNT(*)::int n FROM "Collection" WHERE notes LIKE $1',
+            [`%${a.id}%`],
+          )
+        ).rows[0].n,
+        0,
+      );
+    },
+  );
+  await check(
+    "O.C. aceita uma única vez, preserva unidades e não gera estoque automático",
+    async () => {
+      const o = await ocCreate();
+      const lots = (
+        await db.query('SELECT COUNT(*)::int n FROM "WasteStockLot"')
+      ).rows[0].n;
+      const body = {
+        operationId: randomUUID(),
+        expectedRevision: 1,
+        decision: "ACCEPT",
+        notes: "Confirmado atendimento extraordinário e origem do material",
+      };
+      const [a, b] = await Promise.all([
+        api(`/extra-collection-orders/${o.id}/review`, "POST", body),
+        api(`/extra-collection-orders/${o.id}/review`, "POST", body),
+      ]);
+      const one = expect(a, 200).order,
+        two = expect(b, 200).order;
+      assert.equal(one.collectionId, two.collectionId);
+      const col = expect(
+        await api(`/collections/${one.collectionId}`),
+        200,
+      ).collection;
+      assert.equal(col.status, "COLLECTED");
+      assert.equal(col.collectedAt, new Date(ocBase.occurredAt).toISOString());
+      assert.equal(Number(col.totalWeightKg), 25);
+      assert.equal(col.collectionMaterials.length, 2);
+      assert(
+        col.collectionMaterials.some(
+          (m) => m.unit === "LITER" && Number(m.quantity) === 8,
+        ),
+      );
+      assert.equal(
+        (await db.query('SELECT COUNT(*)::int n FROM "WasteStockLot"')).rows[0]
+          .n,
+        lots,
+      );
+      expect(await ocReview(o), 409);
+    },
+  );
+  await check(
+    "O.C. confirma chegada antes da análise sem criar entradas e preserva recebimento ao aceitar",
+    async () => {
+      const o = await ocCreate(),
+        body = {
+          operationId: randomUUID(),
+          receivedAt: "2026-10-18T09:00:00-03:00",
+          notes: "Material entregue no domingo ao responsável do galpão",
+        };
+      const received = expect(
+        await api(`/extra-collection-orders/${o.id}/receive`, "POST", body),
+        200,
+      ).order;
+      assert.equal(received.status, "PENDING_REVIEW");
+      assert.equal(received.collectionId, null);
+      assert.equal(received.custody, "COOPERATIVE");
+      expect(
+        await api(`/extra-collection-orders/${o.id}/receive`, "POST", body),
+        200,
+      );
+      const approved = expect(await ocReview(received), 200).order;
+      const col = expect(
+        await api(`/collections/${approved.collectionId}`),
+        200,
+      ).collection;
+      assert.equal(col.status, "RECEIVED");
+      assert.equal(col.receivedAt, new Date(body.receivedAt).toISOString());
+    },
+  );
+  await check(
+    "O.C. recebe pelo fluxo normal da coleta e atualiza guarda e histórico da ordem",
+    async () => {
+      const o = expect(await ocReview(await ocCreate()), 200).order;
+      expect(
+        await api(`/collections/${o.collectionId}/receive`, "POST", {}),
+        200,
+      );
+      const after = expect(
+        await api(`/extra-collection-orders/${o.id}`),
+        200,
+      ).order;
+      assert(after.receivedAt);
+      assert.equal(after.custody, "COOPERATIVE");
+      assert(after.events.some((e) => e.kind === "RECEIVED_BY_COLLECTION"));
+    },
+  );
+  await check(
+    "O.C. de parada extra conserva o planejamento e aceita rota de contexto já encerrada",
+    async () => {
+      const c = expect(
+        await api("/collections", "POST", {
+          scheduleId: (await schedule()).id,
+          collectorId: f.collector.id,
+        }),
+        201,
+      ).collection;
+      const route = expect(
+        await api("/routes", "POST", {
+          name: "Rota contexto OC QA",
+          collectionIds: [c.id],
+          driverId: f.driver.id,
+          vehicleId: f.vehicle.id,
+        }),
+        201,
+      ).route;
+      ocContextRoute = route;
+      await api(`/collections/${c.id}/cancel`, "POST", {
+        cancellationReason:
+          "Parada planejada encerrada para validar contexto histórico",
+      });
+      await db.query(
+        'UPDATE "Route" SET status=$1::"RouteStatus" WHERE id=$2',
+        ["COMPLETED", route.id],
+      );
+      const o = await ocCreate({
+        ...ocBase,
+        reason: "UNPLANNED_STOP",
+        contextRouteId: route.id,
+      });
+      const approved = expect(await ocReview(o), 200).order;
+      const actual = expect(await api(`/routes/${route.id}`), 200).route;
+      assert.deepEqual(actual.collectionOrder, route.collectionOrder);
+      assert.equal(actual.status, "COMPLETED");
+      const col = expect(
+        await api(`/collections/${approved.collectionId}`),
+        200,
+      ).collection;
+      assert.equal(col.routeId, null);
+      assert.equal(col.extraOrder.contextRouteId, route.id);
+      expect(
+        await api(
+          "/extra-collection-orders",
+          "POST",
+          {
+            id: randomUUID(),
+            cooperativeId: f.coop.id,
+            payload: {
+              ...ocBase,
+              reason: "UNPLANNED_STOP",
+              contextRouteId: "rota-fora-da-equipe",
+            },
+          },
+          f.collectorToken,
+        ),
+        403,
+      );
+    },
+  );
+  await check(
+    "O.C. solicita complementação, preserva versões e rejeita revisão desatualizada",
+    async () => {
+      const o = await ocCreate(),
+        need = expect(await ocReview(o, "NEEDS_INFO"), 200).order;
+      const body = {
+        operationId: randomUUID(),
+        expectedRevision: 1,
+        payload: {
+          ...ocBase,
+          reasonNotes: "Complementado endereço e responsável pelo pedido extra",
+        },
+      };
+      const revised = expect(
+        await api(
+          `/extra-collection-orders/${o.id}/revise`,
+          "POST",
+          body,
+          f.collectorToken,
+        ),
+        200,
+      ).order;
+      assert.equal(revised.revision, 2);
+      assert.equal(revised.status, "PENDING_REVIEW");
+      assert(revised.events.some((e) => e.kind === "RESUBMITTED"));
+      expect(
+        await api(
+          `/extra-collection-orders/${o.id}/revise`,
+          "POST",
+          body,
+          f.collectorToken,
+        ),
+        200,
+      );
+      expect(await ocReview(need), 409);
+    },
+  );
+  await check(
+    "O.C. recusada exige encaminhamento e preserva ocorrência física",
+    async () => {
+      const o = await ocCreate();
+      expect(await ocReview(o, "REJECT"), 400);
+      const rejected = expect(
+        await ocReview(o, "REJECT", {
+          custody: "ORIGIN",
+          custodyNotes:
+            "Materiais retornados à origem conforme contato registrado",
+        }),
+        200,
+      ).order;
+      assert.equal(rejected.status, "REJECTED");
+      assert.equal(rejected.collectionId, null);
+      assert(rejected.payload.occurredAt);
+      assert.equal(rejected.custody, "ORIGIN");
+    },
+  );
+  await check(
+    "O.C. solicitada cria tarefa pendente e mantém estimativas sem simular coleta realizada",
+    async () => {
+      const requested = await ocCreate({
+        ...ocBase,
+        mode: "REQUESTED",
+        reason: "EXTRA_REQUEST",
+        occurredAt: undefined,
+        custody: "ORIGIN",
+        custodyNotes: "Material permanece com o solicitante",
+        materials: [{ wasteTypeId: f.item.id, unit: "KG", quantity: 40 }],
+      });
+      const o = expect(
+        await ocReview(requested, "ACCEPT", {
+          driverId: f.driver.id,
+          vehicleId: f.vehicle.id,
+        }),
+        200,
+      ).order;
+      const col = expect(
+        await api(`/collections/${o.collectionId}`),
+        200,
+      ).collection;
+      assert.equal(col.status, "PENDING");
+      assert.equal(col.collectionMaterials.length, 0);
+      assert.equal(
+        Number(col.schedule.requestedMaterials[0].estimatedQuantity),
+        40,
+      );
+      expect(
+        await api(`/collections/${col.id}/start`, "POST", {}, f.collectorToken),
+        200,
+      );
+      expect(
+        await api(
+          `/collections/${col.id}/complete-field`,
+          "POST",
+          { materials: [{ wasteTypeId: f.item.id, unit: "KG", quantity: 35 }] },
+          f.collectorToken,
+        ),
+        200,
+      );
+    },
+  );
+  await check(
+    "O.C. bloqueia segunda aprovação para a mesma solicitação original",
+    async () => {
+      const source = await schedule();
+      const p = {
+        ...ocBase,
+        originType: "GENERATOR",
+        generatorId: f.gen.id,
+        sourceScheduleId: source.id,
+      };
+      const a = await ocCreate(p),
+        b = await ocCreate(p);
+      const rs = await Promise.all([ocReview(a), ocReview(b)]);
+      assert.deepEqual(rs.map((r) => r.status).sort(), [200, 409]);
+    },
+  );
+  await check(
+    "O.C. valida datas, fotos e guarda sem transformar relato em recebimento",
+    async () => {
+      expect(
+        await api(
+          "/extra-collection-orders",
+          "POST",
+          {
+            id: randomUUID(),
+            cooperativeId: f.coop.id,
+            payload: {
+              ...ocBase,
+              photos: ["data:image/svg+xml;base64,PHN2Zz4="],
+            },
+          },
+          f.collectorToken,
+        ),
+        400,
+      );
+      expect(
+        await api(
+          "/extra-collection-orders",
+          "POST",
+          {
+            id: randomUUID(),
+            cooperativeId: f.coop.id,
+            payload: { ...ocBase, occurredAt: "2099-10-24T12:00:00-03:00" },
+          },
+          f.collectorToken,
+        ),
+        400,
+      );
+      const o = await ocCreate({
+        ...ocBase,
+        custody: "COOPERATIVE",
+        custodyNotes: "Catador informa entrega; conferência ainda pendente",
+      });
+      assert.equal(o.receivedAt, null);
+      const accepted = expect(await ocReview(o), 200).order;
+      assert.equal(accepted.collection.status, "COLLECTED");
+    },
+  );
+  await check(
+    "O.C. aceita percorre recebimento, triagem, estoque e encerramento sem duplicar entrada",
+    async () => {
+      const o = await ocCreate({
+        ...ocBase,
+        materials: [{ wasteTypeId: f.item.id, unit: "KG", quantity: 10 }],
+      });
+      const accepted = expect(await ocReview(o), 200).order;
+      expect(
+        await api(`/collections/${accepted.collectionId}/receive`, "POST", {}),
+        200,
+      );
+      expect(
+        await api(
+          `/collections/${accepted.collectionId}/start-sorting`,
+          "POST",
+          {},
+        ),
+        200,
+      );
+      const col = expect(
+        await api(`/collections/${accepted.collectionId}`),
+        200,
+      ).collection;
+      assert.equal(col.collectionMaterials.length, 1);
+      const entry = col.collectionMaterials[0].wasteEntry;
+      await stock(entry, 10);
+      expect(await api(`/collections/${col.id}/complete`, "POST", {}), 200);
+      const after = expect(
+        await api(`/extra-collection-orders/${o.id}`),
+        200,
+      ).order;
+      assert.equal(after.collection.status, "COMPLETED");
+      assert(after.receivedAt);
+    },
+  );
   browser = await pw.launch({
     executablePath:
       process.env.KATUA_CHROMIUM_PATH || (await chromium.executablePath()),
@@ -1276,6 +1761,68 @@ try {
       record("INCIDENT_PANEL", { resolution: true, closure: true });
     },
   );
+  await check(
+    "Painel O.C. confirma recebimento antes de aceitar e abre uma única coleta",
+    async () => {
+      const context = await contextFor(f.token, {
+          id: f.owner.id,
+          role: "COOPERATIVE",
+          displayName: f.owner.displayName,
+          email: f.owner.email,
+        }),
+        p = await context.newPage();
+      await p.goto("http://127.0.0.1:5179/extra-collection-orders");
+      await p
+        .getByLabel("Buscar protocolo, catador ou rota", { exact: true })
+        .fill(ocForPanel.id);
+      await p
+        .getByRole("button", { name: "Analisar ordem", exact: true })
+        .click();
+      await p
+        .getByLabel("Observações da análise ou conferência", { exact: true })
+        .fill("Chegada física conferida no galpão pela equipe QA");
+      await p.getByRole("checkbox").check();
+      await p
+        .getByRole("button", {
+          name: "Confirmar recebimento físico",
+          exact: true,
+        })
+        .click();
+      await p
+        .getByText("Operação registrada com histórico e responsável.", {
+          exact: true,
+        })
+        .waitFor();
+      assert(
+        expect(await api(`/extra-collection-orders/${ocForPanel.id}`), 200)
+          .order.receivedAt,
+      );
+      await p
+        .getByLabel("Observações da análise ou conferência", { exact: true })
+        .fill("Coleta extraordinária aceita após conferência dos materiais");
+      await p.getByRole("checkbox").check();
+      await p
+        .getByRole("button", {
+          name: "Aceitar O.C. e vincular coleta",
+          exact: true,
+        })
+        .click();
+      await p
+        .getByRole("link", { name: /Abrir coleta para recebimento/ })
+        .waitFor();
+      const final = expect(
+        await api(`/extra-collection-orders/${ocForPanel.id}`),
+        200,
+      ).order;
+      assert.equal(final.status, "ACCEPTED");
+      assert.equal(final.collection.status, "RECEIVED");
+      await p.screenshot({
+        path: join(outputDir, "panel-extra-order-approved.png"),
+        fullPage: true,
+      });
+      await context.close();
+    },
+  );
   if (process.env.KATUA_APP_WEB_EXPORT) {
     await child(
       ["tests/app-upgrade/static.mjs"],
@@ -1307,6 +1854,117 @@ try {
       );
       return context;
     }
+    await check(
+      "App catador registra parada extra offline com foto e sincroniza sem duplicar",
+      async () => {
+        const context = await appContext(f.collectorToken, {
+            id: f.collector.userId,
+            role: "COLLECTOR",
+            displayName: f.collector.name,
+            email: f.collector.email,
+          }),
+          p = await context.newPage();
+        await p.goto("http://127.0.0.1:5181/(catador)/extra-orders");
+        await p
+          .getByRole("button", { name: "Abrir nova O.C.", exact: true })
+          .click();
+        await p
+          .getByRole("button", {
+            name: "Ponto fora do planejamento da rota",
+            exact: true,
+          })
+          .click();
+        await p
+          .getByRole("button", { name: "Rota contexto OC QA", exact: true })
+          .click();
+        await p
+          .getByLabel("Motivo e circunstâncias", { exact: true })
+          .fill("Morador solicitou retirada adicional durante a rota");
+        await p
+          .getByLabel("Nome da pessoa ou estabelecimento", { exact: true })
+          .fill("Morador extra App QA");
+        await p
+          .getByLabel("Endereço da retirada", { exact: true })
+          .fill("Rua Extra, 250, Fortaleza, CE");
+        await p
+          .getByRole("button", { name: "Adicionar Papel (kg)", exact: true })
+          .click();
+        await p
+          .getByLabel("Quantidade de Papel (kg)", { exact: true })
+          .fill("12,5");
+        await p
+          .getByLabel("Onde o material está e quem está responsável", {
+            exact: true,
+          })
+          .fill("Material em transporte com o catador para entrega no galpão");
+        const png = await p.evaluate(() => {
+          const c = document.createElement("canvas");
+          c.width = 100;
+          c.height = 100;
+          const x = c.getContext("2d");
+          x.fillStyle = "#047857";
+          x.fillRect(0, 0, 100, 100);
+          return c.toDataURL("image/png").split(",")[1];
+        });
+        const chooserPromise = p.waitForEvent("filechooser");
+        await p
+          .getByRole("button", { name: "Anexar foto da galeria", exact: true })
+          .click();
+        const chooser = await chooserPromise;
+        await chooser.setFiles({
+          name: "foto-qa.png",
+          mimeType: "image/png",
+          buffer: Buffer.from(png, "base64"),
+        });
+        await p.getByLabel("Foto 1 da O.C.", { exact: true }).waitFor();
+        await context.setOffline(true);
+        await p
+          .getByRole("button", {
+            name: "Enviar O.C. para a cooperativa",
+            exact: true,
+          })
+          .click();
+        await p.getByText(/O.C. salva no aparelho/).waitFor();
+        await p
+          .getByText("Aguardando envio à cooperativa", { exact: true })
+          .waitFor();
+        const raw = await p.evaluate(() =>
+          JSON.parse(localStorage.getItem("@katu:offline:sync_queue") || "[]"),
+        );
+        const queued = raw.filter(
+          (q) => q.operation_type === "EXTRA_ORDER_WRITE",
+        );
+        assert.equal(queued.length, 1);
+        const id = queued[0].entity_id;
+        const stored = JSON.parse(queued[0].payload_json).body;
+        assert.equal(stored.payload.materials[0].quantity, 12.5);
+        assert(stored.payload.photos[0].startsWith("data:image/jpeg;base64,"));
+        await p.screenshot({
+          path: join(outputDir, "app-extra-order-offline.png"),
+          fullPage: true,
+        });
+        await context.setOffline(false);
+        await p
+          .getByRole("button", {
+            name: "Atualizar ordens e sincronização",
+            exact: true,
+          })
+          .click();
+        await p.getByText("Aguardando análise", { exact: true }).waitFor();
+        const o = expect(
+          await api(`/extra-collection-orders/${id}`),
+          200,
+        ).order;
+        assert.equal(o.payload.contextRouteId, ocContextRoute.id);
+        assert.equal(o.payload.photos.length, 1);
+        assert.equal(o.collectionId, null);
+        await p.screenshot({
+          path: join(outputDir, "app-extra-order-submitted.png"),
+          fullPage: true,
+        });
+        await context.close();
+      },
+    );
     await check(
       "Visual: acesso e perfis responsivos sem solicitar GPS antecipado",
       async () => {

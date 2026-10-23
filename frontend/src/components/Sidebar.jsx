@@ -31,8 +31,12 @@ const Sidebar = ({ active, setActive }) => {
     const load = () => {
       if (admin?.role !== "COOPERATIVE") return;
       apiRequest("/settings/branding")
-        .then((response) => { if (mounted) setBrand(response.data); })
-        .catch(() => { if (mounted) setBrand(null); });
+        .then((response) => {
+          if (mounted) setBrand(response.data);
+        })
+        .catch(() => {
+          if (mounted) setBrand(null);
+        });
     };
     load();
     window.addEventListener("katua-brand-updated", load);
@@ -43,6 +47,7 @@ const Sidebar = ({ active, setActive }) => {
   }, [admin?.id, admin?.role]);
 
   const isWasteSectionActive =
+    location.pathname.startsWith("/extra-collection-orders") ||
     location.pathname.startsWith("/waste-list") ||
     location.pathname.startsWith("/create-waste") ||
     location.pathname.startsWith("/edit-waste") ||
@@ -120,7 +125,8 @@ const Sidebar = ({ active, setActive }) => {
     setActive(true);
   };
 
-  if (admin?.role === "MUNICIPAL_MANAGER") return <MunicipalSidebar active={active} setActive={setActive} />;
+  if (admin?.role === "MUNICIPAL_MANAGER")
+    return <MunicipalSidebar active={active} setActive={setActive} />;
 
   return (
     <>
@@ -131,11 +137,7 @@ const Sidebar = ({ active, setActive }) => {
         onClick={closeSidebarOnMobile}
       />
 
-      <div
-        className={`sidebar tablet-sidebar py-3 ${
-          active ? "" : "close"
-        }`}
-      >
+      <div className={`sidebar tablet-sidebar py-3 ${active ? "" : "close"}`}>
         <div className="logo-wrap">
           <div className="logo-a">
             <img
@@ -190,9 +192,7 @@ const Sidebar = ({ active, setActive }) => {
                 <House />
               </div>
 
-              <span className="text">
-                Painel Geral
-              </span>
+              <span className="text">Painel Geral</span>
             </NavLink>
           </li>
 
@@ -200,9 +200,7 @@ const Sidebar = ({ active, setActive }) => {
           <li className="nav-item">
             <a
               href="#waste"
-              className={`nav-link ${
-                isWasteSectionActive ? "active" : ""
-              }`}
+              className={`nav-link ${isWasteSectionActive ? "active" : ""}`}
               data-bs-toggle="collapse"
               data-bs-target="#waste"
               aria-expanded={isWasteSectionActive}
@@ -212,9 +210,7 @@ const Sidebar = ({ active, setActive }) => {
                 <Recycle />
               </div>
 
-              <span className="text">
-                Coleta de Resíduo
-              </span>
+              <span className="text">Coleta de Resíduo</span>
 
               <ChevronRight className="ms-auto arrow align-middle" />
             </a>
@@ -228,34 +224,37 @@ const Sidebar = ({ active, setActive }) => {
               <li>
                 <NavLink
                   to="/waste-list"
-                  className={({ isActive }) =>
-                    isActive ? "active" : ""
-                  }
+                  className={({ isActive }) => (isActive ? "active" : "")}
                 >
                   <span className="dot-wrap">
                     <span className="dot" />
                   </span>
 
-                  <span className="submenu-text">
-                    Lista de Coletas
-                  </span>
+                  <span className="submenu-text">Lista de Coletas</span>
                 </NavLink>
               </li>
 
               <li>
                 <NavLink
                   to="/collection-requests"
-                  className={({ isActive }) =>
-                    isActive ? "active" : ""
-                  }
+                  className={({ isActive }) => (isActive ? "active" : "")}
                 >
                   <span className="dot-wrap">
                     <span className="dot" />
                   </span>
 
-                  <span className="submenu-text">
-                    Coletas Solicitadas
+                  <span className="submenu-text">Coletas Solicitadas</span>
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/extra-collection-orders"
+                  className={({ isActive }) => (isActive ? "active" : "")}
+                >
+                  <span className="dot-wrap">
+                    <span className="dot" />
                   </span>
+                  <span className="submenu-text">Ordens de coleta extras</span>
                 </NavLink>
               </li>
             </ul>
@@ -265,9 +264,7 @@ const Sidebar = ({ active, setActive }) => {
           <li className="nav-item">
             <a
               href="#bin"
-              className={`nav-link ${
-                isBinSectionActive ? "active" : ""
-              }`}
+              className={`nav-link ${isBinSectionActive ? "active" : ""}`}
               data-bs-toggle="collapse"
               data-bs-target="#bin"
               aria-expanded={isBinSectionActive}
@@ -277,9 +274,7 @@ const Sidebar = ({ active, setActive }) => {
                 <Archive />
               </div>
 
-              <span className="text">
-                Gestão de PEVs
-              </span>
+              <span className="text">Gestão de PEVs</span>
 
               <ChevronRight className="ms-auto arrow align-middle" />
             </a>
@@ -293,34 +288,26 @@ const Sidebar = ({ active, setActive }) => {
               <li>
                 <NavLink
                   to="/bin-list"
-                  className={({ isActive }) =>
-                    isActive ? "active" : ""
-                  }
+                  className={({ isActive }) => (isActive ? "active" : "")}
                 >
                   <span className="dot-wrap">
                     <span className="dot" />
                   </span>
 
-                  <span className="submenu-text">
-                    Lista de PEVs
-                  </span>
+                  <span className="submenu-text">Lista de PEVs</span>
                 </NavLink>
               </li>
 
               <li>
                 <NavLink
                   to="/create-bin"
-                  className={({ isActive }) =>
-                    isActive ? "active" : ""
-                  }
+                  className={({ isActive }) => (isActive ? "active" : "")}
                 >
                   <span className="dot-wrap">
                     <span className="dot" />
                   </span>
 
-                  <span className="submenu-text">
-                    Cadastrar PEV
-                  </span>
+                  <span className="submenu-text">Cadastrar PEV</span>
                 </NavLink>
               </li>
             </ul>
@@ -330,9 +317,7 @@ const Sidebar = ({ active, setActive }) => {
           <li className="nav-item">
             <a
               href="#generator"
-              className={`nav-link ${
-                isGeneratorSectionActive ? "active" : ""
-              }`}
+              className={`nav-link ${isGeneratorSectionActive ? "active" : ""}`}
               data-bs-toggle="collapse"
               data-bs-target="#generator"
               aria-expanded={isGeneratorSectionActive}
@@ -342,9 +327,7 @@ const Sidebar = ({ active, setActive }) => {
                 <Building2 />
               </div>
 
-              <span className="text">
-                Gestão de Geradores
-              </span>
+              <span className="text">Gestão de Geradores</span>
 
               <ChevronRight className="ms-auto arrow align-middle" />
             </a>
@@ -358,51 +341,39 @@ const Sidebar = ({ active, setActive }) => {
               <li>
                 <NavLink
                   to="/generator-list"
-                  className={({ isActive }) =>
-                    isActive ? "active" : ""
-                  }
+                  className={({ isActive }) => (isActive ? "active" : "")}
                 >
                   <span className="dot-wrap">
                     <span className="dot" />
                   </span>
 
-                  <span className="submenu-text">
-                    Listar Geradores
-                  </span>
+                  <span className="submenu-text">Listar Geradores</span>
                 </NavLink>
               </li>
 
               <li>
                 <NavLink
                   to="/create-generator"
-                  className={({ isActive }) =>
-                    isActive ? "active" : ""
-                  }
+                  className={({ isActive }) => (isActive ? "active" : "")}
                 >
                   <span className="dot-wrap">
                     <span className="dot" />
                   </span>
 
-                  <span className="submenu-text">
-                    Criar Gerador
-                  </span>
+                  <span className="submenu-text">Criar Gerador</span>
                 </NavLink>
               </li>
 
               <li>
                 <NavLink
                   to="/generator-documents"
-                  className={({ isActive }) =>
-                    isActive ? "active" : ""
-                  }
+                  className={({ isActive }) => (isActive ? "active" : "")}
                 >
                   <span className="dot-wrap">
                     <span className="dot" />
                   </span>
 
-                  <span className="submenu-text">
-                    Documentos do Gerador
-                  </span>
+                  <span className="submenu-text">Documentos do Gerador</span>
                 </NavLink>
               </li>
             </ul>
@@ -412,9 +383,7 @@ const Sidebar = ({ active, setActive }) => {
           <li className="nav-item">
             <a
               href="#vehicle"
-              className={`nav-link ${
-                isVehicleSectionActive ? "active" : ""
-              }`}
+              className={`nav-link ${isVehicleSectionActive ? "active" : ""}`}
               data-bs-toggle="collapse"
               data-bs-target="#vehicle"
               aria-expanded={isVehicleSectionActive}
@@ -424,9 +393,7 @@ const Sidebar = ({ active, setActive }) => {
                 <Truck />
               </div>
 
-              <span className="text">
-                Gestão de Veículos
-              </span>
+              <span className="text">Gestão de Veículos</span>
 
               <ChevronRight className="ms-auto arrow align-middle" />
             </a>
@@ -440,68 +407,52 @@ const Sidebar = ({ active, setActive }) => {
               <li>
                 <NavLink
                   to="/vehicle-list"
-                  className={({ isActive }) =>
-                    isActive ? "active" : ""
-                  }
+                  className={({ isActive }) => (isActive ? "active" : "")}
                 >
                   <span className="dot-wrap">
                     <span className="dot" />
                   </span>
 
-                  <span className="submenu-text">
-                    Lista de Veículos
-                  </span>
+                  <span className="submenu-text">Lista de Veículos</span>
                 </NavLink>
               </li>
 
               <li>
                 <NavLink
                   to="/create-vehicle"
-                  className={({ isActive }) =>
-                    isActive ? "active" : ""
-                  }
+                  className={({ isActive }) => (isActive ? "active" : "")}
                 >
                   <span className="dot-wrap">
                     <span className="dot" />
                   </span>
 
-                  <span className="submenu-text">
-                    Criar Veículo
-                  </span>
+                  <span className="submenu-text">Criar Veículo</span>
                 </NavLink>
               </li>
 
               <li>
                 <NavLink
                   to="/document-list"
-                  className={({ isActive }) =>
-                    isActive ? "active" : ""
-                  }
+                  className={({ isActive }) => (isActive ? "active" : "")}
                 >
                   <span className="dot-wrap">
                     <span className="dot" />
                   </span>
 
-                  <span className="submenu-text">
-                    Documentos do Veículo
-                  </span>
+                  <span className="submenu-text">Documentos do Veículo</span>
                 </NavLink>
               </li>
 
               <li>
                 <NavLink
                   to="/maintenance-list"
-                  className={({ isActive }) =>
-                    isActive ? "active" : ""
-                  }
+                  className={({ isActive }) => (isActive ? "active" : "")}
                 >
                   <span className="dot-wrap">
                     <span className="dot" />
                   </span>
 
-                  <span className="submenu-text">
-                    Log de Manutenção
-                  </span>
+                  <span className="submenu-text">Log de Manutenção</span>
                 </NavLink>
               </li>
             </ul>
@@ -511,9 +462,7 @@ const Sidebar = ({ active, setActive }) => {
           <li className="nav-item">
             <a
               href="#route"
-              className={`nav-link ${
-                isRouteSectionActive ? "active" : ""
-              }`}
+              className={`nav-link ${isRouteSectionActive ? "active" : ""}`}
               data-bs-toggle="collapse"
               data-bs-target="#route"
               aria-expanded={isRouteSectionActive}
@@ -523,9 +472,7 @@ const Sidebar = ({ active, setActive }) => {
                 <Route />
               </div>
 
-              <span className="text">
-                Gestão de Rotas
-              </span>
+              <span className="text">Gestão de Rotas</span>
 
               <ChevronRight className="ms-auto arrow align-middle" />
             </a>
@@ -539,26 +486,20 @@ const Sidebar = ({ active, setActive }) => {
               <li>
                 <NavLink
                   to="/route-list"
-                  className={({ isActive }) =>
-                    isActive ? "active" : ""
-                  }
+                  className={({ isActive }) => (isActive ? "active" : "")}
                 >
                   <span className="dot-wrap">
                     <span className="dot" />
                   </span>
 
-                  <span className="submenu-text">
-                    Lista de Rotas
-                  </span>
+                  <span className="submenu-text">Lista de Rotas</span>
                 </NavLink>
               </li>
 
               <li>
                 <NavLink
                   to="/mtr-online"
-                  className={({ isActive }) =>
-                    isActive ? "active" : ""
-                  }
+                  className={({ isActive }) => (isActive ? "active" : "")}
                 >
                   <span className="dot-wrap">
                     <span className="dot" />
@@ -573,34 +514,26 @@ const Sidebar = ({ active, setActive }) => {
               <li>
                 <NavLink
                   to="/operational-calendar"
-                  className={({ isActive }) =>
-                    isActive ? "active" : ""
-                  }
+                  className={({ isActive }) => (isActive ? "active" : "")}
                 >
                   <span className="dot-wrap">
                     <span className="dot" />
                   </span>
 
-                  <span className="submenu-text">
-                    Calendário Operacional
-                  </span>
+                  <span className="submenu-text">Calendário Operacional</span>
                 </NavLink>
               </li>
 
               <li>
                 <NavLink
                   to="/create-route"
-                  className={({ isActive }) =>
-                    isActive ? "active" : ""
-                  }
+                  className={({ isActive }) => (isActive ? "active" : "")}
                 >
                   <span className="dot-wrap">
                     <span className="dot" />
                   </span>
 
-                  <span className="submenu-text">
-                    Criar Rota
-                  </span>
+                  <span className="submenu-text">Criar Rota</span>
                 </NavLink>
               </li>
             </ul>
@@ -610,9 +543,7 @@ const Sidebar = ({ active, setActive }) => {
           <li className="nav-item">
             <a
               href="#driver"
-              className={`nav-link ${
-                isStaffSectionActive ? "active" : ""
-              }`}
+              className={`nav-link ${isStaffSectionActive ? "active" : ""}`}
               data-bs-toggle="collapse"
               data-bs-target="#driver"
               aria-expanded={isStaffSectionActive}
@@ -622,9 +553,7 @@ const Sidebar = ({ active, setActive }) => {
                 <Users />
               </div>
 
-              <span className="text">
-                Motoristas e Catadores
-              </span>
+              <span className="text">Motoristas e Catadores</span>
 
               <ChevronRight className="ms-auto arrow align-middle" />
             </a>
@@ -638,102 +567,78 @@ const Sidebar = ({ active, setActive }) => {
               <li>
                 <NavLink
                   to="/staff-list"
-                  className={({ isActive }) =>
-                    isActive ? "active" : ""
-                  }
+                  className={({ isActive }) => (isActive ? "active" : "")}
                 >
                   <span className="dot-wrap">
                     <span className="dot" />
                   </span>
 
-                  <span className="submenu-text">
-                    Listar Motoristas
-                  </span>
+                  <span className="submenu-text">Listar Motoristas</span>
                 </NavLink>
               </li>
 
               <li>
                 <NavLink
                   to="/create-staff"
-                  className={({ isActive }) =>
-                    isActive ? "active" : ""
-                  }
+                  className={({ isActive }) => (isActive ? "active" : "")}
                 >
                   <span className="dot-wrap">
                     <span className="dot" />
                   </span>
 
-                  <span className="submenu-text">
-                    Adicionar Motorista
-                  </span>
+                  <span className="submenu-text">Adicionar Motorista</span>
                 </NavLink>
               </li>
 
               <li>
                 <NavLink
                   to="/collector-list"
-                  className={({ isActive }) =>
-                    isActive ? "active" : ""
-                  }
+                  className={({ isActive }) => (isActive ? "active" : "")}
                 >
                   <span className="dot-wrap">
                     <span className="dot" />
                   </span>
 
-                  <span className="submenu-text">
-                    Listar Catadores
-                  </span>
+                  <span className="submenu-text">Listar Catadores</span>
                 </NavLink>
               </li>
 
               <li>
                 <NavLink
                   to="/create-collector"
-                  className={({ isActive }) =>
-                    isActive ? "active" : ""
-                  }
+                  className={({ isActive }) => (isActive ? "active" : "")}
                 >
                   <span className="dot-wrap">
                     <span className="dot" />
                   </span>
 
-                  <span className="submenu-text">
-                    Adicionar Catador
-                  </span>
+                  <span className="submenu-text">Adicionar Catador</span>
                 </NavLink>
               </li>
 
               <li>
                 <NavLink
                   to="/collector-documents"
-                  className={({ isActive }) =>
-                    isActive ? "active" : ""
-                  }
+                  className={({ isActive }) => (isActive ? "active" : "")}
                 >
                   <span className="dot-wrap">
                     <span className="dot" />
                   </span>
 
-                  <span className="submenu-text">
-                    Documentos dos Catadores
-                  </span>
+                  <span className="submenu-text">Documentos dos Catadores</span>
                 </NavLink>
               </li>
 
               <li>
                 <NavLink
                   to="/assign-list"
-                  className={({ isActive }) =>
-                    isActive ? "active" : ""
-                  }
+                  className={({ isActive }) => (isActive ? "active" : "")}
                 >
                   <span className="dot-wrap">
                     <span className="dot" />
                   </span>
 
-                  <span className="submenu-text">
-                    Rotas Delegadas
-                  </span>
+                  <span className="submenu-text">Rotas Delegadas</span>
                 </NavLink>
               </li>
             </ul>
@@ -755,9 +660,7 @@ const Sidebar = ({ active, setActive }) => {
                 <Boxes />
               </div>
 
-              <span className="text">
-                Gestão de Resíduos
-              </span>
+              <span className="text">Gestão de Resíduos</span>
 
               <ChevronRight className="ms-auto arrow align-middle" />
             </a>
@@ -771,77 +674,59 @@ const Sidebar = ({ active, setActive }) => {
               <li>
                 <NavLink
                   to="/collected-waste"
-                  className={({ isActive }) =>
-                    isActive ? "active" : ""
-                  }
+                  className={({ isActive }) => (isActive ? "active" : "")}
                 >
                   <span className="dot-wrap">
                     <span className="dot" />
                   </span>
 
-                  <span className="submenu-text">
-                    Resíduos Coletados
-                  </span>
+                  <span className="submenu-text">Resíduos Coletados</span>
                 </NavLink>
               </li>
 
               <li>
                 <NavLink
                   to="/waste-destinations"
-                  className={({ isActive }) =>
-                    isActive ? "active" : ""
-                  }
+                  className={({ isActive }) => (isActive ? "active" : "")}
                 >
                   <span className="dot-wrap">
                     <span className="dot" />
                   </span>
 
-                  <span className="submenu-text">
-                    Gestão de Destinações
-                  </span>
+                  <span className="submenu-text">Gestão de Destinações</span>
                 </NavLink>
               </li>
 
               <li>
                 <NavLink
                   to="/waste-stock"
-                  className={({ isActive }) =>
-                    isActive ? "active" : ""
-                  }
+                  className={({ isActive }) => (isActive ? "active" : "")}
                 >
                   <span className="dot-wrap">
                     <span className="dot" />
                   </span>
 
-                  <span className="submenu-text">
-                    Visão do Estoque
-                  </span>
+                  <span className="submenu-text">Visão do Estoque</span>
                 </NavLink>
               </li>
 
               <li>
                 <NavLink
                   to="/waste-type-list"
-                  className={({ isActive }) =>
-                    isActive ? "active" : ""
-                  }
+                  className={({ isActive }) => (isActive ? "active" : "")}
                 >
                   <span className="dot-wrap">
                     <span className="dot" />
                   </span>
 
-                  <span className="submenu-text">
-                    Catálogo de Resíduos
-                  </span>
+                  <span className="submenu-text">Catálogo de Resíduos</span>
                 </NavLink>
               </li>
 
               <li>
                 <NavLink
                   to="/create-type"
-                  className={({ isActive }) =>
-                    isActive ? "active" : ""
-                  }
+                  className={({ isActive }) => (isActive ? "active" : "")}
                 >
                   <span className="dot-wrap">
                     <span className="dot" />
@@ -856,17 +741,13 @@ const Sidebar = ({ active, setActive }) => {
               <li>
                 <NavLink
                   to="/waste-stock/create"
-                  className={({ isActive }) =>
-                    isActive ? "active" : ""
-                  }
+                  className={({ isActive }) => (isActive ? "active" : "")}
                 >
                   <span className="dot-wrap">
                     <span className="dot" />
                   </span>
 
-                  <span className="submenu-text">
-                    Adicionar Lote
-                  </span>
+                  <span className="submenu-text">Adicionar Lote</span>
                 </NavLink>
               </li>
             </ul>
@@ -876,9 +757,7 @@ const Sidebar = ({ active, setActive }) => {
           <li className="nav-item">
             <a
               href="#reports"
-              className={`nav-link ${
-                isReportSectionActive ? "active" : ""
-              }`}
+              className={`nav-link ${isReportSectionActive ? "active" : ""}`}
               data-bs-toggle="collapse"
               data-bs-target="#reports"
               aria-expanded={isReportSectionActive}
@@ -888,9 +767,7 @@ const Sidebar = ({ active, setActive }) => {
                 <ChartLine />
               </div>
 
-              <span className="text">
-                Relatórios e Análises
-              </span>
+              <span className="text">Relatórios e Análises</span>
 
               <ChevronRight className="ms-auto arrow align-middle" />
             </a>
@@ -904,85 +781,65 @@ const Sidebar = ({ active, setActive }) => {
               <li>
                 <NavLink
                   to="/analytics-dashboard"
-                  className={({ isActive }) =>
-                    isActive ? "active" : ""
-                  }
+                  className={({ isActive }) => (isActive ? "active" : "")}
                 >
                   <span className="dot-wrap">
                     <span className="dot" />
                   </span>
 
-                  <span className="submenu-text">
-                    Painel de Indicadores
-                  </span>
+                  <span className="submenu-text">Painel de Indicadores</span>
                 </NavLink>
               </li>
 
               <li>
                 <NavLink
                   to="/waste-collection-reports"
-                  className={({ isActive }) =>
-                    isActive ? "active" : ""
-                  }
+                  className={({ isActive }) => (isActive ? "active" : "")}
                 >
                   <span className="dot-wrap">
                     <span className="dot" />
                   </span>
 
-                  <span className="submenu-text">
-                    Relatórios de Coletas
-                  </span>
+                  <span className="submenu-text">Relatórios de Coletas</span>
                 </NavLink>
               </li>
 
               <li>
                 <NavLink
                   to="/waste-type-reports"
-                  className={({ isActive }) =>
-                    isActive ? "active" : ""
-                  }
+                  className={({ isActive }) => (isActive ? "active" : "")}
                 >
                   <span className="dot-wrap">
                     <span className="dot" />
                   </span>
 
-                  <span className="submenu-text">
-                    Relatórios de Resíduos
-                  </span>
+                  <span className="submenu-text">Relatórios de Resíduos</span>
                 </NavLink>
               </li>
 
               <li>
                 <NavLink
                   to="/staff-reports"
-                  className={({ isActive }) =>
-                    isActive ? "active" : ""
-                  }
+                  className={({ isActive }) => (isActive ? "active" : "")}
                 >
                   <span className="dot-wrap">
                     <span className="dot" />
                   </span>
 
-                  <span className="submenu-text">
-                    Relatórios de Equipe
-                  </span>
+                  <span className="submenu-text">Relatórios de Equipe</span>
                 </NavLink>
               </li>
 
               <li>
                 <NavLink
                   to="/vehicle-reports"
-                  className={({ isActive }) =>
-                    isActive ? "active" : ""
-                  }
+                  className={({ isActive }) => (isActive ? "active" : "")}
                 >
                   <span className="dot-wrap">
                     <span className="dot" />
                   </span>
 
-                  <span className="submenu-text">
-                    Relatórios de Veículos
-                  </span>
+                  <span className="submenu-text">Relatórios de Veículos</span>
                 </NavLink>
               </li>
             </ul>
@@ -992,9 +849,7 @@ const Sidebar = ({ active, setActive }) => {
           <li className="nav-item">
             <a
               href="#system"
-              className={`nav-link ${
-                isSettingSectionActive ? "active" : ""
-              }`}
+              className={`nav-link ${isSettingSectionActive ? "active" : ""}`}
               data-bs-toggle="collapse"
               data-bs-target="#system"
               aria-expanded={isSettingSectionActive}
@@ -1004,9 +859,7 @@ const Sidebar = ({ active, setActive }) => {
                 <Settings />
               </div>
 
-              <span className="text">
-                Configurações do Sistema
-              </span>
+              <span className="text">Configurações do Sistema</span>
 
               <ChevronRight className="ms-auto arrow align-middle" />
             </a>
@@ -1020,17 +873,13 @@ const Sidebar = ({ active, setActive }) => {
               <li>
                 <NavLink
                   to="/settings"
-                  className={({ isActive }) =>
-                    isActive ? "active" : ""
-                  }
+                  className={({ isActive }) => (isActive ? "active" : "")}
                 >
                   <span className="dot-wrap">
                     <span className="dot" />
                   </span>
 
-                  <span className="submenu-text">
-                    Dados da cooperativa
-                  </span>
+                  <span className="submenu-text">Dados da cooperativa</span>
                 </NavLink>
               </li>
 
@@ -1040,8 +889,13 @@ const Sidebar = ({ active, setActive }) => {
                 ["/settings-history", "Histórico de alterações"],
               ].map(([to, label]) => (
                 <li key={to}>
-                  <NavLink to={to} className={({ isActive }) => isActive ? "active" : ""}>
-                    <span className="dot-wrap"><span className="dot" /></span>
+                  <NavLink
+                    to={to}
+                    className={({ isActive }) => (isActive ? "active" : "")}
+                  >
+                    <span className="dot-wrap">
+                      <span className="dot" />
+                    </span>
                     <span className="submenu-text">{label}</span>
                   </NavLink>
                 </li>
@@ -1049,34 +903,26 @@ const Sidebar = ({ active, setActive }) => {
               <li>
                 <NavLink
                   to="/smtp-config"
-                  className={({ isActive }) =>
-                    isActive ? "active" : ""
-                  }
+                  className={({ isActive }) => (isActive ? "active" : "")}
                 >
                   <span className="dot-wrap">
                     <span className="dot" />
                   </span>
 
-                  <span className="submenu-text">
-                    Configuração SMTP
-                  </span>
+                  <span className="submenu-text">Configuração SMTP</span>
                 </NavLink>
               </li>
 
               <li>
                 <NavLink
                   to="/system-alerts"
-                  className={({ isActive }) =>
-                    isActive ? "active" : ""
-                  }
+                  className={({ isActive }) => (isActive ? "active" : "")}
                 >
                   <span className="dot-wrap">
                     <span className="dot" />
                   </span>
 
-                  <span className="submenu-text">
-                    Central de Pendências
-                  </span>
+                  <span className="submenu-text">Central de Pendências</span>
                 </NavLink>
               </li>
             </ul>

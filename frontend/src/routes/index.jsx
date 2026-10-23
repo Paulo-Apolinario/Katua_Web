@@ -1,9 +1,6 @@
+import ExtraOrdersWorkspace from "../components/extra-orders/ExtraOrdersWorkspace";
 import SettingsWorkspace from "../components/settings/SettingsWorkspace";
-import {
-  BrowserRouter,
-  Routes,
-  Route,
-} from "react-router";
+import { BrowserRouter, Routes, Route } from "react-router";
 
 import { AdminAuthProvider } from "../context/AdminAuthContext";
 import AdminPrivateRoute from "./AdminPrivateRoute";
@@ -120,37 +117,26 @@ const Router = () => {
             }
           >
             {/* Dashboard */}
-            <Route
-              index
-              element={<Dashboard />}
-            />
+            <Route index element={<Dashboard />} />
 
             {/* Waste Collection Management */}
-            <Route
-              path="waste-list"
-              element={<WasteList />}
-            />
+            <Route path="waste-list" element={<WasteList />} />
 
-            <Route
-              path="create-waste"
-              element={<AddWaste />}
-            />
+            <Route path="create-waste" element={<AddWaste />} />
 
-            <Route
-              path="edit-waste/:id"
-              element={<EditWaste />}
-            />
+            <Route path="edit-waste/:id" element={<EditWaste />} />
 
             <Route
               path="collection-requests"
               element={<CollectionRequests />}
             />
 
-            {/* Intermediate Waste Management */}
             <Route
-              path="collected-waste"
-              element={<CollectedWasteList />}
+              path="extra-collection-orders"
+              element={<ExtraOrdersWorkspace />}
             />
+            {/* Intermediate Waste Management */}
+            <Route path="collected-waste" element={<CollectedWasteList />} />
 
             <Route
               path="collected-waste/:id"
@@ -163,36 +149,18 @@ const Router = () => {
             />
 
             {/* Zone Management */}
-            <Route
-              path="zone-list"
-              element={<ZoneList />}
-            />
+            <Route path="zone-list" element={<ZoneList />} />
 
-            <Route
-              path="create-zone"
-              element={<AddZone />}
-            />
+            <Route path="create-zone" element={<AddZone />} />
 
-            <Route
-              path="edit-zone/:id"
-              element={<EditZone />}
-            />
+            <Route path="edit-zone/:id" element={<EditZone />} />
 
             {/* Generator Management */}
-            <Route
-              path="generator-list"
-              element={<GeneratorList />}
-            />
+            <Route path="generator-list" element={<GeneratorList />} />
 
-            <Route
-              path="create-generator"
-              element={<AddGenerator />}
-            />
+            <Route path="create-generator" element={<AddGenerator />} />
 
-            <Route
-              path="edit-generator/:id"
-              element={<EditGenerator />}
-            />
+            <Route path="edit-generator/:id" element={<EditGenerator />} />
 
             <Route
               path="generator-documents"
@@ -200,45 +168,21 @@ const Router = () => {
             />
 
             {/* Vehicle Management */}
-            <Route
-              path="vehicle-list"
-              element={<VehicleList />}
-            />
+            <Route path="vehicle-list" element={<VehicleList />} />
 
-            <Route
-              path="create-vehicle"
-              element={<AddVehicle />}
-            />
+            <Route path="create-vehicle" element={<AddVehicle />} />
 
-            <Route
-              path="edit-vehicle/:id"
-              element={<EditVehicle />}
-            />
+            <Route path="edit-vehicle/:id" element={<EditVehicle />} />
 
-            <Route
-              path="document-list"
-              element={<DocumentList />}
-            />
+            <Route path="document-list" element={<DocumentList />} />
 
-            <Route
-              path="create-document"
-              element={<AddDocument />}
-            />
+            <Route path="create-document" element={<AddDocument />} />
 
-            <Route
-              path="edit-document/:id"
-              element={<EditDocument />}
-            />
+            <Route path="edit-document/:id" element={<EditDocument />} />
 
-            <Route
-              path="maintenance-list"
-              element={<MaintenanceLogList />}
-            />
+            <Route path="maintenance-list" element={<MaintenanceLogList />} />
 
-            <Route
-              path="create-maintenance"
-              element={<AddMaintenanceLog />}
-            />
+            <Route path="create-maintenance" element={<AddMaintenanceLog />} />
 
             <Route
               path="edit-maintenance/:id"
@@ -248,41 +192,20 @@ const Router = () => {
             <Route path="bin-list/:id" element={<PevDetail />} />
 
             {/* PEV Management */}
-            <Route
-              path="bin-list"
-              element={<BinList />}
-            />
+            <Route path="bin-list" element={<BinList />} />
 
-            <Route
-              path="create-bin"
-              element={<AddBin />}
-            />
+            <Route path="create-bin" element={<AddBin />} />
 
-            <Route
-              path="edit-bin/:id"
-              element={<EditBin />}
-            />
+            <Route path="edit-bin/:id" element={<EditBin />} />
 
             {/* Route Management */}
-            <Route
-              path="route-list"
-              element={<RouteList />}
-            />
+            <Route path="route-list" element={<RouteList />} />
 
-            <Route
-              path="create-route"
-              element={<AddRoute />}
-            />
+            <Route path="create-route" element={<AddRoute />} />
 
-            <Route
-              path="edit-route/:id"
-              element={<EditRoute />}
-            />
+            <Route path="edit-route/:id" element={<EditRoute />} />
 
-            <Route
-              path="mtr-online"
-              element={<MtrOnlineStatus />}
-            />
+            <Route path="mtr-online" element={<MtrOnlineStatus />} />
 
             <Route
               path="operational-calendar"
@@ -290,70 +213,37 @@ const Router = () => {
             />
 
             {/* Staff Management */}
-            <Route
-              path="staff-list"
-              element={<StaffList />}
-            />
+            <Route path="staff-list" element={<StaffList />} />
 
-            <Route
-              path="create-staff"
-              element={<AddStaff />}
-            />
+            <Route path="create-staff" element={<AddStaff />} />
 
-            <Route
-              path="edit-staff/:id"
-              element={<EditStaff />}
-            />
+            <Route path="edit-staff/:id" element={<EditStaff />} />
 
-            <Route
-              path="collector-list"
-              element={<CollectorList />}
-            />
+            <Route path="collector-list" element={<CollectorList />} />
 
-            <Route
-              path="create-collector"
-              element={<AddCollector />}
-            />
+            <Route path="create-collector" element={<AddCollector />} />
 
             <Route
               path="collector-documents"
               element={<CollectorDocuments />}
             />
 
-            <Route
-              path="assign-list"
-              element={<AssignRouteList />}
-            />
+            <Route path="assign-list" element={<AssignRouteList />} />
 
-            <Route
-              path="create-assign"
-              element={<AddAssignRoute />}
-            />
+            <Route path="create-assign" element={<AddAssignRoute />} />
 
-            <Route
-              path="edit-assign/:id"
-              element={<EditAssignRoute />}
-            />
+            <Route path="edit-assign/:id" element={<EditAssignRoute />} />
 
-            <Route
-              path="attendance-list"
-              element={<StaffAttendanceList />}
-            />
+            <Route path="attendance-list" element={<StaffAttendanceList />} />
 
-            <Route
-              path="create-attendance"
-              element={<AddStaffAttendance />}
-            />
+            <Route path="create-attendance" element={<AddStaffAttendance />} />
 
             <Route
               path="edit-attendance/:id"
               element={<EditStaffAttendance />}
             />
 
-            <Route
-              path="staff-document-list"
-              element={<StaffDocumentList />}
-            />
+            <Route path="staff-document-list" element={<StaffDocumentList />} />
 
             <Route
               path="create-staff-document"
@@ -366,31 +256,16 @@ const Router = () => {
             />
 
             {/* Waste Catalog Management */}
-            <Route
-              path="waste-type-list"
-              element={<WasteTypeList />}
-            />
+            <Route path="waste-type-list" element={<WasteTypeList />} />
 
-            <Route
-              path="create-type"
-              element={<AddWasteType />}
-            />
+            <Route path="create-type" element={<AddWasteType />} />
 
-            <Route
-              path="edit-waste-type/:id"
-              element={<EditWasteType />}
-            />
+            <Route path="edit-waste-type/:id" element={<EditWasteType />} />
 
             {/* Waste Stock Management */}
-            <Route
-              path="waste-stock"
-              element={<WasteStockList />}
-            />
+            <Route path="waste-stock" element={<WasteStockList />} />
 
-            <Route
-              path="waste-stock/create"
-              element={<AddWasteStockLot />}
-            />
+            <Route path="waste-stock/create" element={<AddWasteStockLot />} />
 
             <Route
               path="waste-stock/lots/:lotId/edit"
@@ -408,45 +283,35 @@ const Router = () => {
               element={<WasteCollectionReports />}
             />
 
-            <Route
-              path="waste-type-reports"
-              element={<WasteTypeReports />}
-            />
+            <Route path="waste-type-reports" element={<WasteTypeReports />} />
 
-            <Route
-              path="staff-reports"
-              element={<StaffReports />}
-            />
+            <Route path="staff-reports" element={<StaffReports />} />
 
-            <Route
-              path="vehicle-reports"
-              element={<VehicleReports />}
-            />
+            <Route path="vehicle-reports" element={<VehicleReports />} />
 
             {/* Settings */}
-            <Route
-              path="settings"
-              element={<CompanySetting />}
-            />
+            <Route path="settings" element={<CompanySetting />} />
+
+            <Route path="smtp-config" element={<SmtpConfig />} />
+
+            <Route path="system-alerts" element={<SystemAlerts />} />
 
             <Route
-              path="smtp-config"
-              element={<SmtpConfig />}
+              path="account-security"
+              element={<SettingsWorkspace key="account" kind="account" />}
             />
-
             <Route
-              path="system-alerts"
-              element={<SystemAlerts />}
+              path="operational-preferences"
+              element={
+                <SettingsWorkspace key="preferences" kind="preferences" />
+              }
             />
-
-            <Route path="account-security" element={<SettingsWorkspace key="account" kind="account"/>}/>
-            <Route path="operational-preferences" element={<SettingsWorkspace key="preferences" kind="preferences"/>}/>
-            <Route path="settings-history" element={<SettingsWorkspace key="history" kind="history"/>}/>
+            <Route
+              path="settings-history"
+              element={<SettingsWorkspace key="history" kind="history" />}
+            />
             {/* Profile Setup */}
-            <Route
-              path="profile-setup"
-              element={<ProfileSetup />}
-            />
+            <Route path="profile-setup" element={<ProfileSetup />} />
           </Route>
 
           {/* Authentication */}

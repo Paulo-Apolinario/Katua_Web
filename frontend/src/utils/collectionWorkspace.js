@@ -52,6 +52,8 @@ export const generatorName = (item) => {
       );
 };
 export const location = (item) => {
+  if (item.extraOrder && item.schedule?.pickupAddress)
+    return item.schedule.pickupAddress;
   const bin = originPev(item);
   if (bin)
     return (
@@ -61,7 +63,12 @@ export const location = (item) => {
       bin.location ||
       "Endereço do PEV não informado"
     );
-  if(!item.generator && !item.schedule?.generator && (item.schedule?.pickupAddress || item.pickupAddress)) return item.schedule?.pickupAddress || item.pickupAddress;
+  if (
+    !item.generator &&
+    !item.schedule?.generator &&
+    (item.schedule?.pickupAddress || item.pickupAddress)
+  )
+    return item.schedule?.pickupAddress || item.pickupAddress;
   const g = item.generator || item.schedule?.generator || {};
   return (
     [

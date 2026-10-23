@@ -133,7 +133,7 @@ function CollectionList() {
                 personName(c.driver),
                 c.vehicle?.plate,
                 COLLECTION_STAGES[c.status],
-                ...(c.incidents || []).map(incident => incident.description),
+                ...(c.incidents || []).map((incident) => incident.description),
                 ...materials(c).map((m) => m.name),
               ].join(" "),
             ).includes(term)
@@ -209,7 +209,17 @@ function CollectionList() {
             Acompanhe cada coleta, da atribuição à conclusão. Os materiais e
             suas destinações permanecem vinculados à operação.
           </p>
-          <p className="small text-muted">Ocorrências abertas: {items.reduce((total, c) => total + (c.incidents || []).filter(i => i.status === "OPEN").length, 0)}. Consulte o tratamento em Ver detalhes.</p>
+          <p className="small text-muted">
+            Ocorrências abertas:{" "}
+            {items.reduce(
+              (total, c) =>
+                total +
+                (c.incidents || []).filter((i) => i.status === "OPEN").length,
+              0,
+            )}
+            . Consulte o tratamento em Ver detalhes.
+          </p>
+          <Link to="/extra-collection-orders">Ordens de coleta extras</Link>
           <Link to="/collection-requests">Coletas solicitadas</Link>
           <span className="mx-2">·</span>
           <Link to="/collected-waste">Gestão dos materiais coletados</Link>
@@ -492,7 +502,18 @@ function CollectionList() {
                     );
                   }}
                 />
-                <CollectionIncidents collection={selected} onBusy={setOperationBusy} onChange={updated => { setSelected(updated); setItems(current => current.map(item => item.id === updated.id ? updated : item)); }} />
+                <CollectionIncidents
+                  collection={selected}
+                  onBusy={setOperationBusy}
+                  onChange={(updated) => {
+                    setSelected(updated);
+                    setItems((current) =>
+                      current.map((item) =>
+                        item.id === updated.id ? updated : item,
+                      ),
+                    );
+                  }}
+                />
                 <h3 className="fs-18 mt-3">{generatorName(selected)}</h3>
                 <p>{location(selected)}</p>
                 <p className="small text-muted text-break">
