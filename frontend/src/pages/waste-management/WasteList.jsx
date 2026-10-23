@@ -1,3 +1,4 @@
+import { downloadCollectionPdf } from "../../utils/collectionPdf";
 import CollectionIncidents from "../../components/collections/CollectionIncidents";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router";
@@ -45,9 +46,14 @@ const errorText = (err) =>
   err?.error || err?.message || "Não foi possível carregar as coletas.";
 export default function WasteList() {
   const { admin } = useAdminAuth();
-  return admin?.id ? <CollectionList key={admin.id} /> : null;
+  return admin?.id ? (
+    <CollectionList
+      key={admin.id}
+      cooperativeName={admin.cooperative?.name || admin.displayName}
+    />
+  ) : null;
 }
-function CollectionList() {
+function CollectionList({ cooperativeName }) {
   const [params] = useSearchParams();
   const [operationBusy, setOperationBusy] = useState(false);
   const [items, setItems] = useState([]),
@@ -482,6 +488,16 @@ function CollectionList() {
                   <CollectionBadge status={selected.status} />
                   <button
                     type="button"
+                    className="primary-btn btn-sm"
+                    disabled={operationBusy}
+                    onClick={() =>
+                      downloadCollectionPdf(selected, { cooperativeName })
+                    }
+                  >
+                    Salvar coleta em PDF
+                  </button>
+                  <button
+                    type="button"
                     className="btn btn-sm btn-outline-secondary"
                     disabled={operationBusy}
                     onClick={() => openDetail(selected.id)}
@@ -554,6 +570,18 @@ function CollectionList() {
                     <li key={label}>
                       <strong>{label}</strong> — {dateLabel(date, true)}
                       {actor ? ` · ${personName(actor)}` : ""}
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline-secondary ms-2"
+                        onClick={() =>
+                          downloadCollectionPdf(selected, {
+                            cooperativeName,
+                            event: [label, date, actor],
+                          })
+                        }
+                      >
+                        Baixar ação em PDF
+                      </button>
                     </li>
                   ))}
                 </ol>

@@ -1,6 +1,8 @@
+import { downloadOwnerDocument } from "../../services/ownerDocumentService";
+import { ownerRows } from "../../services/ownerDocumentService";
 import { ManagementHeader } from "../../components/management/ManagementWorkspace";
-import { useEffect, useRef, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router';
+import { useEffect, useRef, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router";
 import {
   House,
   ChevronRight,
@@ -14,62 +16,62 @@ import {
   Building2,
   FileText,
   ExternalLink,
-} from 'lucide-react';
-import toast from 'react-hot-toast';
+} from "lucide-react";
+import toast from "react-hot-toast";
 
-import DragDropUpload from '../../components/DragDropUpload';
-import { getAllVehicles } from '../../services/vehicleService';
+import DragDropUpload from "../../components/DragDropUpload";
+import { getAllVehicles } from "../../services/vehicleService";
 import {
   getMaintenanceLogById,
   updateMaintenanceLog,
-} from '../../services/maintenanceLogService';
-import HeadTags from '../../components/HeadTags';
-import TopProgressBar from '../../components/TopProgressBar';
+} from "../../services/maintenanceLogService";
+import HeadTags from "../../components/HeadTags";
+import TopProgressBar from "../../components/TopProgressBar";
 
 const MAINTENANCE_STATUS = [
-  { value: 'completed', label: 'Concluída' },
-  { value: 'pending', label: 'Pendente' },
-  { value: 'scheduled', label: 'Agendada' },
-  { value: 'overdue', label: 'Atrasada' },
+  { value: "completed", label: "Concluída" },
+  { value: "pending", label: "Pendente" },
+  { value: "scheduled", label: "Agendada" },
+  { value: "overdue", label: "Atrasada" },
 ];
 
 const initialFormState = {
-  vehicle_id: '',
-  maintenance_type: '',
-  maintenance_date: '',
-  location: '',
-  cost: '',
-  performed_by: '',
-  next_maintenance_date: '',
-  note: '',
-  status: 'completed',
+  vehicle_id: "",
+  maintenance_type: "",
+  maintenance_date: "",
+  location: "",
+  cost: "",
+  performed_by: "",
+  next_maintenance_date: "",
+  note: "",
+  status: "completed",
 };
 
 const formatDateInput = (value) => {
-  if (!value) return '';
+  if (!value) return "";
 
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '';
+  if (Number.isNaN(date.getTime())) return "";
 
-  return date.toISOString().split('T')[0];
+  return date.toISOString().split("T")[0];
 };
 
 const getVehicleLabel = (vehicle) => {
-  if (!vehicle) return 'Veículo sem identificação';
+  if (!vehicle) return "Veículo sem identificação";
 
   return (
     vehicle.vehicle_number ||
     vehicle.plate ||
     vehicle.name ||
     vehicle.model ||
-    `Veículo ${vehicle.id || ''}`.trim()
+    `Veículo ${vehicle.id || ""}`.trim()
   );
 };
 
 const getInvoiceUrl = (file) => {
   if (!file) return null;
 
-  if (String(file).startsWith('http')) return file;
+  if (String(file).startsWith("http")) return file;
 
   return `${import.meta.env.VITE_API_BASE_URL}/images/vehicle_invoice/${file}`;
 };
@@ -97,34 +99,42 @@ const EditMaintenanceLog = () => {
           getMaintenanceLogById(id),
         ]);
 
-        if (vehicleResponse?.success) {
-          setVehicles(Array.isArray(vehicleResponse.data) ? vehicleResponse.data : []);
+        if (
+          vehicleResponse?.success ||
+          Array.isArray(vehicleResponse?.vehicles)
+        ) {
+          setVehicles(ownerRows(vehicleResponse, "vehicles"));
         } else {
-          toast.error(vehicleResponse?.message || 'Não foi possível carregar os veículos.');
+          toast.error(
+            vehicleResponse?.message ||
+              "Não foi possível carregar os veículos.",
+          );
         }
 
         if (logResponse?.success) {
           const log = logResponse.data || {};
 
           setFormData({
-            vehicle_id: log.vehicle_id || '',
-            maintenance_type: log.maintenance_type || '',
+            vehicle_id: log.vehicle_id || "",
+            maintenance_type: log.maintenance_type || "",
             maintenance_date: formatDateInput(log.maintenance_date),
-            location: log.location || '',
-            cost: log.cost || '',
-            performed_by: log.performed_by || '',
+            location: log.location || "",
+            cost: log.cost || "",
+            performed_by: log.performed_by || "",
             next_maintenance_date: formatDateInput(log.next_maintenance_date),
-            note: log.notes || log.note || '',
-            status: log.status || 'completed',
+            note: log.notes || log.note || "",
+            status: log.status || "completed",
           });
 
           setExistingFile(log.file || null);
         } else {
-          toast.error(logResponse?.message || 'Não foi possível carregar a manutenção.');
+          toast.error(
+            logResponse?.message || "Não foi possível carregar a manutenção.",
+          );
         }
       } catch (error) {
-        console.error('Erro ao carregar manutenção:', error);
-        toast.error(error?.message || 'Erro ao carregar manutenção.');
+        console.error("Erro ao carregar manutenção:", error);
+        toast.error(error?.message || "Erro ao carregar manutenção.");
       } finally {
         setLoading(false);
       }
@@ -134,7 +144,7 @@ const EditMaintenanceLog = () => {
   }, [id]);
 
   const clearFieldError = (field) => {
-    setErrors((prev) => ({ ...prev, [field]: '' }));
+    setErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
   const handleInputChange = (event) => {
@@ -150,35 +160,36 @@ const EditMaintenanceLog = () => {
 
   const handleFileChange = (file) => {
     setNewFileSelected(Boolean(file));
-    clearFieldError('file');
+    clearFieldError("file");
   };
 
   const validateForm = () => {
     const validationErrors = {};
 
     if (!formData.vehicle_id) {
-      validationErrors.vehicle_id = ['Selecione o veículo vinculado.'];
+      validationErrors.vehicle_id = ["Selecione o veículo vinculado."];
     }
 
     if (!formData.maintenance_type.trim()) {
-      validationErrors.maintenance_type = ['Informe o tipo de manutenção.'];
+      validationErrors.maintenance_type = ["Informe o tipo de manutenção."];
     }
 
     if (!formData.maintenance_date) {
-      validationErrors.maintenance_date = ['Informe a data da manutenção.'];
+      validationErrors.maintenance_date = ["Informe a data da manutenção."];
     }
 
     if (formData.cost && Number(formData.cost) < 0) {
-      validationErrors.cost = ['O custo não pode ser negativo.'];
+      validationErrors.cost = ["O custo não pode ser negativo."];
     }
 
     if (
       formData.maintenance_date &&
       formData.next_maintenance_date &&
-      new Date(formData.next_maintenance_date) < new Date(formData.maintenance_date)
+      new Date(formData.next_maintenance_date) <
+        new Date(formData.maintenance_date)
     ) {
       validationErrors.next_maintenance_date = [
-        'A próxima manutenção não pode ser anterior à manutenção atual.',
+        "A próxima manutenção não pode ser anterior à manutenção atual.",
       ];
     }
 
@@ -189,36 +200,36 @@ const EditMaintenanceLog = () => {
   const buildPayload = () => {
     const payload = new FormData();
 
-    payload.append('_method', 'PUT');
-    payload.append('vehicle_id', formData.vehicle_id);
-    payload.append('maintenance_type', formData.maintenance_type.trim());
-    payload.append('maintenance_date', formData.maintenance_date);
-    payload.append('status', formData.status);
+    payload.append("_method", "PUT");
+    payload.append("vehicle_id", formData.vehicle_id);
+    payload.append("maintenance_type", formData.maintenance_type.trim());
+    payload.append("maintenance_date", formData.maintenance_date);
+    payload.append("status", formData.status);
 
     if (formData.location.trim()) {
-      payload.append('location', formData.location.trim());
+      payload.append("location", formData.location.trim());
     }
 
     if (formData.cost) {
-      payload.append('cost', formData.cost);
+      payload.append("cost", formData.cost);
     }
 
     if (formData.performed_by.trim()) {
-      payload.append('performed_by', formData.performed_by.trim());
+      payload.append("performed_by", formData.performed_by.trim());
     }
 
     if (formData.next_maintenance_date) {
-      payload.append('next_maintenance_date', formData.next_maintenance_date);
+      payload.append("next_maintenance_date", formData.next_maintenance_date);
     }
 
     if (formData.note.trim()) {
-      payload.append('notes', formData.note.trim());
+      payload.append("notes", formData.note.trim());
     }
 
     const selectedFile = fileRef.current?.getFile?.();
 
     if (selectedFile) {
-      payload.append('file', selectedFile);
+      payload.append("file", selectedFile);
     }
 
     return payload;
@@ -228,7 +239,7 @@ const EditMaintenanceLog = () => {
     event.preventDefault();
 
     if (!validateForm()) {
-      toast.error('Revise os campos obrigatórios antes de salvar.');
+      toast.error("Revise os campos obrigatórios antes de salvar.");
       return;
     }
 
@@ -238,28 +249,30 @@ const EditMaintenanceLog = () => {
       const response = await updateMaintenanceLog(id, buildPayload());
 
       if (response?.success) {
-        toast.success(response.message || 'Manutenção atualizada com sucesso.');
+        toast.success(response.message || "Manutenção atualizada com sucesso.");
         setErrors({});
         setExistingFile(response.data?.file || existingFile);
         setNewFileSelected(false);
         fileRef.current?.clear?.();
-        navigate('/maintenance-list');
+        navigate("/maintenance-list");
         return;
       }
 
-      toast.error(response?.message || 'Não foi possível atualizar a manutenção.');
+      toast.error(
+        response?.message || "Não foi possível atualizar a manutenção.",
+      );
 
       if (response?.errors) {
         setErrors(response.errors);
       }
     } catch (error) {
-      console.error('Erro ao atualizar manutenção:', error);
+      console.error("Erro ao atualizar manutenção:", error);
 
       if (error?.errors) {
         setErrors(error.errors);
       }
 
-      toast.error(error?.message || 'Erro ao atualizar manutenção.');
+      toast.error(error?.message || "Erro ao atualizar manutenção.");
     } finally {
       setSaving(false);
     }
@@ -319,7 +332,9 @@ const EditMaintenanceLog = () => {
                 </div>
 
                 {errors.vehicle_id && (
-                  <div className="text-danger small mt-1">{errors.vehicle_id[0]}</div>
+                  <div className="text-danger small mt-1">
+                    {errors.vehicle_id[0]}
+                  </div>
                 )}
               </div>
 
@@ -346,7 +361,9 @@ const EditMaintenanceLog = () => {
                 </div>
 
                 {errors.maintenance_type && (
-                  <div className="text-danger small mt-1">{errors.maintenance_type[0]}</div>
+                  <div className="text-danger small mt-1">
+                    {errors.maintenance_type[0]}
+                  </div>
                 )}
               </div>
 
@@ -372,7 +389,9 @@ const EditMaintenanceLog = () => {
                 </div>
 
                 {errors.maintenance_date && (
-                  <div className="text-danger small mt-1">{errors.maintenance_date[0]}</div>
+                  <div className="text-danger small mt-1">
+                    {errors.maintenance_date[0]}
+                  </div>
                 )}
               </div>
 
@@ -399,7 +418,9 @@ const EditMaintenanceLog = () => {
                 </div>
 
                 {errors.location && (
-                  <div className="text-danger small mt-1">{errors.location[0]}</div>
+                  <div className="text-danger small mt-1">
+                    {errors.location[0]}
+                  </div>
                 )}
               </div>
 
@@ -455,7 +476,9 @@ const EditMaintenanceLog = () => {
                 </div>
 
                 {errors.performed_by && (
-                  <div className="text-danger small mt-1">{errors.performed_by[0]}</div>
+                  <div className="text-danger small mt-1">
+                    {errors.performed_by[0]}
+                  </div>
                 )}
               </div>
 
@@ -495,7 +518,8 @@ const EditMaintenanceLog = () => {
                 />
 
                 <small className="text-muted d-block mt-2">
-                  Envie um novo arquivo somente se desejar substituir a nota/fatura atual.
+                  Envie um novo arquivo somente se desejar substituir a
+                  nota/fatura atual.
                 </small>
 
                 {errors.file && (
@@ -514,14 +538,17 @@ const EditMaintenanceLog = () => {
                     </div>
 
                     {existingFileUrl && (
-                      <a
-                        href={existingFileUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <button
+                        type="button"
                         className="outline-btn btn-sm"
+                        onClick={() =>
+                          downloadOwnerDocument({
+                            download: `/owner-documents/maintenance/${id}/file`,
+                          }).catch((e) => toast.error(e.message))
+                        }
                       >
-                        Ver arquivo <ExternalLink size={14} />
-                      </a>
+                        Baixar arquivo <ExternalLink size={14} />
+                      </button>
                     )}
                   </div>
                 </div>
@@ -550,7 +577,9 @@ const EditMaintenanceLog = () => {
                 </div>
 
                 {errors.notes && (
-                  <div className="text-danger small mt-1">{errors.notes[0]}</div>
+                  <div className="text-danger small mt-1">
+                    {errors.notes[0]}
+                  </div>
                 )}
               </div>
 
@@ -571,7 +600,10 @@ const EditMaintenanceLog = () => {
                         disabled={loading || saving}
                       />
 
-                      <label className="form-check-label" htmlFor={`status-${status.value}`}>
+                      <label
+                        className="form-check-label"
+                        htmlFor={`status-${status.value}`}
+                      >
                         {status.label}
                       </label>
                     </div>
@@ -580,7 +612,9 @@ const EditMaintenanceLog = () => {
 
                 {errors.status && (
                   <div className="text-danger small mt-1">
-                    {Array.isArray(errors.status) ? errors.status[0] : errors.status}
+                    {Array.isArray(errors.status)
+                      ? errors.status[0]
+                      : errors.status}
                   </div>
                 )}
               </div>
@@ -596,7 +630,7 @@ const EditMaintenanceLog = () => {
                   disabled={loading || saving}
                 >
                   <Save />
-                  {saving ? 'Salvando...' : 'Salvar Alterações'}
+                  {saving ? "Salvando..." : "Salvar Alterações"}
                 </button>
               </div>
             </form>

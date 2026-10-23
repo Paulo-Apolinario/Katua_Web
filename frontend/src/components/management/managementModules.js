@@ -4,8 +4,11 @@ const generatorRoutes = [
   "create-generator",
   "edit-generator",
   "generator-documents",
+  "generator-history",
 ];
 const vehicleRoutes = [
+  "vehicle-history",
+  "vehicle-document-registers",
   "vehicle-list",
   "create-vehicle",
   "edit-vehicle",
@@ -23,11 +26,19 @@ const routeRoutes = [
   "mtr-online",
   "operational-calendar",
 ];
-const driverRoutes = ["staff-list", "create-staff", "edit-staff"];
+const driverRoutes = [
+  "staff-list",
+  "create-staff",
+  "edit-staff",
+  "driver-documents",
+  "driver-history",
+];
 const collectorRoutes = [
   "collector-list",
   "create-collector",
   "collector-documents",
+  "collector-history",
+  "collector-profile",
 ];
 const teamRoutes = [
   "assign-list",
@@ -42,11 +53,18 @@ const teamRoutes = [
 ];
 const link = (to, label, paths) => ({ to, label, paths });
 const teamLinks = [
-  link("/staff-list", "Motoristas", driverRoutes),
+  link("/staff-list", "Motoristas", [
+    "staff-list",
+    "create-staff",
+    "edit-staff",
+  ]),
   link("/collector-list", "Catadores", ["collector-list", "create-collector"]),
   link("/collector-documents", "Documentos dos catadores", [
     "collector-documents",
   ]),
+  link("/driver-documents", "Documentos dos motoristas", ["driver-documents"]),
+  link("/driver-history", "Histórico dos motoristas", ["driver-history"]),
+  link("/collector-history", "Histórico dos catadores", ["collector-history"]),
   link("/assign-list", "Rotas delegadas", [
     "assign-list",
     "create-assign",
@@ -57,7 +75,14 @@ const modules = [
   {
     id: "settings",
     label: "Configurações do sistema",
-    paths: ["settings", "smtp-config", "system-alerts", "account-security", "operational-preferences", "settings-history"],
+    paths: [
+      "settings",
+      "smtp-config",
+      "system-alerts",
+      "account-security",
+      "operational-preferences",
+      "settings-history",
+    ],
     description: "Preferências da cooperativa e segurança da conta.",
     links: [],
   },
@@ -86,10 +111,9 @@ const modules = [
         "generator-list",
         "edit-generator",
       ]),
+      link("/generator-history", "Histórico de coletas", ["generator-history"]),
       link("/create-generator", "Cadastrar gerador", ["create-generator"]),
-      link("/generator-documents", "Documentos e histórico", [
-        "generator-documents",
-      ]),
+      link("/generator-documents", "Documentos", ["generator-documents"]),
     ],
   },
   {
@@ -109,6 +133,7 @@ const modules = [
         "create-document",
         "edit-document",
       ]),
+      link("/vehicle-history", "Histórico de coletas", ["vehicle-history"]),
       link("/maintenance-list", "Manutenções", [
         "maintenance-list",
         "create-maintenance",

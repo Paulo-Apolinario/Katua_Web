@@ -100,7 +100,7 @@ const CollectorList = () => {
       toast.error(
         error?.error ||
           error?.message ||
-          "Não foi possível carregar os catadores."
+          "Não foi possível carregar os catadores.",
       );
     } finally {
       setLoading(false);
@@ -117,11 +117,11 @@ const CollectorList = () => {
     collectors.forEach((collector) => {
       const collectorCollections = getCollectorCollections(
         collections,
-        collector.id
+        collector.id,
       );
 
       const completedCollections = collectorCollections.filter(
-        (collection) => collection.status === "COMPLETED"
+        (collection) => collection.status === "COMPLETED",
       );
 
       const totalKg = collectorCollections.reduce((total, collection) => {
@@ -156,7 +156,9 @@ const CollectorList = () => {
       ];
 
       return values.some((value) =>
-        String(value || "").toLowerCase().includes(term)
+        String(value || "")
+          .toLowerCase()
+          .includes(term),
       );
     });
   }, [collectors, searchText]);
@@ -179,7 +181,10 @@ const CollectorList = () => {
               <RefreshCw size={16} />
               Atualizar
             </button>
-            <Link to="/create-collector" className="primary-btn btn-sm border-0">
+            <Link
+              to="/create-collector"
+              className="primary-btn btn-sm border-0"
+            >
               <Plus size={16} />
               Novo Catador
             </Link>
@@ -246,7 +251,7 @@ const CollectorList = () => {
                       <td>
                         <span
                           className={`badge text-bg-${getStatusClass(
-                            collector.status
+                            collector.status,
                           )}`}
                         >
                           {getStatusLabel(collector.status)}
@@ -269,11 +274,17 @@ const CollectorList = () => {
 
                       <td>
                         <Link
-                          to={`/collector-documents?id=${collector.id}`}
+                          to={`/collector-documents?collectorId=${collector.id}`}
                           className="secondary-btn btn-sm"
                         >
                           <Eye size={16} />
-                          Detalhes
+                          Documentos
+                        </Link>
+                        <Link
+                          to={`/collector-history?collectorId=${collector.id}`}
+                          className="outline-btn btn-sm ms-2"
+                        >
+                          Histórico
                         </Link>
                       </td>
                     </tr>

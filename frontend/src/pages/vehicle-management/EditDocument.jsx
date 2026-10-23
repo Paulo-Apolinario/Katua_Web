@@ -1,6 +1,8 @@
+import { downloadOwnerDocument } from "../../services/ownerDocumentService";
+import { ownerRows } from "../../services/ownerDocumentService";
 import { ManagementHeader } from "../../components/management/ManagementWorkspace";
-import { useEffect, useRef, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router';
+import { useEffect, useRef, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router";
 import {
   House,
   ChevronRight,
@@ -11,63 +13,63 @@ import {
   Truck,
   Hash,
   ExternalLink,
-} from 'lucide-react';
-import toast from 'react-hot-toast';
+} from "lucide-react";
+import toast from "react-hot-toast";
 
-import DragDropUpload from '../../components/DragDropUpload';
-import { getAllVehicles } from '../../services/vehicleService';
+import DragDropUpload from "../../components/DragDropUpload";
+import { getAllVehicles } from "../../services/vehicleService";
 import {
   getVehicleDocumentById,
   updateVehicleDocument,
-} from '../../services/vehicleDocumentService';
-import HeadTags from '../../components/HeadTags';
-import TopProgressBar from '../../components/TopProgressBar';
+} from "../../services/vehicleDocumentService";
+import HeadTags from "../../components/HeadTags";
+import TopProgressBar from "../../components/TopProgressBar";
 
 const DOCUMENT_TYPES = [
-  { value: 'insurance', label: 'Seguro' },
-  { value: 'pollution', label: 'Certificado Ambiental/Emissões' },
-  { value: 'registration', label: 'Registro do Veículo' },
-  { value: 'permit', label: 'Licença/Autorização de Circulação' },
-  { value: 'tax', label: 'Taxas/Tributos' },
-  { value: 'inspection', label: 'Vistoria' },
-  { value: 'maintenance', label: 'Documento de Manutenção' },
-  { value: 'others', label: 'Outros' },
+  { value: "insurance", label: "Seguro" },
+  { value: "pollution", label: "Certificado Ambiental/Emissões" },
+  { value: "registration", label: "Registro do Veículo" },
+  { value: "permit", label: "Licença/Autorização de Circulação" },
+  { value: "tax", label: "Taxas/Tributos" },
+  { value: "inspection", label: "Vistoria" },
+  { value: "maintenance", label: "Documento de Manutenção" },
+  { value: "others", label: "Outros" },
 ];
 
 const initialFormState = {
-  vehicle_id: '',
-  document_type: '',
-  document_number: '',
-  issue_date: '',
-  expiry_date: '',
-  notes: '',
+  vehicle_id: "",
+  document_type: "",
+  document_number: "",
+  issue_date: "",
+  expiry_date: "",
+  notes: "",
 };
 
 const formatDateInput = (value) => {
-  if (!value) return '';
+  if (!value) return "";
 
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '';
+  if (Number.isNaN(date.getTime())) return "";
 
-  return date.toISOString().split('T')[0];
+  return date.toISOString().split("T")[0];
 };
 
 const getVehicleLabel = (vehicle) => {
-  if (!vehicle) return 'Veículo sem identificação';
+  if (!vehicle) return "Veículo sem identificação";
 
   return (
     vehicle.vehicle_number ||
     vehicle.plate ||
     vehicle.name ||
     vehicle.model ||
-    `Veículo ${vehicle.id || ''}`.trim()
+    `Veículo ${vehicle.id || ""}`.trim()
   );
 };
 
 const getDocumentFileUrl = (file) => {
   if (!file) return null;
 
-  if (String(file).startsWith('http')) return file;
+  if (String(file).startsWith("http")) return file;
 
   return `${import.meta.env.VITE_API_BASE_URL}/uploads/vehicle_documents/${file}`;
 };
@@ -95,31 +97,40 @@ const EditDocument = () => {
           getVehicleDocumentById(id),
         ]);
 
-        if (vehicleResponse?.success) {
-          setVehicles(Array.isArray(vehicleResponse.data) ? vehicleResponse.data : []);
+        if (
+          vehicleResponse?.success ||
+          Array.isArray(vehicleResponse?.vehicles)
+        ) {
+          setVehicles(ownerRows(vehicleResponse, "vehicles"));
         } else {
-          toast.error(vehicleResponse?.message || 'Não foi possível carregar os veículos.');
+          toast.error(
+            vehicleResponse?.message ||
+              "Não foi possível carregar os veículos.",
+          );
         }
 
         if (documentResponse?.success) {
           const document = documentResponse.data || {};
 
           setFormData({
-            vehicle_id: document.vehicle_id || '',
-            document_type: document.document_type || '',
-            document_number: document.document_number || '',
+            vehicle_id: document.vehicle_id || "",
+            document_type: document.document_type || "",
+            document_number: document.document_number || "",
             issue_date: formatDateInput(document.issue_date),
             expiry_date: formatDateInput(document.expiry_date),
-            notes: document.notes || '',
+            notes: document.notes || "",
           });
 
           setExistingFile(document.file || null);
         } else {
-          toast.error(documentResponse?.message || 'Não foi possível carregar o documento.');
+          toast.error(
+            documentResponse?.message ||
+              "Não foi possível carregar o documento.",
+          );
         }
       } catch (error) {
-        console.error('Erro ao carregar documento:', error);
-        toast.error(error?.message || 'Erro ao carregar documento.');
+        console.error("Erro ao carregar documento:", error);
+        toast.error(error?.message || "Erro ao carregar documento.");
       } finally {
         setLoading(false);
       }
@@ -129,7 +140,7 @@ const EditDocument = () => {
   }, [id]);
 
   const clearFieldError = (field) => {
-    setErrors((prev) => ({ ...prev, [field]: '' }));
+    setErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
   const handleInputChange = (event) => {
@@ -145,22 +156,24 @@ const EditDocument = () => {
 
   const handleFileChange = (file) => {
     setNewFileSelected(Boolean(file));
-    clearFieldError('file');
+    clearFieldError("file");
   };
 
   const validateForm = () => {
     const validationErrors = {};
 
     if (!formData.vehicle_id) {
-      validationErrors.vehicle_id = ['Selecione o veículo vinculado.'];
+      validationErrors.vehicle_id = ["Selecione o veículo vinculado."];
     }
 
     if (!formData.document_type) {
-      validationErrors.document_type = ['Selecione o tipo de documento.'];
+      validationErrors.document_type = ["Selecione o tipo de documento."];
     }
 
     if (!formData.document_number.trim()) {
-      validationErrors.document_number = ['Informe o número/código do documento.'];
+      validationErrors.document_number = [
+        "Informe o número/código do documento.",
+      ];
     }
 
     if (
@@ -169,7 +182,7 @@ const EditDocument = () => {
       new Date(formData.issue_date) > new Date(formData.expiry_date)
     ) {
       validationErrors.expiry_date = [
-        'A data de vencimento não pode ser anterior à data de emissão.',
+        "A data de vencimento não pode ser anterior à data de emissão.",
       ];
     }
 
@@ -180,27 +193,27 @@ const EditDocument = () => {
   const buildPayload = () => {
     const payload = new FormData();
 
-    payload.append('_method', 'PUT');
-    payload.append('vehicle_id', formData.vehicle_id);
-    payload.append('document_type', formData.document_type);
-    payload.append('document_number', formData.document_number.trim());
+    payload.append("_method", "PUT");
+    payload.append("vehicle_id", formData.vehicle_id);
+    payload.append("document_type", formData.document_type);
+    payload.append("document_number", formData.document_number.trim());
 
     if (formData.issue_date) {
-      payload.append('issue_date', formData.issue_date);
+      payload.append("issue_date", formData.issue_date);
     }
 
     if (formData.expiry_date) {
-      payload.append('expiry_date', formData.expiry_date);
+      payload.append("expiry_date", formData.expiry_date);
     }
 
     if (formData.notes.trim()) {
-      payload.append('notes', formData.notes.trim());
+      payload.append("notes", formData.notes.trim());
     }
 
     const selectedFile = fileRef.current?.getFile?.();
 
     if (selectedFile) {
-      payload.append('file', selectedFile);
+      payload.append("file", selectedFile);
     }
 
     return payload;
@@ -210,7 +223,7 @@ const EditDocument = () => {
     event.preventDefault();
 
     if (!validateForm()) {
-      toast.error('Revise os campos obrigatórios antes de salvar.');
+      toast.error("Revise os campos obrigatórios antes de salvar.");
       return;
     }
 
@@ -220,28 +233,30 @@ const EditDocument = () => {
       const response = await updateVehicleDocument(id, buildPayload());
 
       if (response?.success) {
-        toast.success(response.message || 'Documento atualizado com sucesso.');
+        toast.success(response.message || "Documento atualizado com sucesso.");
         setErrors({});
         setExistingFile(response.data?.file || existingFile);
         setNewFileSelected(false);
         fileRef.current?.clear?.();
-        navigate('/document-list');
+        navigate("/document-list");
         return;
       }
 
-      toast.error(response?.message || 'Não foi possível atualizar o documento.');
+      toast.error(
+        response?.message || "Não foi possível atualizar o documento.",
+      );
 
       if (response?.errors) {
         setErrors(response.errors);
       }
     } catch (error) {
-      console.error('Erro ao atualizar documento:', error);
+      console.error("Erro ao atualizar documento:", error);
 
       if (error?.errors) {
         setErrors(error.errors);
       }
 
-      toast.error(error?.message || 'Erro ao atualizar documento.');
+      toast.error(error?.message || "Erro ao atualizar documento.");
     } finally {
       setSaving(false);
     }
@@ -301,7 +316,9 @@ const EditDocument = () => {
                 </div>
 
                 {errors.vehicle_id && (
-                  <div className="text-danger small mt-1">{errors.vehicle_id[0]}</div>
+                  <div className="text-danger small mt-1">
+                    {errors.vehicle_id[0]}
+                  </div>
                 )}
               </div>
 
@@ -334,13 +351,16 @@ const EditDocument = () => {
                 </div>
 
                 {errors.document_type && (
-                  <div className="text-danger small mt-1">{errors.document_type[0]}</div>
+                  <div className="text-danger small mt-1">
+                    {errors.document_type[0]}
+                  </div>
                 )}
               </div>
 
               <div className="mb-4">
                 <label htmlFor="document_number" className="form-label">
-                  Número/Código do Documento <span className="text-danger">*</span>
+                  Número/Código do Documento{" "}
+                  <span className="text-danger">*</span>
                 </label>
 
                 <div className="left-inner-addon">
@@ -361,7 +381,9 @@ const EditDocument = () => {
                 </div>
 
                 {errors.document_number && (
-                  <div className="text-danger small mt-1">{errors.document_number[0]}</div>
+                  <div className="text-danger small mt-1">
+                    {errors.document_number[0]}
+                  </div>
                 )}
               </div>
 
@@ -387,7 +409,9 @@ const EditDocument = () => {
                 </div>
 
                 {errors.issue_date && (
-                  <div className="text-danger small mt-1">{errors.issue_date[0]}</div>
+                  <div className="text-danger small mt-1">
+                    {errors.issue_date[0]}
+                  </div>
                 )}
               </div>
 
@@ -413,7 +437,9 @@ const EditDocument = () => {
                 </div>
 
                 {errors.expiry_date && (
-                  <div className="text-danger small mt-1">{errors.expiry_date[0]}</div>
+                  <div className="text-danger small mt-1">
+                    {errors.expiry_date[0]}
+                  </div>
                 )}
               </div>
 
@@ -434,7 +460,9 @@ const EditDocument = () => {
                 />
 
                 {errors.notes && (
-                  <div className="text-danger small mt-1">{errors.notes[0]}</div>
+                  <div className="text-danger small mt-1">
+                    {errors.notes[0]}
+                  </div>
                 )}
               </div>
 
@@ -447,7 +475,8 @@ const EditDocument = () => {
                 />
 
                 <small className="text-muted d-block mt-2">
-                  Envie um novo arquivo somente se desejar substituir o documento atual.
+                  Envie um novo arquivo somente se desejar substituir o
+                  documento atual.
                 </small>
 
                 {errors.file && (
@@ -466,14 +495,17 @@ const EditDocument = () => {
                     </div>
 
                     {existingFileUrl && (
-                      <a
-                        href={existingFileUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <button
+                        type="button"
                         className="outline-btn btn-sm"
+                        onClick={() =>
+                          downloadOwnerDocument({
+                            download: `/owner-documents/vehicle/${id}/file`,
+                          }).catch((e) => toast.error(e.message))
+                        }
                       >
-                        Ver arquivo <ExternalLink size={14} />
-                      </a>
+                        Baixar arquivo <ExternalLink size={14} />
+                      </button>
                     )}
                   </div>
                 </div>
@@ -490,7 +522,7 @@ const EditDocument = () => {
                   disabled={loading || saving}
                 >
                   <Save />
-                  {saving ? 'Salvando...' : 'Salvar Alterações'}
+                  {saving ? "Salvando..." : "Salvar Alterações"}
                 </button>
               </div>
             </form>

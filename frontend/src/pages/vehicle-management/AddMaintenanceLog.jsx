@@ -1,6 +1,7 @@
+import { ownerRows } from "../../services/ownerDocumentService";
 import { ManagementHeader } from "../../components/management/ManagementWorkspace";
-import { useEffect, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router';
+import { useEffect, useRef, useState } from "react";
+import { Link, useNavigate } from "react-router";
 import {
   House,
   ChevronRight,
@@ -13,43 +14,43 @@ import {
   DollarSign,
   Building2,
   FileText,
-} from 'lucide-react';
-import toast from 'react-hot-toast';
+} from "lucide-react";
+import toast from "react-hot-toast";
 
-import DragDropUpload from '../../components/DragDropUpload';
-import { getAllVehicles } from '../../services/vehicleService';
-import { createMaintenanceLog } from '../../services/maintenanceLogService';
-import HeadTags from '../../components/HeadTags';
-import TopProgressBar from '../../components/TopProgressBar';
+import DragDropUpload from "../../components/DragDropUpload";
+import { getAllVehicles } from "../../services/vehicleService";
+import { createMaintenanceLog } from "../../services/maintenanceLogService";
+import HeadTags from "../../components/HeadTags";
+import TopProgressBar from "../../components/TopProgressBar";
 
 const MAINTENANCE_STATUS = [
-  { value: 'completed', label: 'Concluída' },
-  { value: 'pending', label: 'Pendente' },
-  { value: 'scheduled', label: 'Agendada' },
-  { value: 'overdue', label: 'Atrasada' },
+  { value: "completed", label: "Concluída" },
+  { value: "pending", label: "Pendente" },
+  { value: "scheduled", label: "Agendada" },
+  { value: "overdue", label: "Atrasada" },
 ];
 
 const initialFormState = {
-  vehicle_id: '',
-  maintenance_type: '',
-  maintenance_date: '',
-  location: '',
-  cost: '',
-  performed_by: '',
-  next_maintenance_date: '',
-  note: '',
-  status: 'completed',
+  vehicle_id: "",
+  maintenance_type: "",
+  maintenance_date: "",
+  location: "",
+  cost: "",
+  performed_by: "",
+  next_maintenance_date: "",
+  note: "",
+  status: "completed",
 };
 
 const getVehicleLabel = (vehicle) => {
-  if (!vehicle) return 'Veículo sem identificação';
+  if (!vehicle) return "Veículo sem identificação";
 
   return (
     vehicle.vehicle_number ||
     vehicle.plate ||
     vehicle.name ||
     vehicle.model ||
-    `Veículo ${vehicle.id || ''}`.trim()
+    `Veículo ${vehicle.id || ""}`.trim()
   );
 };
 
@@ -70,15 +71,17 @@ const AddMaintenanceLog = () => {
 
         const response = await getAllVehicles();
 
-        if (response?.success) {
-          setVehicles(Array.isArray(response.data) ? response.data : []);
+        if (response?.success || Array.isArray(response?.vehicles)) {
+          setVehicles(ownerRows(response, "vehicles"));
           return;
         }
 
-        toast.error(response?.message || 'Não foi possível carregar os veículos.');
+        toast.error(
+          response?.message || "Não foi possível carregar os veículos.",
+        );
       } catch (error) {
-        console.error('Erro ao carregar veículos:', error);
-        toast.error(error?.message || 'Erro ao carregar veículos.');
+        console.error("Erro ao carregar veículos:", error);
+        toast.error(error?.message || "Erro ao carregar veículos.");
       } finally {
         setLoading(false);
       }
@@ -88,7 +91,7 @@ const AddMaintenanceLog = () => {
   }, []);
 
   const clearFieldError = (field) => {
-    setErrors((prev) => ({ ...prev, [field]: '' }));
+    setErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
   const handleInputChange = (event) => {
@@ -106,28 +109,29 @@ const AddMaintenanceLog = () => {
     const validationErrors = {};
 
     if (!formData.vehicle_id) {
-      validationErrors.vehicle_id = ['Selecione o veículo vinculado.'];
+      validationErrors.vehicle_id = ["Selecione o veículo vinculado."];
     }
 
     if (!formData.maintenance_type.trim()) {
-      validationErrors.maintenance_type = ['Informe o tipo de manutenção.'];
+      validationErrors.maintenance_type = ["Informe o tipo de manutenção."];
     }
 
     if (!formData.maintenance_date) {
-      validationErrors.maintenance_date = ['Informe a data da manutenção.'];
+      validationErrors.maintenance_date = ["Informe a data da manutenção."];
     }
 
     if (formData.cost && Number(formData.cost) < 0) {
-      validationErrors.cost = ['O custo não pode ser negativo.'];
+      validationErrors.cost = ["O custo não pode ser negativo."];
     }
 
     if (
       formData.maintenance_date &&
       formData.next_maintenance_date &&
-      new Date(formData.next_maintenance_date) < new Date(formData.maintenance_date)
+      new Date(formData.next_maintenance_date) <
+        new Date(formData.maintenance_date)
     ) {
       validationErrors.next_maintenance_date = [
-        'A próxima manutenção não pode ser anterior à manutenção atual.',
+        "A próxima manutenção não pode ser anterior à manutenção atual.",
       ];
     }
 
@@ -138,35 +142,35 @@ const AddMaintenanceLog = () => {
   const buildPayload = () => {
     const payload = new FormData();
 
-    payload.append('vehicle_id', formData.vehicle_id);
-    payload.append('maintenance_type', formData.maintenance_type.trim());
-    payload.append('maintenance_date', formData.maintenance_date);
-    payload.append('status', formData.status);
+    payload.append("vehicle_id", formData.vehicle_id);
+    payload.append("maintenance_type", formData.maintenance_type.trim());
+    payload.append("maintenance_date", formData.maintenance_date);
+    payload.append("status", formData.status);
 
     if (formData.location.trim()) {
-      payload.append('location', formData.location.trim());
+      payload.append("location", formData.location.trim());
     }
 
     if (formData.cost) {
-      payload.append('cost', formData.cost);
+      payload.append("cost", formData.cost);
     }
 
     if (formData.performed_by.trim()) {
-      payload.append('performed_by', formData.performed_by.trim());
+      payload.append("performed_by", formData.performed_by.trim());
     }
 
     if (formData.next_maintenance_date) {
-      payload.append('next_maintenance_date', formData.next_maintenance_date);
+      payload.append("next_maintenance_date", formData.next_maintenance_date);
     }
 
     if (formData.note.trim()) {
-      payload.append('notes', formData.note.trim());
+      payload.append("notes", formData.note.trim());
     }
 
     const selectedFile = fileRef.current?.getFile?.();
 
     if (selectedFile) {
-      payload.append('file', selectedFile);
+      payload.append("file", selectedFile);
     }
 
     return payload;
@@ -176,7 +180,7 @@ const AddMaintenanceLog = () => {
     event.preventDefault();
 
     if (!validateForm()) {
-      toast.error('Revise os campos obrigatórios antes de salvar.');
+      toast.error("Revise os campos obrigatórios antes de salvar.");
       return;
     }
 
@@ -186,24 +190,24 @@ const AddMaintenanceLog = () => {
       const response = await createMaintenanceLog(buildPayload());
 
       if (response?.success) {
-        toast.success(response.message || 'Manutenção criada com sucesso.');
+        toast.success(response.message || "Manutenção criada com sucesso.");
         setFormData(initialFormState);
         fileRef.current?.clear?.();
         setErrors({});
-        navigate('/maintenance-list');
+        navigate("/maintenance-list");
         return;
       }
 
-      toast.error(response?.message || 'Não foi possível criar a manutenção.');
+      toast.error(response?.message || "Não foi possível criar a manutenção.");
       setErrors(response?.errors || {});
     } catch (error) {
-      console.error('Erro ao criar manutenção:', error);
+      console.error("Erro ao criar manutenção:", error);
 
       if (error?.errors) {
         setErrors(error.errors);
       }
 
-      toast.error(error?.message || 'Erro ao criar manutenção.');
+      toast.error(error?.message || "Erro ao criar manutenção.");
     } finally {
       setSaving(false);
     }
@@ -261,7 +265,9 @@ const AddMaintenanceLog = () => {
                 </div>
 
                 {errors.vehicle_id && (
-                  <div className="text-danger small mt-1">{errors.vehicle_id[0]}</div>
+                  <div className="text-danger small mt-1">
+                    {errors.vehicle_id[0]}
+                  </div>
                 )}
               </div>
 
@@ -288,7 +294,9 @@ const AddMaintenanceLog = () => {
                 </div>
 
                 {errors.maintenance_type && (
-                  <div className="text-danger small mt-1">{errors.maintenance_type[0]}</div>
+                  <div className="text-danger small mt-1">
+                    {errors.maintenance_type[0]}
+                  </div>
                 )}
               </div>
 
@@ -314,7 +322,9 @@ const AddMaintenanceLog = () => {
                 </div>
 
                 {errors.maintenance_date && (
-                  <div className="text-danger small mt-1">{errors.maintenance_date[0]}</div>
+                  <div className="text-danger small mt-1">
+                    {errors.maintenance_date[0]}
+                  </div>
                 )}
               </div>
 
@@ -341,7 +351,9 @@ const AddMaintenanceLog = () => {
                 </div>
 
                 {errors.location && (
-                  <div className="text-danger small mt-1">{errors.location[0]}</div>
+                  <div className="text-danger small mt-1">
+                    {errors.location[0]}
+                  </div>
                 )}
               </div>
 
@@ -397,7 +409,9 @@ const AddMaintenanceLog = () => {
                 </div>
 
                 {errors.performed_by && (
-                  <div className="text-danger small mt-1">{errors.performed_by[0]}</div>
+                  <div className="text-danger small mt-1">
+                    {errors.performed_by[0]}
+                  </div>
                 )}
               </div>
 
@@ -433,11 +447,12 @@ const AddMaintenanceLog = () => {
                 <DragDropUpload
                   ref={fileRef}
                   label="Nota/Fatura da Manutenção"
-                  onChange={() => clearFieldError('file')}
+                  onChange={() => clearFieldError("file")}
                 />
 
                 <small className="text-muted d-block mt-2">
-                  Anexe nota fiscal, comprovante, orçamento ou imagem da manutenção, se houver.
+                  Anexe nota fiscal, comprovante, orçamento ou imagem da
+                  manutenção, se houver.
                 </small>
 
                 {errors.file && (
@@ -468,7 +483,9 @@ const AddMaintenanceLog = () => {
                 </div>
 
                 {errors.notes && (
-                  <div className="text-danger small mt-1">{errors.notes[0]}</div>
+                  <div className="text-danger small mt-1">
+                    {errors.notes[0]}
+                  </div>
                 )}
               </div>
 
@@ -489,7 +506,10 @@ const AddMaintenanceLog = () => {
                         disabled={saving}
                       />
 
-                      <label className="form-check-label" htmlFor={`status-${status.value}`}>
+                      <label
+                        className="form-check-label"
+                        htmlFor={`status-${status.value}`}
+                      >
                         {status.label}
                       </label>
                     </div>
@@ -498,7 +518,9 @@ const AddMaintenanceLog = () => {
 
                 {errors.status && (
                   <div className="text-danger small mt-1">
-                    {Array.isArray(errors.status) ? errors.status[0] : errors.status}
+                    {Array.isArray(errors.status)
+                      ? errors.status[0]
+                      : errors.status}
                   </div>
                 )}
               </div>
@@ -514,7 +536,7 @@ const AddMaintenanceLog = () => {
                   disabled={saving || loading}
                 >
                   <Save />
-                  {saving ? 'Salvando...' : 'Salvar Manutenção'}
+                  {saving ? "Salvando..." : "Salvar Manutenção"}
                 </button>
               </div>
             </form>

@@ -57,12 +57,15 @@ const Sidebar = ({ active, setActive }) => {
     location.pathname.startsWith("/generator-list") ||
     location.pathname.startsWith("/create-generator") ||
     location.pathname.startsWith("/edit-generator") ||
-    location.pathname.startsWith("/generator-documents");
+    location.pathname.startsWith("/generator-documents") ||
+    location.pathname.startsWith("/generator-history");
 
   const isVehicleSectionActive =
     location.pathname.startsWith("/vehicle-list") ||
     location.pathname.startsWith("/create-vehicle") ||
     location.pathname.startsWith("/edit-vehicle") ||
+    location.pathname.startsWith("/vehicle-history") ||
+    location.pathname.startsWith("/vehicle-document-registers") ||
     location.pathname.startsWith("/document-list") ||
     location.pathname.startsWith("/create-document") ||
     location.pathname.startsWith("/edit-document") ||
@@ -88,6 +91,10 @@ const Sidebar = ({ active, setActive }) => {
     location.pathname.startsWith("/edit-staff") ||
     location.pathname.startsWith("/collector-list") ||
     location.pathname.startsWith("/create-collector") ||
+    location.pathname.startsWith("/driver-documents") ||
+    location.pathname.startsWith("/driver-history") ||
+    location.pathname.startsWith("/collector-history") ||
+    location.pathname.startsWith("/collector-profile") ||
     location.pathname.startsWith("/collector-documents") ||
     location.pathname.startsWith("/assign-list") ||
     location.pathname.startsWith("/create-assign") ||
@@ -376,6 +383,17 @@ const Sidebar = ({ active, setActive }) => {
                   <span className="submenu-text">Documentos do Gerador</span>
                 </NavLink>
               </li>
+              <li>
+                <NavLink
+                  to="/generator-history"
+                  className={({ isActive }) => (isActive ? "active" : "")}
+                >
+                  <span className="dot-wrap">
+                    <span className="dot" />
+                  </span>
+                  <span className="submenu-text">Histórico dos Geradores</span>
+                </NavLink>
+              </li>
             </ul>
           </li>
 
@@ -440,6 +458,17 @@ const Sidebar = ({ active, setActive }) => {
                   </span>
 
                   <span className="submenu-text">Documentos do Veículo</span>
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/vehicle-history"
+                  className={({ isActive }) => (isActive ? "active" : "")}
+                >
+                  <span className="dot-wrap">
+                    <span className="dot" />
+                  </span>
+                  <span className="submenu-text">Histórico dos Veículos</span>
                 </NavLink>
               </li>
 
@@ -626,6 +655,41 @@ const Sidebar = ({ active, setActive }) => {
                   </span>
 
                   <span className="submenu-text">Documentos dos Catadores</span>
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/driver-documents"
+                  className={({ isActive }) => (isActive ? "active" : "")}
+                >
+                  <span className="dot-wrap">
+                    <span className="dot" />
+                  </span>
+                  <span className="submenu-text">
+                    Documentos dos Motoristas
+                  </span>
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/driver-history"
+                  className={({ isActive }) => (isActive ? "active" : "")}
+                >
+                  <span className="dot-wrap">
+                    <span className="dot" />
+                  </span>
+                  <span className="submenu-text">Histórico dos Motoristas</span>
+                </NavLink>
+              </li>
+              <li>
+                <NavLink
+                  to="/collector-history"
+                  className={({ isActive }) => (isActive ? "active" : "")}
+                >
+                  <span className="dot-wrap">
+                    <span className="dot" />
+                  </span>
+                  <span className="submenu-text">Histórico dos Catadores</span>
                 </NavLink>
               </li>
 

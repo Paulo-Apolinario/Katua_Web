@@ -6,13 +6,18 @@ import {
   ChevronRight,
   CirclePlus,
   Pencil,
+  FileText,
+  History,
   Power,
   Search,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import DataTable from "../../components/DataTable";
 import DeleteModal from "../../components/modal/DeleteModal";
-import { getAllVehicles, updateVehicleStatus } from "../../services/vehicleService";
+import {
+  getAllVehicles,
+  updateVehicleStatus,
+} from "../../services/vehicleService";
 import HeadTags from "../../components/HeadTags";
 import TopProgressBar from "../../components/TopProgressBar";
 
@@ -128,17 +133,21 @@ const VehicleList = () => {
 
       setVehicles((prev) =>
         prev
-          .map((item) => item.id === deleteId ? { ...item, status: "INACTIVE" } : item)
+          .map((item) =>
+            item.id === deleteId ? { ...item, status: "INACTIVE" } : item,
+          )
           .map((item, index) => ({
             ...item,
             sn: index + 1,
-          }))
+          })),
       );
 
       toast.success("Veículo inativado. Histórico preservado.");
       setDeleteId(null);
     } catch (error) {
-      toast.error(error?.error || error?.message || "Erro ao inativar veículo.");
+      toast.error(
+        error?.error || error?.message || "Erro ao inativar veículo.",
+      );
       console.error("Inactivate vehicle error:", error);
     }
   };
@@ -147,7 +156,13 @@ const VehicleList = () => {
     <>
       <HeadTags title="Lista de Veículos" />
       <TopProgressBar loading={loading} />
-      <DeleteModal handleDelete={handleDelete} title="Inativar veículo" message="Deseja inativar este veículo? O cadastro e o histórico serão preservados." confirmLabel="Inativar" cancelLabel="Cancelar" />
+      <DeleteModal
+        handleDelete={handleDelete}
+        title="Inativar veículo"
+        message="Deseja inativar este veículo? O cadastro e o histórico serão preservados."
+        confirmLabel="Inativar"
+        cancelLabel="Cancelar"
+      />
 
       <ManagementHeader
         title="Lista de Veículos"
@@ -175,7 +190,8 @@ const VehicleList = () => {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Buscar por placa, modelo ou motorista..."
-                 aria-label="Buscar por placa, modelo ou motorista..." />
+                  aria-label="Buscar por placa, modelo ou motorista..."
+                />
               </div>
             </div>
 
@@ -192,9 +208,26 @@ const VehicleList = () => {
               renderActions={(row) => (
                 <div className="actions d-flex align-items-center gap-10">
                   <Link
+                    to={`/document-list?vehicleId=${row.id}`}
+                    className="action-button"
+                    title="Documentos"
+                    aria-label="Documentos"
+                  >
+                    <FileText />
+                  </Link>
+                  <Link
+                    to={`/vehicle-history?vehicleId=${row.id}`}
+                    className="action-button"
+                    title="Histórico de coletas"
+                    aria-label="Histórico de coletas"
+                  >
+                    <History />
+                  </Link>
+                  <Link
                     to={`/edit-vehicle/${row.id}`}
                     className="action-button edit"
-                    title="Editar veículo" aria-label="Editar veículo"
+                    title="Editar veículo"
+                    aria-label="Editar veículo"
                   >
                     <Pencil />
                   </Link>

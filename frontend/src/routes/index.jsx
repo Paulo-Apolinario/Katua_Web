@@ -1,3 +1,5 @@
+import DocumentVault from "../components/documents/DocumentVault";
+import OwnerHistory from "../components/documents/OwnerHistory";
 import ExtraOrdersWorkspace from "../components/extra-orders/ExtraOrdersWorkspace";
 import SettingsWorkspace from "../components/settings/SettingsWorkspace";
 import { BrowserRouter, Routes, Route } from "react-router";
@@ -30,7 +32,6 @@ import EditZone from "../pages/zone-management/EditZone";
 import GeneratorList from "../pages/generator-management/GeneratorList";
 import AddGenerator from "../pages/generator-management/AddGenerator";
 import EditGenerator from "../pages/generator-management/EditGenerator";
-import GeneratorDocuments from "../pages/generator-management/GeneratorDocuments";
 
 // Vehicle Management
 import VehicleList from "../pages/vehicle-management/VehicleList";
@@ -66,9 +67,6 @@ import EditAssignRoute from "../pages/staff-management/EditAssignRoute";
 import StaffAttendanceList from "../pages/staff-management/StaffAttendanceList";
 import AddStaffAttendance from "../pages/staff-management/AddStaffAttendance";
 import EditStaffAttendance from "../pages/staff-management/EditStaffAttendance";
-import StaffDocumentList from "../pages/staff-management/StaffDocumentList";
-import AddStaffDocument from "../pages/staff-management/AddStaffDocument";
-import EditStaffDocument from "../pages/staff-management/EditStaffDocument";
 import CollectorList from "../pages/staff-management/CollectorList";
 import AddCollector from "../pages/staff-management/AddCollector";
 import CollectorDocuments from "../pages/staff-management/CollectorDocuments";
@@ -164,17 +162,45 @@ const Router = () => {
 
             <Route
               path="generator-documents"
-              element={<GeneratorDocuments />}
+              element={<DocumentVault key="generator" kind="generator" />}
             />
 
             {/* Vehicle Management */}
+            <Route path="collector-profile" element={<CollectorDocuments />} />
+            <Route
+              path="vehicle-document-registers"
+              element={<DocumentList />}
+            />
+            <Route
+              path="driver-documents"
+              element={<DocumentVault key="driver" kind="driver" />}
+            />
+            <Route
+              path="generator-history"
+              element={<OwnerHistory key="generator" kind="generator" />}
+            />
+            <Route
+              path="collector-history"
+              element={<OwnerHistory key="collector" kind="collector" />}
+            />
+            <Route
+              path="driver-history"
+              element={<OwnerHistory key="driver" kind="driver" />}
+            />
+            <Route
+              path="vehicle-history"
+              element={<OwnerHistory key="vehicle" kind="vehicle" />}
+            />
             <Route path="vehicle-list" element={<VehicleList />} />
 
             <Route path="create-vehicle" element={<AddVehicle />} />
 
             <Route path="edit-vehicle/:id" element={<EditVehicle />} />
 
-            <Route path="document-list" element={<DocumentList />} />
+            <Route
+              path="document-list"
+              element={<DocumentVault key="vehicle" kind="vehicle" />}
+            />
 
             <Route path="create-document" element={<AddDocument />} />
 
@@ -225,7 +251,7 @@ const Router = () => {
 
             <Route
               path="collector-documents"
-              element={<CollectorDocuments />}
+              element={<DocumentVault key="collector" kind="collector" />}
             />
 
             <Route path="assign-list" element={<AssignRouteList />} />
@@ -243,16 +269,19 @@ const Router = () => {
               element={<EditStaffAttendance />}
             />
 
-            <Route path="staff-document-list" element={<StaffDocumentList />} />
+            <Route
+              path="staff-document-list"
+              element={<DocumentVault key="driver" kind="driver" />}
+            />
 
             <Route
               path="create-staff-document"
-              element={<AddStaffDocument />}
+              element={<DocumentVault key="driver" kind="driver" />}
             />
 
             <Route
               path="edit-staff-document/:id"
-              element={<EditStaffDocument />}
+              element={<DocumentVault key="driver" kind="driver" />}
             />
 
             {/* Waste Catalog Management */}

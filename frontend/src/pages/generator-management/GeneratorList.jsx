@@ -92,7 +92,9 @@ const GeneratorList = () => {
       ];
 
       return values.some((value) =>
-        String(value || "").toLowerCase().includes(term)
+        String(value || "")
+          .toLowerCase()
+          .includes(term),
       );
     });
   }, [generators, searchText]);
@@ -100,10 +102,10 @@ const GeneratorList = () => {
   const stats = useMemo(() => {
     const total = generators.length;
     const active = generators.filter(
-      (item) => item.accessStatus === "ACTIVE"
+      (item) => item.accessStatus === "ACTIVE",
     ).length;
     const pending = generators.filter(
-      (item) => item.accessStatus === "PENDING_ACTIVATION"
+      (item) => item.accessStatus === "PENDING_ACTIVATION",
     ).length;
     const released = generators.filter((item) => item.accessReleased).length;
 
@@ -218,10 +220,14 @@ const GeneratorList = () => {
                         <Building2 size={18} />
                         <div>
                           <strong>
-                            {generator.companyName || generator.name || "Sem nome"}
+                            {generator.companyName ||
+                              generator.name ||
+                              "Sem nome"}
                           </strong>
                           <div className="text-muted small">
-                            {generator.companyName ? generator.name : generator.email}
+                            {generator.companyName
+                              ? generator.name
+                              : generator.email}
                           </div>
                         </div>
                       </div>
@@ -244,7 +250,7 @@ const GeneratorList = () => {
                     <td>
                       <span
                         className={`badge text-bg-${getAccessStatusClass(
-                          generator.accessStatus
+                          generator.accessStatus,
                         )}`}
                       >
                         {generator.accessReleased ? (
@@ -278,6 +284,12 @@ const GeneratorList = () => {
                           title="Documentos do gerador"
                         >
                           <Eye size={16} />
+                        </Link>
+                        <Link
+                          to={`/generator-history?generatorId=${generator.id}`}
+                          className="btn btn-sm btn-outline-secondary"
+                        >
+                          Histórico
                         </Link>
                       </div>
                     </td>

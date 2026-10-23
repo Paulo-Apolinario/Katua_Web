@@ -1,6 +1,7 @@
+import { downloadOwnerDocument } from "../../services/ownerDocumentService";
 import { ManagementHeader } from "../../components/management/ManagementWorkspace";
-import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router';
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router";
 import {
   House,
   ChevronRight,
@@ -15,75 +16,75 @@ import {
   AlertTriangle,
   FileText,
   ExternalLink,
-} from 'lucide-react';
-import toast from 'react-hot-toast';
+} from "lucide-react";
+import toast from "react-hot-toast";
 
-import DeleteModal from '../../components/modal/DeleteModal';
+import DeleteModal from "../../components/modal/DeleteModal";
 import {
   getAllMaintenanceLogs,
   deleteMaintenanceLog,
-} from '../../services/maintenanceLogService';
-import HeadTags from '../../components/HeadTags';
-import TopProgressBar from '../../components/TopProgressBar';
+} from "../../services/maintenanceLogService";
+import HeadTags from "../../components/HeadTags";
+import TopProgressBar from "../../components/TopProgressBar";
 
 const MAINTENANCE_STATUS = [
-  { value: 'completed', label: 'Concluída', className: 'status-success' },
-  { value: 'pending', label: 'Pendente', className: 'status-warning' },
-  { value: 'scheduled', label: 'Agendada', className: 'status-info' },
-  { value: 'overdue', label: 'Atrasada', className: 'status-danger' },
+  { value: "completed", label: "Concluída", className: "status-success" },
+  { value: "pending", label: "Pendente", className: "status-warning" },
+  { value: "scheduled", label: "Agendada", className: "status-info" },
+  { value: "overdue", label: "Atrasada", className: "status-danger" },
 ];
 
 const getStatusConfig = (value) => {
   return (
     MAINTENANCE_STATUS.find((item) => item.value === value) || {
-      label: value || 'N/A',
-      className: 'status-danger',
+      label: value || "N/A",
+      className: "status-danger",
     }
   );
 };
 
 const getVehicleLabel = (vehicle) => {
-  if (!vehicle) return 'N/A';
+  if (!vehicle) return "N/A";
 
   return (
     vehicle.vehicle_number ||
     vehicle.plate ||
     vehicle.name ||
     vehicle.model ||
-    `Veículo ${vehicle.id || ''}`.trim()
+    `Veículo ${vehicle.id || ""}`.trim()
   );
 };
 
 const formatDate = (value) => {
-  if (!value) return 'N/A';
+  if (!value) return "N/A";
 
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return 'N/A';
+  if (Number.isNaN(date.getTime())) return "N/A";
 
-  return date.toLocaleDateString('pt-BR');
+  return date.toLocaleDateString("pt-BR");
 };
 
 const formatMoney = (value) => {
-  if (!value) return 'N/A';
+  if (!value) return "N/A";
 
-  return Number(value).toLocaleString('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
+  return Number(value).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
   });
 };
 
 const getInvoiceUrl = (file) => {
   if (!file) return null;
 
-  if (String(file).startsWith('http')) return file;
+  if (String(file).startsWith("http")) return file;
 
   return `${import.meta.env.VITE_API_BASE_URL}/images/vehicle_invoice/${file}`;
 };
 
 const MaintenanceLogList = () => {
   const [logs, setLogs] = useState([]);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [deleteId, setDeleteId] = useState(null);
@@ -103,16 +104,18 @@ const MaintenanceLogList = () => {
           list.map((item, index) => ({
             ...item,
             sn: index + 1,
-          }))
+          })),
         );
 
         return;
       }
 
-      toast.error(response?.message || 'Não foi possível carregar as manutenções.');
+      toast.error(
+        response?.message || "Não foi possível carregar as manutenções.",
+      );
     } catch (error) {
-      console.error('Erro ao carregar manutenções:', error);
-      toast.error(error?.message || 'Erro ao carregar manutenções.');
+      console.error("Erro ao carregar manutenções:", error);
+      toast.error(error?.message || "Erro ao carregar manutenções.");
     } finally {
       setLoading(false);
     }
@@ -127,9 +130,9 @@ const MaintenanceLogList = () => {
 
     return logs.filter((item) => {
       const vehicle = String(getVehicleLabel(item.vehicle)).toLowerCase();
-      const type = String(item.maintenance_type || '').toLowerCase();
-      const location = String(item.location || '').toLowerCase();
-      const performedBy = String(item.performed_by || '').toLowerCase();
+      const type = String(item.maintenance_type || "").toLowerCase();
+      const location = String(item.location || "").toLowerCase();
+      const performedBy = String(item.performed_by || "").toLowerCase();
 
       const matchesSearch =
         !term ||
@@ -147,22 +150,23 @@ const MaintenanceLogList = () => {
   const summary = useMemo(() => {
     return {
       total: logs.length,
-      completed: logs.filter((item) => item.status === 'completed').length,
-      scheduled: logs.filter((item) => item.status === 'scheduled').length,
+      completed: logs.filter((item) => item.status === "completed").length,
+      scheduled: logs.filter((item) => item.status === "scheduled").length,
       pending:
-        logs.filter((item) => item.status === 'pending').length +
-        logs.filter((item) => item.status === 'overdue').length,
+        logs.filter((item) => item.status === "pending").length +
+        logs.filter((item) => item.status === "overdue").length,
     };
   }, [logs]);
 
   const totalPages = Math.max(1, Math.ceil(filteredData.length / rowsPerPage));
-  const startIndex = filteredData.length === 0 ? 0 : (currentPage - 1) * rowsPerPage;
+  const startIndex =
+    filteredData.length === 0 ? 0 : (currentPage - 1) * rowsPerPage;
   const endIndex = Math.min(startIndex + rowsPerPage, filteredData.length);
   const paginatedData = filteredData.slice(startIndex, endIndex);
 
   const handleClearFilters = () => {
-    setSearch('');
-    setStatusFilter('');
+    setSearch("");
+    setStatusFilter("");
     setCurrentPage(1);
   };
 
@@ -181,18 +185,20 @@ const MaintenanceLogList = () => {
             .map((item, index) => ({
               ...item,
               sn: index + 1,
-            }))
+            })),
         );
 
-        toast.success(response.message || 'Manutenção excluída com sucesso.');
+        toast.success(response.message || "Manutenção excluída com sucesso.");
         setDeleteId(null);
         return;
       }
 
-      toast.error(response?.message || 'Não foi possível excluir a manutenção.');
+      toast.error(
+        response?.message || "Não foi possível excluir a manutenção.",
+      );
     } catch (error) {
-      console.error('Erro ao excluir manutenção:', error);
-      toast.error(error?.message || 'Erro ao excluir manutenção.');
+      console.error("Erro ao excluir manutenção:", error);
+      toast.error(error?.message || "Erro ao excluir manutenção.");
     } finally {
       setDeleting(false);
     }
@@ -202,7 +208,13 @@ const MaintenanceLogList = () => {
     <>
       <HeadTags title="Manutenções | KATUÁ" />
       <TopProgressBar loading={loading || deleting} />
-      <DeleteModal handleDelete={handleDelete} title="Excluir manutenção" message="Deseja excluir esta manutenção?" confirmLabel="Excluir" cancelLabel="Cancelar" />
+      <DeleteModal
+        handleDelete={handleDelete}
+        title="Excluir manutenção"
+        message="Deseja excluir esta manutenção?"
+        confirmLabel="Excluir"
+        cancelLabel="Cancelar"
+      />
 
       <ManagementHeader
         title="Manutenções"
@@ -296,7 +308,11 @@ const MaintenanceLogList = () => {
                 ))}
               </select>
 
-              <button type="button" className="outline-btn btn-sm" onClick={handleClearFilters}>
+              <button
+                type="button"
+                className="outline-btn btn-sm"
+                onClick={handleClearFilters}
+              >
                 Limpar filtros
               </button>
             </div>
@@ -318,7 +334,8 @@ const MaintenanceLogList = () => {
                     setCurrentPage(1);
                   }}
                   placeholder="Buscar por veículo, tipo, local ou oficina..."
-                 aria-label="Buscar por veículo, tipo, local ou oficina..." />
+                  aria-label="Buscar por veículo, tipo, local ou oficina..."
+                />
               </div>
             </div>
           </div>
@@ -358,31 +375,36 @@ const MaintenanceLogList = () => {
                     <tr key={log.id}>
                       <td>{log.sn}</td>
                       <td>{getVehicleLabel(log.vehicle)}</td>
-                      <td>{log.maintenance_type || 'N/A'}</td>
-                      <td>{log.location || 'N/A'}</td>
+                      <td>{log.maintenance_type || "N/A"}</td>
+                      <td>{log.location || "N/A"}</td>
                       <td>{formatDate(log.maintenance_date)}</td>
                       <td>{formatDate(log.next_maintenance_date)}</td>
                       <td>{formatMoney(log.cost)}</td>
-                      <td>{log.performed_by || 'N/A'}</td>
+                      <td>{log.performed_by || "N/A"}</td>
 
                       <td>
-                        <span className={`status ${status.className}`}>{status.label}</span>
+                        <span className={`status ${status.className}`}>
+                          {status.label}
+                        </span>
                       </td>
 
                       <td>
                         {invoiceUrl ? (
-                          <a
-                            href={invoiceUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="d-inline-flex align-items-center gap-2"
+                          <button
+                            type="button"
+                            className="outline-btn btn-sm"
+                            onClick={() =>
+                              downloadOwnerDocument({
+                                download: `/owner-documents/maintenance/${log.id}/file`,
+                              }).catch((e) => toast.error(e.message))
+                            }
                           >
                             <FileText size={16} />
-                            Ver arquivo
+                            Baixar arquivo
                             <ExternalLink size={14} />
-                          </a>
+                          </button>
                         ) : (
-                          'N/A'
+                          "N/A"
                         )}
                       </td>
 
@@ -420,8 +442,8 @@ const MaintenanceLogList = () => {
         <div className="d-flex justify-content-between align-items-center flex-wrap gap-15 mt-3">
           <div className="d-flex align-items-center gap-10">
             <span>
-              Exibindo {filteredData.length === 0 ? 0 : startIndex + 1} - {endIndex} de{' '}
-              {filteredData.length}
+              Exibindo {filteredData.length === 0 ? 0 : startIndex + 1} -{" "}
+              {endIndex} de {filteredData.length}
             </span>
 
             <select
@@ -453,7 +475,9 @@ const MaintenanceLogList = () => {
               type="button"
               className="btn btn-light"
               disabled={currentPage >= totalPages || filteredData.length === 0}
-              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+              onClick={() =>
+                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+              }
             >
               Próximo
             </button>

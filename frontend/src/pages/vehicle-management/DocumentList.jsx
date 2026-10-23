@@ -1,6 +1,7 @@
+import { downloadOwnerDocument } from "../../services/ownerDocumentService";
 import { ManagementHeader } from "../../components/management/ManagementWorkspace";
-import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router';
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router";
 import {
   House,
   ChevronRight,
@@ -11,66 +12,68 @@ import {
   FileText,
   RefreshCw,
   ExternalLink,
-} from 'lucide-react';
-import toast from 'react-hot-toast';
+} from "lucide-react";
+import toast from "react-hot-toast";
 
-import DeleteModal from '../../components/modal/DeleteModal';
+import DeleteModal from "../../components/modal/DeleteModal";
 import {
   getVehicleDocuments,
   deleteVehicleDocument,
-} from '../../services/vehicleDocumentService';
-import HeadTags from '../../components/HeadTags';
-import TopProgressBar from '../../components/TopProgressBar';
+} from "../../services/vehicleDocumentService";
+import HeadTags from "../../components/HeadTags";
+import TopProgressBar from "../../components/TopProgressBar";
 
 const DOCUMENT_TYPES = [
-  { value: 'insurance', label: 'Seguro' },
-  { value: 'pollution', label: 'Certificado Ambiental/Emissões' },
-  { value: 'registration', label: 'Registro do Veículo' },
-  { value: 'permit', label: 'Licença/Autorização' },
-  { value: 'tax', label: 'Taxas/Tributos' },
-  { value: 'inspection', label: 'Vistoria' },
-  { value: 'maintenance', label: 'Documento de Manutenção' },
-  { value: 'others', label: 'Outros' },
+  { value: "insurance", label: "Seguro" },
+  { value: "pollution", label: "Certificado Ambiental/Emissões" },
+  { value: "registration", label: "Registro do Veículo" },
+  { value: "permit", label: "Licença/Autorização" },
+  { value: "tax", label: "Taxas/Tributos" },
+  { value: "inspection", label: "Vistoria" },
+  { value: "maintenance", label: "Documento de Manutenção" },
+  { value: "others", label: "Outros" },
 ];
 
 const getDocumentTypeLabel = (value) => {
-  return DOCUMENT_TYPES.find((item) => item.value === value)?.label || value || 'N/A';
+  return (
+    DOCUMENT_TYPES.find((item) => item.value === value)?.label || value || "N/A"
+  );
 };
 
 const getVehicleLabel = (vehicle) => {
-  if (!vehicle) return 'N/A';
+  if (!vehicle) return "N/A";
 
   return (
     vehicle.vehicle_number ||
     vehicle.plate ||
     vehicle.name ||
     vehicle.model ||
-    `Veículo ${vehicle.id || ''}`.trim()
+    `Veículo ${vehicle.id || ""}`.trim()
   );
 };
 
 const formatDate = (value) => {
-  if (!value) return 'N/A';
+  if (!value) return "N/A";
 
   const date = new Date(value);
 
-  if (Number.isNaN(date.getTime())) return 'N/A';
+  if (Number.isNaN(date.getTime())) return "N/A";
 
-  return date.toLocaleDateString('pt-BR');
+  return date.toLocaleDateString("pt-BR");
 };
 
 const getDocumentFileUrl = (file) => {
   if (!file) return null;
 
-  if (String(file).startsWith('http')) return file;
+  if (String(file).startsWith("http")) return file;
 
   return `${import.meta.env.VITE_API_BASE_URL}/uploads/vehicle_documents/${file}`;
 };
 
 const DocumentList = () => {
   const [documents, setDocuments] = useState([]);
-  const [search, setSearch] = useState('');
-  const [documentTypeFilter, setDocumentTypeFilter] = useState('');
+  const [search, setSearch] = useState("");
+  const [documentTypeFilter, setDocumentTypeFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [deleteId, setDeleteId] = useState(null);
@@ -90,16 +93,18 @@ const DocumentList = () => {
           list.map((item, index) => ({
             ...item,
             sn: index + 1,
-          }))
+          })),
         );
 
         return;
       }
 
-      toast.error(response?.message || 'Não foi possível carregar os documentos.');
+      toast.error(
+        response?.message || "Não foi possível carregar os documentos.",
+      );
     } catch (error) {
-      console.error('Erro ao carregar documentos:', error);
-      toast.error(error?.message || 'Erro ao carregar documentos.');
+      console.error("Erro ao carregar documentos:", error);
+      toast.error(error?.message || "Erro ao carregar documentos.");
     } finally {
       setLoading(false);
     }
@@ -114,8 +119,10 @@ const DocumentList = () => {
 
     return documents.filter((item) => {
       const vehicle = String(getVehicleLabel(item.vehicle)).toLowerCase();
-      const documentNumber = String(item.document_number || '').toLowerCase();
-      const documentType = String(getDocumentTypeLabel(item.document_type)).toLowerCase();
+      const documentNumber = String(item.document_number || "").toLowerCase();
+      const documentType = String(
+        getDocumentTypeLabel(item.document_type),
+      ).toLowerCase();
 
       const matchesSearch =
         !term ||
@@ -123,7 +130,8 @@ const DocumentList = () => {
         documentNumber.includes(term) ||
         documentType.includes(term);
 
-      const matchesType = !documentTypeFilter || item.document_type === documentTypeFilter;
+      const matchesType =
+        !documentTypeFilter || item.document_type === documentTypeFilter;
 
       return matchesSearch && matchesType;
     });
@@ -148,13 +156,14 @@ const DocumentList = () => {
   }, [documents]);
 
   const totalPages = Math.max(1, Math.ceil(filteredData.length / rowsPerPage));
-  const startIndex = filteredData.length === 0 ? 0 : (currentPage - 1) * rowsPerPage;
+  const startIndex =
+    filteredData.length === 0 ? 0 : (currentPage - 1) * rowsPerPage;
   const endIndex = Math.min(startIndex + rowsPerPage, filteredData.length);
   const paginatedData = filteredData.slice(startIndex, endIndex);
 
   const handleClearFilters = () => {
-    setSearch('');
-    setDocumentTypeFilter('');
+    setSearch("");
+    setDocumentTypeFilter("");
     setCurrentPage(1);
   };
 
@@ -173,18 +182,18 @@ const DocumentList = () => {
             .map((item, index) => ({
               ...item,
               sn: index + 1,
-            }))
+            })),
         );
 
-        toast.success(response.message || 'Documento excluído com sucesso.');
+        toast.success(response.message || "Documento excluído com sucesso.");
         setDeleteId(null);
         return;
       }
 
-      toast.error(response?.message || 'Não foi possível excluir o documento.');
+      toast.error(response?.message || "Não foi possível excluir o documento.");
     } catch (error) {
-      console.error('Erro ao excluir documento:', error);
-      toast.error(error?.message || 'Erro ao excluir documento.');
+      console.error("Erro ao excluir documento:", error);
+      toast.error(error?.message || "Erro ao excluir documento.");
     } finally {
       setDeleting(false);
     }
@@ -194,7 +203,13 @@ const DocumentList = () => {
     <>
       <HeadTags title="Documentos | KATUÁ" />
       <TopProgressBar loading={loading || deleting} />
-      <DeleteModal handleDelete={handleDelete} title="Excluir documento" message="Deseja excluir este documento?" confirmLabel="Excluir" cancelLabel="Cancelar" />
+      <DeleteModal
+        handleDelete={handleDelete}
+        title="Excluir documento"
+        message="Deseja excluir este documento?"
+        confirmLabel="Excluir"
+        cancelLabel="Cancelar"
+      />
 
       <ManagementHeader
         title="Documentos"
@@ -268,7 +283,11 @@ const DocumentList = () => {
                 ))}
               </select>
 
-              <button type="button" className="outline-btn btn-sm" onClick={handleClearFilters}>
+              <button
+                type="button"
+                className="outline-btn btn-sm"
+                onClick={handleClearFilters}
+              >
                 Limpar filtros
               </button>
             </div>
@@ -290,7 +309,8 @@ const DocumentList = () => {
                     setCurrentPage(1);
                   }}
                   placeholder="Buscar por veículo, número ou tipo..."
-                 aria-label="Buscar por veículo, número ou tipo..." />
+                  aria-label="Buscar por veículo, número ou tipo..."
+                />
               </div>
             </div>
           </div>
@@ -330,7 +350,7 @@ const DocumentList = () => {
 
                       <td>{getDocumentTypeLabel(document.document_type)}</td>
 
-                      <td>{document.document_number || 'N/A'}</td>
+                      <td>{document.document_number || "N/A"}</td>
 
                       <td>{formatDate(document.issue_date)}</td>
 
@@ -338,18 +358,21 @@ const DocumentList = () => {
 
                       <td>
                         {fileUrl ? (
-                          <a
-                            href={fileUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="d-inline-flex align-items-center gap-2"
+                          <button
+                            type="button"
+                            className="outline-btn btn-sm"
+                            onClick={() =>
+                              downloadOwnerDocument({
+                                download: `/owner-documents/vehicle/${document.id}/file`,
+                              }).catch((e) => toast.error(e.message))
+                            }
                           >
                             <FileText size={16} />
-                            Ver arquivo
+                            Baixar arquivo
                             <ExternalLink size={14} />
-                          </a>
+                          </button>
                         ) : (
-                          'N/A'
+                          "N/A"
                         )}
                       </td>
 
@@ -387,8 +410,8 @@ const DocumentList = () => {
         <div className="d-flex justify-content-between align-items-center flex-wrap gap-15 mt-3">
           <div className="d-flex align-items-center gap-10">
             <span>
-              Exibindo {filteredData.length === 0 ? 0 : startIndex + 1} - {endIndex} de{' '}
-              {filteredData.length}
+              Exibindo {filteredData.length === 0 ? 0 : startIndex + 1} -{" "}
+              {endIndex} de {filteredData.length}
             </span>
 
             <select
@@ -420,7 +443,9 @@ const DocumentList = () => {
               type="button"
               className="btn btn-light"
               disabled={currentPage >= totalPages || filteredData.length === 0}
-              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+              onClick={() =>
+                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+              }
             >
               Próximo
             </button>

@@ -6,6 +6,8 @@ import {
   ChevronRight,
   CirclePlus,
   Pencil,
+  FileText,
+  History,
   Search,
 } from "lucide-react";
 import DataTable from "../../components/DataTable";
@@ -59,7 +61,9 @@ const StaffList = () => {
 
       setStaffs(dataWithSn);
     } catch (error) {
-      toast.error(error?.error || error?.message || "Erro ao carregar motoristas.");
+      toast.error(
+        error?.error || error?.message || "Erro ao carregar motoristas.",
+      );
       console.error("Fetch drivers error:", error);
     } finally {
       setLoading(false);
@@ -153,7 +157,8 @@ const StaffList = () => {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Buscar por nome, email, CPF ou CNH..."
-                 aria-label="Buscar por nome, email, CPF ou CNH..." />
+                  aria-label="Buscar por nome, email, CPF ou CNH..."
+                />
               </div>
             </div>
 
@@ -170,8 +175,26 @@ const StaffList = () => {
               renderActions={(row) => (
                 <div className="actions d-flex align-items-center gap-10">
                   <Link
+                    to={`/driver-documents?driverId=${row.id}`}
+                    className="action-button"
+                    title="Documentos"
+                    aria-label="Documentos"
+                  >
+                    <FileText />
+                  </Link>
+                  <Link
+                    to={`/driver-history?driverId=${row.id}`}
+                    className="action-button"
+                    title="Histórico de coletas"
+                    aria-label="Histórico de coletas"
+                  >
+                    <History />
+                  </Link>
+                  <Link
                     to={`/edit-staff/${row.id}`}
-                    className="action-button edit" title="Editar motorista" aria-label="Editar motorista"
+                    className="action-button edit"
+                    title="Editar motorista"
+                    aria-label="Editar motorista"
                   >
                     <Pencil />
                   </Link>
