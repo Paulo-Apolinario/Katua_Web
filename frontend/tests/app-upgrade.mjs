@@ -1308,6 +1308,120 @@ try {
       return context;
     }
     await check(
+      "Visual: acesso e perfis responsivos sem solicitar GPS antecipado",
+      async () => {
+        const context = await browser.newContext({
+            viewport: { width: 1440, height: 1000 },
+          }),
+          p = await context.newPage();
+        await p.route("**/*", (r) =>
+          new URL(r.request().url()).hostname === "127.0.0.1"
+            ? r.continue()
+            : r.abort(),
+        );
+        await p.goto("http://127.0.0.1:5181/(public)/access-type");
+        await p
+          .getByRole("heading", { name: "Como você participa?" })
+          .waitFor();
+        await p.screenshot({
+          path: join(outputDir, "visual-access-desktop.png"),
+          fullPage: true,
+        });
+        await p.getByRole("button", { name: "Gerador", exact: true }).click();
+        await p
+          .getByRole("heading", { name: "Qual é o seu perfil?" })
+          .waitFor();
+        assert.equal(
+          await p.getByText(/GPS ativo|Carregando localização/).count(),
+          0,
+        );
+        await p.screenshot({
+          path: join(outputDir, "visual-profiles-desktop.png"),
+          fullPage: true,
+        });
+        await p.setViewportSize({ width: 390, height: 844 });
+        await p.screenshot({
+          path: join(outputDir, "visual-profiles-mobile.png"),
+          fullPage: true,
+        });
+        assert(
+          await p.evaluate(
+            () => document.documentElement.scrollWidth <= innerWidth,
+          ),
+        );
+        await context.close();
+      },
+    );
+    await check(
+      "Visual: seis perfis de login preservam senha, recuperação e acesso por e-mail",
+      async () => {
+        const context = await browser.newContext({
+            viewport: { width: 1440, height: 1000 },
+          }),
+          p = await context.newPage();
+        await p.route("**/*", (r) =>
+          new URL(r.request().url()).hostname === "127.0.0.1"
+            ? r.continue()
+            : r.abort(),
+        );
+        for (const profile of [
+          "pf",
+          "comercial",
+          "grande",
+          "cooperativa",
+          "catador",
+          "motorista",
+        ]) {
+          await p.goto("http://127.0.0.1:5181/(auth)/login?profile=" + profile);
+          await p
+            .getByLabel("E-mail", { exact: true })
+            .fill("teste@example.test");
+          await p.getByLabel("Senha", { exact: true }).fill("qa-only");
+          assert.equal(
+            await p.getByLabel("Senha", { exact: true }).getAttribute("type"),
+            "password",
+          );
+          await p
+            .getByRole("button", { name: "Mostrar senha", exact: true })
+            .click();
+          assert.equal(
+            await p
+              .getByLabel("Senha", { exact: true })
+              .evaluate((el) => el.type),
+            "text",
+          );
+          await p
+            .getByRole("radio", { name: "Acesso por e-mail", exact: true })
+            .click();
+          assert.equal(await p.getByLabel("Senha", { exact: true }).count(), 0);
+          await p
+            .getByRole("button", { name: "Enviar link de acesso", exact: true })
+            .waitFor();
+          await p
+            .getByRole("radio", { name: "Com senha", exact: true })
+            .click();
+          await p
+            .getByRole("button", { name: "Esqueceu a senha?", exact: true })
+            .waitFor();
+        }
+        await p.screenshot({
+          path: join(outputDir, "visual-login-desktop.png"),
+          fullPage: true,
+        });
+        await p.setViewportSize({ width: 390, height: 844 });
+        await p.screenshot({
+          path: join(outputDir, "visual-login-mobile.png"),
+          fullPage: true,
+        });
+        assert(
+          await p.evaluate(
+            () => document.documentElement.scrollWidth <= innerWidth,
+          ),
+        );
+        await context.close();
+      },
+    );
+    await check(
       "App PF solicita coleta pelo catálogo e confirma ponto no mapa",
       async () => {
         const context = await appContext(f.pfToken, {
@@ -1527,6 +1641,21 @@ try {
         assert(
           (await p.locator(".leaflet-container").boundingBox()).height >= 280,
         );
+        await p.getByRole("button", { name: /Localizar PEV Praça QA/ }).click();
+        await p
+          .getByRole("link", { name: /Abrir navegação para PEV Praça QA/ })
+          .waitFor();
+        assert.equal(
+          await p.getByText("Latitude:", { exact: true }).count(),
+          0,
+        );
+        await p
+          .getByRole("button", { name: /Localizar Cooperativa QA/ })
+          .click();
+        await p
+          .getByRole("link", { name: /Abrir navegação para Cooperativa QA/ })
+          .waitFor();
+        await p.getByRole("button", { name: "Ver todos", exact: true }).click();
         await p.getByRole("button", { name: /Localizar PEV Praça QA/ }).click();
         assert((await p.locator(".leaflet-marker-icon").count()) >= 2);
         await p.screenshot({
