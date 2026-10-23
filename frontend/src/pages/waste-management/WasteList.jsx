@@ -1,3 +1,4 @@
+import CollectionQuantityReview from "../../components/collections/CollectionQuantityReview";
 import { downloadCollectionPdf } from "../../utils/collectionPdf";
 import CollectionIncidents from "../../components/collections/CollectionIncidents";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -505,6 +506,19 @@ function CollectionList({ cooperativeName }) {
                     Atualizar detalhes
                   </button>
                 </div>
+                <CollectionQuantityReview
+                  key={`${selected.id}:${selected.status}`}
+                  collection={selected}
+                  onBusy={setOperationBusy}
+                  onChange={(updated) => {
+                    setSelected(updated);
+                    setItems((current) =>
+                      current.map((item) =>
+                        item.id === updated.id ? updated : item,
+                      ),
+                    );
+                  }}
+                />
                 <CollectionStageActions
                   key={`${selected.id}:${selected.status}`}
                   collection={selected}

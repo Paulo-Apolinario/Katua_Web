@@ -9,13 +9,13 @@ const stages = {
   COLLECTED: {
     title: "Confirmar recebimento",
     action: receiveCollection,
-    help: "Confirme que os materiais chegaram fisicamente à cooperativa. Confira as quantidades registradas em campo; descreva divergências nas observações antes de continuar.",
+    help: "Confirme que os materiais chegaram fisicamente à cooperativa. Após confirmar a chegada, utilize a conferência de quantidades na etapa de triagem.",
     confirmation: "Conferi a chegada física e os materiais desta coleta.",
   },
   RECEIVED: {
     title: "Iniciar triagem",
     action: startCollectionSorting,
-    help: "Registre o início da conferência e separação dos materiais recebidos.",
+    help: "Confira as quantidades recebidas na seção de pesagem e registre o início da separação dos materiais.",
     confirmation: "Confirmo o início da triagem dos materiais recebidos.",
   },
   SORTING: {

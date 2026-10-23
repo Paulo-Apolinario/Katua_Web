@@ -111,6 +111,29 @@ export function buildCollectionPdf(
       : [["Sem material efetivo registrado", "—"]],
     y,
   );
+  for (const review of c.quantityReviews || []) {
+    y = table(
+      ["Conferência", "Registro"],
+      [
+        [
+          `Versão ${review.version}`,
+          `${stamp(review.createdAt)} · ${review.actorName}`,
+        ],
+        ["Justificativa", review.reason],
+      ],
+      y,
+    );
+    y = table(
+      ["Material", "Informado em campo", "Anterior", "Conferido"],
+      review.items.map((item) => [
+        item.name,
+        quantity(item.reportedQuantity, item.unit),
+        quantity(item.previousQuantity, item.unit),
+        quantity(item.confirmedQuantity, item.unit),
+      ]),
+      y,
+    );
+  }
   y = table(
     ["Etapa registrada", "Data / hora (Fortaleza)", "Responsável"],
     collectionEvents(c).map(([label, date, actor]) => [

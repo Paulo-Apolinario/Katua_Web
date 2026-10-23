@@ -132,3 +132,9 @@ export default {
   cancelCollection,
   updateCollectionStatus,
 };
+
+export const reviewCollectionQuantities = (id, payload) =>
+  apiRequest(`/collections/${requireId(id)}/review-quantities`, {
+    method: "POST",
+    body: payload,
+  });
