@@ -701,6 +701,8 @@ try {
           await app
             .getByText("Etapa atual: Recebida", { exact: true })
             .waitFor();
+          await app.getByRole("button", {name:"Fechar detalhes",exact:true}).click();
+          await app.getByText("Detalhes da coleta", {exact:true}).waitFor({state:"hidden"});
           assert.equal(
             expect(
               await api("/notifications", "GET", null, f.collectorToken),
