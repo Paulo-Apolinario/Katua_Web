@@ -64,7 +64,9 @@ export const AdminAuthProvider = ({ children }) => {
     }
 
     if (!isPanelUser(user)) {
-      throw new Error("Acesso permitido para cooperativas e gestores municipais designados.");
+      throw new Error(
+        "Acesso permitido para cooperativas e gestores municipais designados.",
+      );
     }
 
     saveAuthData({
@@ -73,6 +75,13 @@ export const AdminAuthProvider = ({ children }) => {
     });
 
     setToken(newToken);
+    setAdmin(user);
+  };
+
+  const updateAdmin = (user) => {
+    if (!user || user.id !== admin?.id)
+      throw new Error("Perfil inválido para esta sessão.");
+    saveAuthData({ user });
     setAdmin(user);
   };
 
@@ -90,6 +99,7 @@ export const AdminAuthProvider = ({ children }) => {
         loading,
         login,
         logout,
+        updateAdmin,
         isAuthenticated: Boolean(admin && token),
       }}
     >

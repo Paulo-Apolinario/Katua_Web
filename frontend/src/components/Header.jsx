@@ -1,3 +1,4 @@
+import useProfileImage from "../hooks/useProfileImage";
 import { PanelRight, LogOut, Settings, UserRoundPen } from "lucide-react";
 import { Link, useNavigate } from "react-router";
 import { useAdminAuth } from "../context/AdminAuthContext";
@@ -9,14 +10,14 @@ const Header = ({ active, setActive }) => {
   const navigate = useNavigate();
 
   const userName =
+    admin?.displayName ||
     admin?.name ||
     admin?.fullName ||
-    admin?.displayName ||
     admin?.companyName ||
     admin?.email ||
     "Cooperativa";
 
-  const userImage = admin?.image || admin?.profileImage || null;
+  const userImage = useProfileImage(admin);
 
   const handleLogout = () => {
     try {
@@ -49,8 +50,8 @@ const Header = ({ active, setActive }) => {
                   className="rounded-circle object-fit-cover profile-img"
                   width="35"
                   height="35"
-                  src={`${import.meta.env.VITE_API_BASE_URL}/uploads/profile/${userImage}`}
-                  alt="Profile"
+                  src={userImage}
+                  alt="Imagem do perfil"
                 />
               ) : (
                 <img
@@ -58,7 +59,7 @@ const Header = ({ active, setActive }) => {
                   width="35"
                   height="35"
                   src={default_img}
-                  alt="Profile"
+                  alt="Imagem do perfil"
                 />
               )}
             </span>
@@ -69,28 +70,29 @@ const Header = ({ active, setActive }) => {
           </a>
 
           <ul className="dropdown-menu border-0 mt-2">
-            {admin?.role !== "MUNICIPAL_MANAGER" && <>
-            <li>
-              <Link
-                to="/profile-setup"
-                className="dropdown-item d-flex align-items-center gap-10"
-              >
-                <UserRoundPen size={20} />
-                Configuração de perfil
-              </Link>
-            </li>
+            {admin?.role !== "MUNICIPAL_MANAGER" && (
+              <>
+                <li>
+                  <Link
+                    to="/profile-setup"
+                    className="dropdown-item d-flex align-items-center gap-10"
+                  >
+                    <UserRoundPen size={20} />
+                    Configuração de perfil
+                  </Link>
+                </li>
 
-            <li>
-              <Link
-                to="/settings"
-                className="dropdown-item d-flex align-items-center gap-10"
-              >
-                <Settings size={20} />
-                Configuração
-              </Link>
-            </li>
-
-            </>}
+                <li>
+                  <Link
+                    to="/settings"
+                    className="dropdown-item d-flex align-items-center gap-10"
+                  >
+                    <Settings size={20} />
+                    Configuração
+                  </Link>
+                </li>
+              </>
+            )}
             <li className="border-top pt-2 mt-2">
               <button
                 className="dropdown-item d-flex align-items-center gap-10"

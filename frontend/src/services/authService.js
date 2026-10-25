@@ -69,9 +69,16 @@ export const resetPassword = async (payload) => {
   });
 };
 
-export const requestLoginLink = (email) => apiRequest("/auth/login-link", {
-  method: "POST", body: { email: email.trim().toLowerCase(), audience: "PANEL" },
-});
-export const consumeLoginLink = (token) => apiRequest("/auth/login-link/consume", {
-  method: "POST", body: { token, audience: "PANEL" },
-});
+export const requestLoginLink = (email) =>
+  apiRequest("/auth/login-link", {
+    method: "POST",
+    body: { email: email.trim().toLowerCase(), audience: "PANEL" },
+  });
+export const consumeLoginLink = (token) =>
+  apiRequest("/auth/login-link/consume", {
+    method: "POST",
+    body: { token, audience: "PANEL" },
+  });
+
+export const updateProfile = (body) =>
+  apiRequest("/auth/profile", { method: "PATCH", body });

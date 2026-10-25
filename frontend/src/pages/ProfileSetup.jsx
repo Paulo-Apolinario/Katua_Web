@@ -1,4 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useAdminAuth } from "../context/AdminAuthContext";
+import { getMe, updateProfile } from "../services/authService";
+import { getStoredToken } from "../services/apiClient";
+import useProfileImage from "../hooks/useProfileImage";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { House, ChevronRight, Plus, EyeOff, Eye } from "lucide-react";
 import default_img from "../../public/images/profile.png";
@@ -8,10 +12,7 @@ import TopProgressBar from "../components/TopProgressBar";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-const getToken = () =>
-  localStorage.getItem("auth_token") ||
-  localStorage.getItem("token") ||
-  localStorage.getItem("@katu:token");
+const getToken = getStoredToken;
 
 const parseResponse = async (response) => {
   const text = await response.text();
@@ -40,6 +41,8 @@ const normalizeUser = (user) => {
 
 const ProfileSetup = () => {
   const navigate = useNavigate();
+  const { admin, updateAdmin, logout } = useAdminAuth();
+  const savedImage = useProfileImage(admin);
 
   const [visibleCurrent, setVisibleCurrent] = useState(false);
   const [visibleNew, setVisibleNew] = useState(false);
@@ -62,7 +65,6 @@ const ProfileSetup = () => {
   });
 
   const [imagePreview, setImagePreview] = useState("");
-  const [userImage, setUserImage] = useState("");
 
   const [profileErrors, setProfileErrors] = useState({
     displayName: "",
@@ -78,102 +80,46 @@ const ProfileSetup = () => {
   const handleUnauthorized = useCallback(() => {
     toast.error("Sessão expirada. Faça login novamente.");
 
-    localStorage.removeItem("auth_token");
-    localStorage.removeItem("token");
-    localStorage.removeItem("@katu:token");
-    localStorage.removeItem("user");
-    localStorage.removeItem("@katu:user");
+    logout();
 
     navigate("/login");
-  }, [navigate]);
-
-  const loadProfile = useCallback(async () => {
-    setLoading(true);
-
-    try {
-      const token = getToken();
-
-      if (!token) {
-        handleUnauthorized();
-        return;
-      }
-
-      const response = await fetch(`${API_BASE_URL}/auth/me`, {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const data = await parseResponse(response);
-
-      if (response.status === 401) {
-        handleUnauthorized();
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error(
-          data?.error || data?.message || "Erro ao carregar perfil."
-        );
-      }
-
-      const user = normalizeUser(data?.user || data);
-
-      setFormData({
-        displayName: user?.displayName || "",
-        email: user?.email || "",
-        profileImage: null,
-      });
-
-      setUserImage(user?.imageUrl || "");
-
-      localStorage.setItem("user", JSON.stringify(user));
-      localStorage.setItem("@katu:user", JSON.stringify(user));
-    } catch (error) {
-      try {
-        const localUser = normalizeUser(
-          JSON.parse(
-            localStorage.getItem("user") ||
-              localStorage.getItem("@katu:user") ||
-              "null"
-          )
-        );
-
-        if (localUser) {
-          setFormData({
-            displayName: localUser.displayName || "",
-            email: localUser.email || "",
-            profileImage: null,
-          });
-
-          setUserImage(localUser.imageUrl || "");
-        }
-      } catch {
-        // mantém silencioso
-      }
-
-      toast.error(error?.message || "Erro ao obter dados do perfil.");
-    } finally {
-      setLoading(false);
-    }
-  }, [handleUnauthorized]);
+  }, [navigate, logout]);
 
   useEffect(() => {
-    loadProfile();
-  }, [loadProfile]);
-
-  const previewSrc = useMemo(() => {
-    if (imagePreview) return imagePreview;
-
-    if (userImage) {
-      if (String(userImage).startsWith("http")) return userImage;
-      return `${API_BASE_URL}${String(userImage).startsWith("/") ? "" : "/"}${userImage}`;
-    }
-
-    return default_img;
-  }, [imagePreview, userImage]);
+    let active = true;
+    setLoading(true);
+    getMe()
+      .then((data) => {
+        if (!active) return;
+        const user = normalizeUser(data.user || data);
+        setFormData({
+          displayName: user.displayName,
+          email: user.email,
+          profileImage: null,
+        });
+      })
+      .catch((error) => {
+        if (active)
+          toast.error(
+            error?.error ||
+              error?.message ||
+              "Não foi possível carregar o perfil.",
+          );
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+  useEffect(
+    () => () => {
+      if (imagePreview) URL.revokeObjectURL(imagePreview);
+    },
+    [imagePreview],
+  );
+  const previewSrc = imagePreview || savedImage || default_img;
 
   const handleInputChange = (event) => {
     const { name, value } = event.target;
@@ -215,6 +161,8 @@ const ProfileSetup = () => {
         ...prev,
         profileImage: "Envie uma imagem nos formatos JPG, PNG ou WEBP.",
       }));
+      setFormData((old) => ({ ...old, profileImage: null }));
+      setImagePreview("");
       return;
     }
 
@@ -225,6 +173,8 @@ const ProfileSetup = () => {
         ...prev,
         profileImage: "A imagem deve ter no máximo 3MB.",
       }));
+      setFormData((old) => ({ ...old, profileImage: null }));
+      setImagePreview("");
       return;
     }
 
@@ -238,19 +188,13 @@ const ProfileSetup = () => {
       profileImage: "",
     }));
 
-    const reader = new FileReader();
-
-    reader.onload = (readerEvent) => {
-      setImagePreview(readerEvent.target.result);
-    };
-
-    reader.readAsDataURL(file);
+    setImagePreview(URL.createObjectURL(file));
   };
 
   const validateProfile = () => {
     const errors = {
       displayName: "",
-      profileImage: "",
+      profileImage: profileErrors.profileImage,
     };
 
     const displayName = formData.displayName.trim();
@@ -292,9 +236,7 @@ const ProfileSetup = () => {
     setPasswordErrors(errors);
 
     return (
-      !errors.currentPassword &&
-      !errors.newPassword &&
-      !errors.confirmPassword
+      !errors.currentPassword && !errors.newPassword && !errors.confirmPassword
     );
   };
 
@@ -320,32 +262,9 @@ const ProfileSetup = () => {
         form.append("profileImage", formData.profileImage);
       }
 
-      const response = await fetch(`${API_BASE_URL}/auth/profile`, {
-        method: "PATCH",
-        headers: {
-          Accept: "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: form,
-      });
-
-      const data = await parseResponse(response);
-
-      if (response.status === 401) {
-        handleUnauthorized();
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error(
-          data?.error || data?.message || "Erro ao atualizar perfil."
-        );
-      }
-
+      const data = await updateProfile(form);
       const updatedUser = normalizeUser(data?.user || data);
-
-      localStorage.setItem("user", JSON.stringify(updatedUser));
-      localStorage.setItem("@katu:user", JSON.stringify(updatedUser));
+      updateAdmin(updatedUser);
 
       setFormData((prev) => ({
         ...prev,
@@ -354,12 +273,18 @@ const ProfileSetup = () => {
         profileImage: null,
       }));
 
-      setUserImage(updatedUser?.imageUrl || "");
       setImagePreview("");
+      document.getElementById("imageUpload").value = "";
 
       toast.success("Perfil atualizado com sucesso!");
     } catch (error) {
-      toast.error(error?.message || "Erro ao atualizar perfil.");
+      if (error?.statusCode === 401) {
+        handleUnauthorized();
+        return;
+      }
+      toast.error(
+        error?.error || error?.message || "Erro ao atualizar perfil.",
+      );
     } finally {
       setSavingProfile(false);
     }
@@ -401,7 +326,9 @@ const ProfileSetup = () => {
       }
 
       if (!response.ok) {
-        throw new Error(data?.error || data?.message || "Erro ao alterar senha.");
+        throw new Error(
+          data?.error || data?.message || "Erro ao alterar senha.",
+        );
       }
 
       toast.success("Senha alterada com sucesso!");
@@ -456,7 +383,7 @@ const ProfileSetup = () => {
             <h3 className="fw-600 fs-18 mb-4">Informações pessoais</h3>
 
             <form className="form" onSubmit={handleProfileSubmit}>
-              <div className="profile d-flex align-items-center gap-20 mb-4">
+              <div className="profile d-flex flex-wrap align-items-center gap-20 mb-4">
                 <div>
                   <img
                     src={previewSrc}
@@ -476,7 +403,7 @@ const ProfileSetup = () => {
                     accept="image/jpeg,image/png,image/webp"
                     onChange={handleImageUpload}
                     style={{ display: "none" }}
-                    disabled={savingProfile}
+                    disabled={savingProfile || loading}
                   />
 
                   <label htmlFor="imageUpload" className="btn-md outline-btn">
@@ -488,6 +415,24 @@ const ProfileSetup = () => {
                     Formatos aceitos: JPG, PNG ou WEBP até 3MB.
                   </p>
 
+                  {(formData.profileImage || profileErrors.profileImage) && (
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-secondary mt-2"
+                      disabled={savingProfile}
+                      onClick={() => {
+                        setFormData((old) => ({ ...old, profileImage: null }));
+                        setImagePreview("");
+                        setProfileErrors((old) => ({
+                          ...old,
+                          profileImage: "",
+                        }));
+                        document.getElementById("imageUpload").value = "";
+                      }}
+                    >
+                      Cancelar nova imagem
+                    </button>
+                  )}
                   {profileErrors.profileImage && (
                     <p className="text-danger text-sm mt-1">
                       {profileErrors.profileImage}
