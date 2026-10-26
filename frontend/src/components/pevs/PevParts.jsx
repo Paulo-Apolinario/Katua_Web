@@ -91,6 +91,7 @@ export function PevField({
   label,
   value,
   onChange,
+  onBlur,
   type = "text",
   options,
   required = false,
@@ -111,6 +112,7 @@ export function PevField({
           name={name}
           className="form-select"
           value={value ?? ""}
+          onBlur={onBlur}
           onChange={(e) => onChange(e.target.value)}
           required={required}
           disabled={readOnly}
@@ -130,6 +132,7 @@ export function PevField({
           value={value ?? ""}
           required={required}
           readOnly={readOnly}
+          onBlur={onBlur}
           onChange={(e) => onChange(e.target.value)}
         />
       ) : (
@@ -143,6 +146,7 @@ export function PevField({
           value={value ?? ""}
           required={required}
           readOnly={readOnly}
+          onBlur={onBlur}
           onChange={(e) => onChange(e.target.value)}
           aria-describedby={help ? `${id}-help` : undefined}
         />

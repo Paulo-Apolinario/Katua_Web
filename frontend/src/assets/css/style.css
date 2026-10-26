@@ -742,6 +742,8 @@ Mobile Sidebar
   position: fixed;
   top: 0;
   left: -300px;
+  width: var(--sidebar-width);
+  max-width: calc(100vw - 32px);
   background: var(--sidebar-bg);
   height: 100%;
   border-right: 1px solid #E7E7E7;

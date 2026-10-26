@@ -20,12 +20,14 @@ export default function PevMap({
   longitude,
   onPick,
   label = "Mapa de PEVs",
+  markerLabel = "Localização selecionada",
+  disabled = false,
 }) {
   const container = useRef(null),
     map = useRef(null),
     layer = useRef(null),
-    callback = useRef(onPick);
-  callback.current = onPick;
+    callback = useRef({ onPick, disabled });
+  callback.current = { onPick, disabled };
   const headquarters = useHeadquarters(!onPick);
   const baseMarker = useRef(null);
   const [tileError, setTileError] = useState(false);
@@ -47,11 +49,14 @@ export default function PevMap({
       },
     ).addTo(m);
     tiles.on("tileerror", () => setTileError(true));
-    m.on("click", (e) =>
-      callback.current?.({
-        latitude: e.latlng.lat.toFixed(6),
-        longitude: e.latlng.lng.toFixed(6),
-      }),
+    m.on(
+      "click",
+      (e) =>
+        !callback.current.disabled &&
+        callback.current.onPick?.({
+          latitude: e.latlng.lat.toFixed(6),
+          longitude: e.latlng.lng.toFixed(6),
+        }),
     );
     const observer = new ResizeObserver(() => m.invalidateSize());
     observer.observe(container.current);
@@ -75,23 +80,25 @@ export default function PevMap({
               id: "selected",
               latitude,
               longitude,
-              name: "Localização selecionada",
+              name: markerLabel,
             },
           ]
         : []
       : items.filter(hasPosition);
     for (const b of points) {
       const marker = L.marker([Number(b.latitude), Number(b.longitude)], {
-        icon: pin(
-          editing
-            ? "#126b48"
-            : b.status !== "active"
-              ? "#66766c"
-              : b.needsPickup
-                ? "#be7313"
-                : "#126b48",
-        ),
-        draggable: editing,
+        icon: editing
+          ? mapPin("PEV")
+          : pin(
+              editing
+                ? "#126b48"
+                : b.status !== "active"
+                  ? "#66766c"
+                  : b.needsPickup
+                    ? "#be7313"
+                    : "#126b48",
+            ),
+        draggable: editing && !disabled,
         title: title(b),
         alt: title(b),
       }).addTo(g);
@@ -116,10 +123,11 @@ export default function PevMap({
       if (editing)
         marker.on("dragend", () => {
           const p = marker.getLatLng();
-          callback.current?.({
-            latitude: p.lat.toFixed(6),
-            longitude: p.lng.toFixed(6),
-          });
+          !callback.current.disabled &&
+            callback.current.onPick?.({
+              latitude: p.lat.toFixed(6),
+              longitude: p.lng.toFixed(6),
+            });
         });
     }
     const bounds = points.map((b) => [Number(b.latitude), Number(b.longitude)]);
@@ -127,20 +135,50 @@ export default function PevMap({
     if (!editing && hasCoordinates(headquarters.base)) {
       const b = headquarters.base;
       const xy = [Number(b.latitude), Number(b.longitude)];
-      const text = document.createElement("strong"); text.textContent = "Sede: " + b.name;
-      baseMarker.current = L.marker(xy, { icon: mapPin("BASE"), title: "Sede: " + b.name, alt: "Sede: " + b.name, zIndexOffset: 1000 }).addTo(g).bindPopup(text)
-        .bindTooltip("Sede da cooperativa", { permanent: true, direction: "top", offset: [0, -40], className: "katua-hq-tooltip" });
+      const text = document.createElement("strong");
+      text.textContent = "Sede: " + b.name;
+      baseMarker.current = L.marker(xy, {
+        icon: mapPin("BASE"),
+        title: "Sede: " + b.name,
+        alt: "Sede: " + b.name,
+        zIndexOffset: 1000,
+      })
+        .addTo(g)
+        .bindPopup(text)
+        .bindTooltip("Sede da cooperativa", {
+          permanent: true,
+          direction: "top",
+          offset: [0, -40],
+          className: "katua-hq-tooltip",
+        });
       bounds.push(xy);
     }
     if (bounds.length === 1) m.setView(bounds[0], 15);
-    else if (bounds.length > 1) m.fitBounds(bounds, { padding: [40, 45], maxZoom: 15 });
+    else if (bounds.length > 1)
+      m.fitBounds(bounds, { padding: [40, 45], maxZoom: 15 });
     else m.setView(CENTER, 12);
-  }, [items, latitude, longitude, onPick, headquarters.base]);
+  }, [
+    items,
+    latitude,
+    longitude,
+    onPick,
+    headquarters.base,
+    markerLabel,
+    disabled,
+  ]);
   return (
     <div className="pev-map-wrap">
-      {!onPick && <HeadquartersStatus {...headquarters} onLocate={() => {
-        if (baseMarker.current) { map.current.setView(baseMarker.current.getLatLng(), 16); baseMarker.current.openPopup(); }
-      }} />}
+      {!onPick && (
+        <HeadquartersStatus
+          {...headquarters}
+          onLocate={() => {
+            if (baseMarker.current) {
+              map.current.setView(baseMarker.current.getLatLng(), 16);
+              baseMarker.current.openPopup();
+            }
+          }}
+        />
+      )}
       <div
         ref={container}
         className="pev-map"

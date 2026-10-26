@@ -31,6 +31,7 @@ import {
   capacity,
 } from "./pevUtils";
 import PevMap from "./PevMap";
+import { locatePevAddress, pevAddressKey } from "./pevGeocoding";
 const initial = () => ({
   bin_id: "",
   name: "",
@@ -84,9 +85,27 @@ function Form({ id }) {
     [removePhoto, setRemovePhoto] = useState(false),
     [savedId, setSavedId] = useState(null),
     [cepBusy, setCepBusy] = useState(false),
-    [cepError, setCepError] = useState("");
+    [cepError, setCepError] = useState(""),
+    [geoBusy, setGeoBusy] = useState(false),
+    [locationConfirmed, setLocationConfirmed] = useState(false),
+    [allowPending, setAllowPending] = useState(false),
+    [locationMessage, setLocationMessage] = useState(
+      "Consulte o CEP para sugerir uma posição ou marque a entrada do PEV no mapa.",
+    ),
+    [locationError, setLocationError] = useState("");
   const fileInput = useRef(null),
-    cepRequest = useRef(0);
+    cepRequest = useRef(0),
+    geoRequest = useRef(0),
+    cepAbort = useRef(null),
+    geoAbort = useRef(null),
+    formRef = useRef(form);
+  formRef.current = form;
+  const updateForm = useCallback((updater) => {
+    const next =
+      typeof updater === "function" ? updater(formRef.current) : updater;
+    formRef.current = next;
+    setForm(next);
+  }, []);
   const loader = useCallback(async () => {
     if (!id) return null;
     const r = await getBinById(id);
@@ -99,7 +118,7 @@ function Form({ id }) {
     if (!loaded && !resource.loading && !resource.error) {
       if (resource.data) {
         const b = resource.data;
-        setForm({
+        updateForm({
           ...initial(),
           ...Object.fromEntries(
             Object.keys(initial()).map((k) => [
@@ -117,10 +136,16 @@ function Form({ id }) {
           status: b.status || "active",
           pointKind: b.pointKind || "PEV",
         });
+        setLocationConfirmed(hasPosition(b));
+        setLocationMessage(
+          hasPosition(b)
+            ? "Localização já salva. Alterar o endereço ou o marcador exige nova confirmação."
+            : "Este PEV está sem marcador. Localize e confirme a entrada para utilizá-lo no cálculo das rotas.",
+        );
       }
       setLoaded(true);
     }
-  }, [resource, loaded]);
+  }, [resource, loaded, updateForm]);
   useEffect(() => {
     if (!photo) {
       setPreview("");
@@ -133,14 +158,120 @@ function Form({ id }) {
   useEffect(
     () => () => {
       cepRequest.current++;
+      geoRequest.current++;
+      cepAbort.current?.abort();
+      geoAbort.current?.abort();
     },
     [],
   );
-  const set = (key, value) => setForm((f) => ({ ...f, [key]: value }));
-  const pick = useCallback(
-    (coords) => setForm((f) => ({ ...f, ...coords })),
-    [],
-  );
+  const cancelGeo = () => {
+    geoRequest.current++;
+    geoAbort.current?.abort();
+    setGeoBusy(false);
+  };
+  const cancelCep = () => {
+    cepRequest.current++;
+    cepAbort.current?.abort();
+    setCepBusy(false);
+  };
+  const set = (key, value) => {
+    if (formRef.current[key] === value) return;
+    op.setError("");
+    if (
+      [
+        "zipCode",
+        "street",
+        "number",
+        "neighborhood",
+        "city",
+        "state",
+        "location",
+      ].includes(key)
+    ) {
+      cancelGeo();
+      if (key !== "number") cancelCep();
+      updateForm((f) => ({ ...f, [key]: value, latitude: "", longitude: "" }));
+      setLocationConfirmed(false);
+      setAllowPending(false);
+      setLocationError("");
+      setCepError("");
+      setLocationMessage(
+        "Endereço alterado. Localize novamente e confirme o marcador antes de salvar.",
+      );
+    } else if (["latitude", "longitude"].includes(key)) {
+      cancelGeo();
+      cancelCep();
+      updateForm((f) => ({ ...f, [key]: value }));
+      setLocationConfirmed(false);
+      setAllowPending(false);
+      setLocationError("");
+      setLocationMessage(
+        "Coordenadas ajustadas manualmente. Confira a posição no mapa e confirme.",
+      );
+    } else updateForm((f) => ({ ...f, [key]: value }));
+  };
+  const pick = (coords) => {
+    if (op.busy) return;
+    op.setError("");
+    cancelGeo();
+    cancelCep();
+    updateForm((f) => ({ ...f, ...coords }));
+    setLocationConfirmed(false);
+    setAllowPending(false);
+    setLocationError("");
+    setLocationMessage(
+      hasPosition(coords)
+        ? "Marcador ajustado manualmente. Confirme a entrada do PEV no mapa."
+        : "Localização removida. Localize novamente ou marque um ponto no mapa.",
+    );
+  };
+  async function locate(snapshot = formRef.current, force = false) {
+    if (!force && hasPosition(snapshot)) return;
+    const key = pevAddressKey(snapshot),
+      request = ++geoRequest.current;
+    geoAbort.current?.abort();
+    const controller = new AbortController();
+    geoAbort.current = controller;
+    const timer = setTimeout(() => controller.abort(), 16000);
+    setGeoBusy(true);
+    setLocationError("");
+    setLocationConfirmed(false);
+    setAllowPending(false);
+    setLocationMessage("Localizando o endereço no mapa…");
+    try {
+      const coords = await locatePevAddress(snapshot, {
+        signal: controller.signal,
+      });
+      if (
+        request !== geoRequest.current ||
+        key !== pevAddressKey(formRef.current)
+      )
+        return;
+      updateForm((f) => ({
+        ...f,
+        latitude: coords.latitude,
+        longitude: coords.longitude,
+      }));
+      setLocationMessage(coords.message);
+    } catch (e) {
+      if (
+        request !== geoRequest.current ||
+        key !== pevAddressKey(formRef.current)
+      )
+        return;
+      setLocationError(
+        controller.signal.aborted
+          ? "A busca de localização excedeu o tempo de espera. Tente novamente ou marque o ponto manualmente no mapa."
+          : e.message,
+      );
+      setLocationMessage(
+        "Localização automática indisponível. O endereço permanece preenchido e pode ser ajustado manualmente.",
+      );
+    } finally {
+      clearTimeout(timer);
+      if (request === geoRequest.current) setGeoBusy(false);
+    }
+  }
   const field = (name, label, props = {}) => (
     <PevField
       key={name}
@@ -148,44 +279,112 @@ function Form({ id }) {
       label={label}
       value={form[name]}
       onChange={(value) => set(name, value)}
+      onBlur={
+        name === "number"
+          ? () => {
+              if (
+                !cepBusy &&
+                !geoBusy &&
+                (formRef.current.street.trim() ||
+                  formRef.current.location.trim()) &&
+                formRef.current.city.trim() &&
+                !hasPosition(formRef.current)
+              )
+                void locate();
+            }
+          : undefined
+      }
       {...props}
     />
   );
   async function lookupCep() {
-    const zip = form.zipCode.replace(/\D/g, "");
+    const zip = formRef.current.zipCode.replace(/\D/g, "");
     if (zip.length !== 8) {
       setCepError("Informe um CEP com 8 dígitos.");
       return;
     }
-    const request = ++cepRequest.current;
+    cancelGeo();
+    cepAbort.current?.abort();
+    const request = ++cepRequest.current,
+      controller = new AbortController();
+    cepAbort.current = controller;
+    const timer = setTimeout(() => controller.abort(), 12000);
     setCepBusy(true);
     setCepError("");
+    setLocationError("");
     try {
-      const r = await fetch(`https://viacep.com.br/ws/${zip}/json/`);
-      if (!r.ok) throw Error("Consulta de CEP indisponível.");
-      const data = await r.json();
-      if (data.erro)
+      const response = await fetch(`https://viacep.com.br/ws/${zip}/json/`, {
+        signal: controller.signal,
+      });
+      if (!response.ok) throw Error("Consulta de CEP indisponível.");
+      const data = await response.json();
+      if (data.erro || !data.localidade || !data.uf)
         throw Error("CEP não encontrado. Preencha o endereço manualmente.");
-      if (request === cepRequest.current)
-        setForm((f) =>
-          f.zipCode.replace(/\D/g, "") !== zip
-            ? f
-            : {
-                ...f,
-                street: data.logradouro || f.street,
-                neighborhood: data.bairro || f.neighborhood,
-                city: data.localidade || f.city,
-                state: data.uf || f.state,
-              },
-        );
+      if (
+        request !== cepRequest.current ||
+        formRef.current.zipCode.replace(/\D/g, "") !== zip
+      )
+        return;
+      // Mudança de número durante a consulta é preservada; outros campos de endereço invalidam a resposta.
+      const next = {
+        ...formRef.current,
+        street: data.logradouro || "",
+        neighborhood: data.bairro || "",
+        city: data.localidade,
+        state: data.uf,
+        latitude: "",
+        longitude: "",
+      };
+      updateForm(next);
+      setLocationConfirmed(false);
+      setAllowPending(false);
+      void locate(next, true);
     } catch (e) {
-      if (request === cepRequest.current) setCepError(e.message);
+      if (request === cepRequest.current)
+        setCepError(
+          controller.signal.aborted
+            ? "Consulta de CEP demorou além do esperado. Tente novamente."
+            : e instanceof TypeError
+              ? "Não foi possível consultar o CEP. Confira a conexão ou preencha o endereço manualmente."
+              : e.message,
+        );
     } finally {
+      clearTimeout(timer);
       if (request === cepRequest.current) setCepBusy(false);
     }
   }
+  function confirmLocation() {
+    if (!hasPosition(formRef.current)) {
+      setLocationError("Marque uma posição válida no mapa antes de confirmar.");
+      return;
+    }
+    op.setError("");
+    cancelGeo();
+    setLocationConfirmed(true);
+    setAllowPending(false);
+    setLocationError("");
+    setLocationMessage(
+      "Localização confirmada. As coordenadas serão gravadas ao salvar o PEV.",
+    );
+  }
   async function submit(e) {
     e.preventDefault();
+    if (cepBusy || geoBusy) {
+      op.setError(
+        "Aguarde a consulta de endereço e localização antes de salvar.",
+      );
+      return;
+    }
+    if (hasPosition(form) && !locationConfirmed) {
+      op.setError("Confirme a localização no mapa antes de salvar o PEV.");
+      return;
+    }
+    if (!hasPosition(form) && !allowPending) {
+      op.setError(
+        "Localize e confirme o ponto no mapa. Se a localização ainda não estiver disponível, escolha explicitamente salvar com localização pendente.",
+      );
+      return;
+    }
     if (!form.name.trim()) {
       op.setError("Informe o nome do ponto.");
       return;
@@ -249,7 +448,7 @@ function Form({ id }) {
     setRemovePhoto(false);
   }
   function updateDay(day, intervals) {
-    setForm((f) => ({
+    updateForm((f) => ({
       ...f,
       openingHours: [
         ...(f.openingHours || []).filter((d) => d.day !== day),
@@ -266,9 +465,10 @@ function Form({ id }) {
       <PevGuide>
         <strong>Localização registrada, retirada rastreável.</strong>
         <div className="small mt-1">
-          Clique no mapa ou informe as coordenadas. O marcador é gravado junto
-          com o cadastro. Uma localização ainda não confirmada pode ser
-          completada depois.
+          Consulte o CEP, complete o número e confirme a entrada do PEV no mapa.
+          O endereço é enviado aos serviços de localização durante a busca. Você
+          pode ajustar o pino manualmente; ele só será gravado ao salvar o
+          cadastro.
         </div>
       </PevGuide>
       <PevState resource={resource}>
@@ -355,11 +555,34 @@ function Form({ id }) {
                   </p>
                 )}
                 <p className="small text-muted mt-3">
-                  A consulta de CEP preenche o endereço. Confira no mapa a
-                  posição exata do ponto; o centro do mapa não é salvo como
-                  localização.
+                  Consultar CEP preenche o endereço e sugere uma posição no
+                  mapa. Após informar ou alterar o número, saia do campo para
+                  atualizar a busca. A posição por CEP é aproximada: ajuste o
+                  marcador para a entrada do imóvel e confirme.
                 </p>
+                <div className="d-flex flex-wrap align-items-center gap-2 mb-3">
+                  <button
+                    type="button"
+                    className="btn btn-outline-success"
+                    onClick={() => void locate(formRef.current, true)}
+                    disabled={geoBusy || cepBusy}
+                  >
+                    {geoBusy
+                      ? "Localizando no mapa…"
+                      : "Localizar endereço no mapa"}
+                  </button>
+                  <span className="small text-muted">
+                    Sugestões por CEP: BrasilAPI. Busca pelo endereço completo:
+                    Google Maps, quando configurado.
+                  </span>
+                </div>
                 <PevMap
+                  disabled={op.busy}
+                  markerLabel={
+                    locationConfirmed
+                      ? "Localização confirmada do PEV"
+                      : "Posição sugerida — confirme a entrada do PEV"
+                  }
                   latitude={form.latitude}
                   longitude={form.longitude}
                   onPick={pick}
@@ -375,20 +598,67 @@ function Form({ id }) {
                     help: "Exemplo: -38.526700",
                   })}
                 </div>
-                <div className="d-flex align-items-center gap-3 flex-wrap mt-3">
-                  <span className="small" role="status">
-                    {hasPosition(form)
-                      ? "Marcador selecionado. Será gravado ao salvar o PEV."
-                      : "Sem marcador selecionado."}
-                  </span>
+                <div
+                  className={`pev-location-status mt-3 ${locationConfirmed ? "is-confirmed" : ""}`}
+                  role="status"
+                  aria-live="polite"
+                >
+                  <strong>
+                    {locationConfirmed
+                      ? "Localização confirmada"
+                      : geoBusy
+                        ? "Buscando localização"
+                        : hasPosition(form)
+                          ? "Confirmação necessária"
+                          : "Localização pendente"}
+                  </strong>
+                  <p className="small mb-0 mt-1">{locationMessage}</p>
+                </div>
+                {locationError && (
+                  <p role="alert" className="text-danger small mt-2">
+                    {locationError}
+                  </p>
+                )}
+                <div className="d-flex align-items-center gap-2 flex-wrap mt-3">
                   <button
                     type="button"
-                    className="btn btn-sm btn-outline-secondary"
+                    className={`btn ${locationConfirmed ? "btn-success" : "btn-outline-success"}`}
+                    disabled={
+                      geoBusy ||
+                      cepBusy ||
+                      !hasPosition(form) ||
+                      locationConfirmed
+                    }
+                    onClick={confirmLocation}
+                  >
+                    {locationConfirmed
+                      ? "Localização confirmada no mapa"
+                      : "Confirmar localização no mapa"}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary"
                     onClick={() => pick({ latitude: "", longitude: "" })}
                   >
                     Limpar localização
                   </button>
                 </div>
+                {!hasPosition(form) && !geoBusy && (
+                  <label className="d-block small mt-3">
+                    <input
+                      className="form-check-input me-2"
+                      type="checkbox"
+                      checked={allowPending}
+                      onChange={(e) => {
+                        setAllowPending(e.target.checked);
+                        op.setError("");
+                      }}
+                    />
+                    Salvar com localização pendente. Este PEV ficará fora dos
+                    marcadores e do cálculo por ruas até a localização ser
+                    completada.
+                  </label>
+                )}
               </section>
               <section className="card p-4 mb-4">
                 <h2 className="fs-18 mb-3">
@@ -678,9 +948,11 @@ function Form({ id }) {
                   capacityValue: form.capacityValue || null,
                 })}{" "}
                 ·{" "}
-                {hasPosition(form)
-                  ? "Com marcador no mapa"
-                  : "Localização no mapa pendente"}
+                {locationConfirmed
+                  ? "Localização confirmada no mapa"
+                  : hasPosition(form)
+                    ? "Marcador aguardando confirmação"
+                    : "Localização no mapa pendente"}
               </div>
             </PevGuide>
             {op.error && (
@@ -690,7 +962,10 @@ function Form({ id }) {
             )}
             <div className="d-flex justify-content-end gap-2">
               <BackToPevs />
-              <button className="btn btn-success" disabled={op.busy}>
+              <button
+                className="btn btn-success"
+                disabled={op.busy || cepBusy || geoBusy}
+              >
                 {op.busy ? "Salvando..." : "Salvar PEV"}
               </button>
             </div>

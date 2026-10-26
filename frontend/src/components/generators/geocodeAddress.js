@@ -1,4 +1,10 @@
-const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+const GOOGLE_MAPS_API_KEY = import.meta.env?.VITE_GOOGLE_MAPS_API_KEY;
+export function hasAddressGeocoder() {
+  return Boolean(
+    GOOGLE_MAPS_API_KEY ||
+      (typeof window !== "undefined" && window.google?.maps),
+  );
+}
 function buildFullAddress(form) {
   return [
     form.street,
@@ -15,7 +21,12 @@ function buildFullAddress(form) {
 export function loadGoogleMapsScript() {
   return new Promise((resolve, reject) => {
     if (window.google?.maps) return resolve(window.google.maps);
-    if (!GOOGLE_MAPS_API_KEY) return reject(new Error("Busca por endereço indisponível. Marque o ponto no mapa ou informe as coordenadas."));
+    if (!GOOGLE_MAPS_API_KEY)
+      return reject(
+        new Error(
+          "Busca por endereço indisponível. Marque o ponto no mapa ou informe as coordenadas.",
+        ),
+      );
     let script = document.getElementById("google-maps-script");
     const created = !script;
     if (!script) {
@@ -29,8 +40,14 @@ export function loadGoogleMapsScript() {
       clearTimeout(timer);
       script.removeEventListener("load", loaded);
       script.removeEventListener("error", failed);
-      if (error) { script.remove(); reject(new Error("Busca por endereço indisponível. Marque o ponto manualmente no mapa.")); }
-      else resolve(window.google.maps);
+      if (error) {
+        script.remove();
+        reject(
+          new Error(
+            "Busca por endereço indisponível. Marque o ponto manualmente no mapa.",
+          ),
+        );
+      } else resolve(window.google.maps);
     };
     const loaded = () => finish(!window.google?.maps);
     const failed = () => finish(true);
@@ -48,7 +65,15 @@ export async function geocodeAddressWithGoogle(form) {
   const maps = await loadGoogleMapsScript();
 
   return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error("A busca excedeu o tempo de espera. Marque o ponto manualmente no mapa.")), 15000);
+    const timer = setTimeout(
+      () =>
+        reject(
+          new Error(
+            "A busca excedeu o tempo de espera. Marque o ponto manualmente no mapa.",
+          ),
+        ),
+      15000,
+    );
     const geocoder = new maps.Geocoder();
 
     geocoder.geocode(
@@ -71,8 +96,7 @@ export async function geocodeAddressWithGoogle(form) {
           latitude: location.lat(),
           longitude: location.lng(),
         });
-      }
+      },
     );
   });
 }
-

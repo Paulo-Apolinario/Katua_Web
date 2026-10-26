@@ -153,3 +153,15 @@
     max-width: 210px;
   }
 }
+.pev-location-status {
+  border: 1px solid #e2c789;
+  background: #fffaf0;
+  border-radius: 12px;
+  padding: 14px 16px;
+  color: #78551b;
+}
+.pev-location-status.is-confirmed {
+  border-color: #a5cfba;
+  background: #effaf4;
+  color: #14532d;
+}

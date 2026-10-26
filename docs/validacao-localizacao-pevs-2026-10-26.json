@@ -1,0 +1,59 @@
+{
+  "date": "2026-10-26",
+  "scope": "Painel Katua_Web; sem alteração de API ou banco",
+  "totalChecks": 22,
+  "unitChecks": 10,
+  "browser": {
+    "environment": "Vite real + Chromium; API e serviços geográficos controlados; sem VPS",
+    "outcomes": [
+      {
+        "name": "CEP preenche endereço, sugere coordenadas e mostra marcador sem chave Google",
+        "status": "PASS"
+      },
+      {
+        "name": "Salvar sugestão sem confirmação é bloqueado",
+        "status": "PASS"
+      },
+      {
+        "name": "Confirmar e salvar envia latitude e longitude numéricas e reabre o cadastro",
+        "status": "PASS"
+      },
+      {
+        "name": "Alterar rua invalida marcador e confirmação sem apagar os outros dados",
+        "status": "PASS"
+      },
+      {
+        "name": "Marcação manual funciona mesmo sem mapa-base e exige confirmação",
+        "status": "PASS"
+      },
+      {
+        "name": "PEV salvo é oferecido à rota com as coordenadas confirmadas",
+        "status": "PASS"
+      },
+      {
+        "name": "Número é incluído na geocodificação e sua mudança refaz a busca ao sair do campo",
+        "status": "PASS"
+      },
+      {
+        "name": "Resposta atrasada da geocodificação não sobrescreve marcador manual",
+        "status": "PASS"
+      },
+      {
+        "name": "CEP sem coordenadas mantém endereço e não salva centro do mapa",
+        "status": "PASS"
+      },
+      {
+        "name": "Cadastro pendente requer escolha explícita e envia coordenadas nulas",
+        "status": "PASS"
+      },
+      {
+        "name": "Consulta de CEP antiga não substitui um CEP alterado durante a espera",
+        "status": "PASS"
+      },
+      {
+        "name": "Tela móvel mantém mapa, confirmação e controles dentro da largura",
+        "status": "PASS"
+      }
+    ]
+  }
+}
