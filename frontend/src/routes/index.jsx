@@ -1,3 +1,4 @@
+import RoutePlans from "../pages/route-management/RoutePlans";
 import DocumentVault from "../components/documents/DocumentVault";
 import OwnerHistory from "../components/documents/OwnerHistory";
 import ExtraOrdersWorkspace from "../components/extra-orders/ExtraOrdersWorkspace";
@@ -225,6 +226,7 @@ const Router = () => {
             <Route path="edit-bin/:id" element={<EditBin />} />
 
             {/* Route Management */}
+            <Route path="route-plans" element={<RoutePlans />} />
             <Route path="route-list" element={<RouteList />} />
 
             <Route path="create-route" element={<AddRoute />} />

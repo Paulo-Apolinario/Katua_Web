@@ -41,6 +41,14 @@ export const personName = (person) =>
   "Não informado";
 const originPev = (item) => item.bin || item.collection?.bin;
 export const generatorName = (item) => {
+  if (item.routePoint)
+    return (
+      (item.routePoint.kind === "PEV"
+        ? "PEV · "
+        : item.routePoint.kind === "ADDRESS"
+          ? "Ponto avulso · "
+          : "") + item.routePoint.name
+    );
   const bin = originPev(item);
   return bin
     ? `PEV · ${bin.name || bin.binId || "Ponto de entrega"}`
@@ -52,6 +60,7 @@ export const generatorName = (item) => {
       );
 };
 export const location = (item) => {
+  if (item.routePoint) return item.routePoint.address;
   if (item.extraOrder && item.schedule?.pickupAddress)
     return item.schedule.pickupAddress;
   const bin = originPev(item);

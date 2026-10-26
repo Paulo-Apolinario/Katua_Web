@@ -3,12 +3,33 @@ import { apiRequest } from "./apiClient";
 export const normalizeRoutePayload = (payload = {}) => {
   const data = {};
   if (payload.name !== undefined) data.name = payload.name?.trim();
-  if (payload.stops !== undefined) data.stops = Array.isArray(payload.stops)
-    ? payload.stops.map((item) => item.trim()).filter(Boolean) : payload.stops;
-  for (const field of ["driverId", "vehicleId", "description", "scheduledDate"]) {
-    if (payload[field] !== undefined) data[field] = payload[field]?.trim() || null;
+  if (payload.stops !== undefined)
+    data.stops = Array.isArray(payload.stops)
+      ? payload.stops.map((item) => item.trim()).filter(Boolean)
+      : payload.stops;
+  for (const field of [
+    "driverId",
+    "vehicleId",
+    "description",
+    "scheduledDate",
+  ]) {
+    if (payload[field] !== undefined)
+      data[field] = payload[field]?.trim() || null;
   }
-  if (payload.collectionIds !== undefined) data.collectionIds = payload.collectionIds;
+  if (payload.collectionIds !== undefined)
+    data.collectionIds = payload.collectionIds;
+  for (const key of [
+    "pointUpdates",
+    "plannedPoints",
+    "visitOrder",
+    "collectorIds",
+    "startPoint",
+    "endPoint",
+    "departureTime",
+    "estimatedMinutes",
+    "expectedRevision",
+  ])
+    if (payload[key] !== undefined) data[key] = payload[key];
   if (payload.status !== undefined) data.status = payload.status;
   return data;
 };
@@ -28,9 +49,13 @@ export const getRouteById = async (id) => {
 export const createRoute = async (payload) => {
   return apiRequest("/routes", {
     method: "POST",
-    body: JSON.stringify(Object.fromEntries(
-      Object.entries(normalizeRoutePayload(payload)).filter(([, value]) => value !== null),
-    )),
+    body: JSON.stringify(
+      Object.fromEntries(
+        Object.entries(normalizeRoutePayload(payload)).filter(
+          ([, value]) => value !== null,
+        ),
+      ),
+    ),
   });
 };
 

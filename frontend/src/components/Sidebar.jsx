@@ -80,6 +80,7 @@ const Sidebar = ({ active, setActive }) => {
 
   const isRouteSectionActive =
     location.pathname.startsWith("/route-list") ||
+    location.pathname.startsWith("/route-plans") ||
     location.pathname.startsWith("/create-route") ||
     location.pathname.startsWith("/edit-route") ||
     location.pathname.startsWith("/operational-calendar") ||
@@ -521,10 +522,21 @@ const Sidebar = ({ active, setActive }) => {
                     <span className="dot" />
                   </span>
 
-                  <span className="submenu-text">Lista de Rotas</span>
+                  <span className="submenu-text">Programação de rotas</span>
                 </NavLink>
               </li>
 
+              <li>
+                <NavLink
+                  to="/route-plans"
+                  className={({ isActive }) => (isActive ? "active" : "")}
+                >
+                  <span className="dot-wrap">
+                    <span className="dot" />
+                  </span>
+                  <span className="submenu-text">Rotas fixas</span>
+                </NavLink>
+              </li>
               <li>
                 <NavLink
                   to="/mtr-online"

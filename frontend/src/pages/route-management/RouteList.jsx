@@ -1,13 +1,8 @@
+import "../../components/routes/routePlanner.css";
 import { ManagementHeader } from "../../components/management/ManagementWorkspace";
 import { useState, useEffect } from "react";
-import { Link } from "react-router";
-import {
-  House,
-  ChevronRight,
-  CirclePlus,
-  Search,
-  Pencil,
-} from "lucide-react";
+import { Link, useSearchParams } from "react-router";
+import { House, ChevronRight, CirclePlus, Search, Pencil } from "lucide-react";
 import RouteAssignmentSummary from "../../components/RouteAssignmentSummary";
 import DataTable from "../../components/DataTable";
 import { getAllRoutes } from "../../services/routeService";
@@ -51,6 +46,8 @@ const formatDate = (value) => {
 };
 
 const RouteList = () => {
+  const [params] = useSearchParams();
+  const [statusFilter, setStatusFilter] = useState("");
   const [routes, setRoutes] = useState([]);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -68,7 +65,7 @@ const RouteList = () => {
         list.map((item, index) => ({
           ...item,
           sn: index + 1,
-        }))
+        })),
       );
     } catch (error) {
       toast.error(error?.error || error?.message || "Erro ao carregar rotas.");
@@ -85,6 +82,11 @@ const RouteList = () => {
   const filteredData = routes.filter((item) => {
     const term = search.toLowerCase();
 
+    const history = params.get("view") === "history";
+    if (history !== ["COMPLETED", "CANCELLED"].includes(item.status))
+      return false;
+    if (params.get("plan") && item.planId !== params.get("plan")) return false;
+    if (statusFilter && item.status !== statusFilter) return false;
     return (
       item.name?.toLowerCase().includes(term) ||
       item.driver?.name?.toLowerCase().includes(term) ||
@@ -98,7 +100,12 @@ const RouteList = () => {
     {
       key: "name",
       label: "Rota",
-      render: (value, row) => <div><strong>{value || "N/A"}</strong><RouteAssignmentSummary route={row} /></div>,
+      render: (value, row) => (
+        <div>
+          <strong>{value || "N/A"}</strong>
+          <RouteAssignmentSummary route={row} />
+        </div>
+      ),
     },
     {
       key: "scheduledDate",
@@ -109,9 +116,7 @@ const RouteList = () => {
       key: "stops",
       label: "Paradas",
       render: (value) =>
-        Array.isArray(value) && value.length > 0
-          ? `${value.length} parada(s)`
-          : "N/A",
+        `${Array.isArray(value) ? value.length : 0} de apoio em texto`,
     },
     {
       key: "stats",
@@ -129,11 +134,21 @@ const RouteList = () => {
 
   return (
     <>
-      <HeadTags title="Lista de Rotas" />
+      <HeadTags
+        title={
+          params.get("view") === "history"
+            ? "Histórico de rotas"
+            : "Programação de rotas"
+        }
+      />
       <TopProgressBar loading={loading} />
 
       <ManagementHeader
-        title="Lista de Rotas"
+        title={
+          params.get("view") === "history"
+            ? "Histórico de rotas"
+            : "Programação de rotas"
+        }
         actions={
           <>
             <Link to="/create-route" className="primary-btn btn-sm">
@@ -143,6 +158,38 @@ const RouteList = () => {
         }
       />
 
+      <nav className="route-plan-nav">
+        <Link className="btn btn-outline-success" to="/route-list">
+          Programação
+        </Link>
+        <Link className="btn btn-outline-success" to="/route-plans">
+          Rotas fixas
+        </Link>
+        <Link className="btn btn-outline-success" to="/route-list?view=history">
+          Histórico
+        </Link>
+      </nav>
+      <label className="mb-3">
+        Situação
+        <select
+          className="form-select"
+          value={statusFilter}
+          onChange={(e) => {
+            setStatusFilter(e.target.value);
+            setCurrentPage(1);
+          }}
+        >
+          <option value="">Todas</option>
+          {(params.get("view") === "history"
+            ? ["COMPLETED", "CANCELLED"]
+            : ["SCHEDULED", "IN_PROGRESS"]
+          ).map((s) => (
+            <option key={s} value={s}>
+              {getStatusLabel(s)}
+            </option>
+          ))}
+        </select>
+      </label>
       <div className="row">
         <div className="col-12">
           <div className="card p-25">
@@ -158,7 +205,8 @@ const RouteList = () => {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Buscar por rota, motorista, veículo ou status..."
-                 aria-label="Buscar por rota, motorista, veículo ou status..." />
+                  aria-label="Buscar por rota, motorista, veículo ou status..."
+                />
               </div>
             </div>
 
@@ -173,19 +221,18 @@ const RouteList = () => {
                 setCurrentPage(1);
               }}
               renderActions={(row) => (
-               <div className="actions d-flex align-items-center gap-10">
-
-                     <Link
-                      to={`/edit-route/${row.id}`}
-                      className="d-inline-flex align-items-center gap-2"
-                          title="Editar rota, motorista e veículo"
-                          aria-label="Editar rota, motorista e veículo"
-                          >
-                     <Pencil size={16} /> <span className="small">Editar equipe e rota</span>
-                    </Link>
-
-                    </div>
-                )}
+                <div className="actions d-flex align-items-center gap-10">
+                  <Link
+                    to={`/edit-route/${row.id}`}
+                    className="d-inline-flex align-items-center gap-2"
+                    title="Editar rota, motorista e veículo"
+                    aria-label="Editar rota, motorista e veículo"
+                  >
+                    <Pencil size={16} />{" "}
+                    <span className="small">Editar equipe e rota</span>
+                  </Link>
+                </div>
+              )}
             />
           </div>
         </div>

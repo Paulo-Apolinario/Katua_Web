@@ -1,21 +1,223 @@
-.route-planner { min-width: 0; max-width: 1700px; margin: auto; }
-.route-planner h2 { font-size: 1.05rem; color: #203b2d; font-weight: 700; margin-bottom: 1rem; }
-.route-planner p, .route-planner dd { overflow-wrap: anywhere; }
-.route-planner fieldset { min-width: 0; }
-.route-planning-layout { display: grid; grid-template-columns: minmax(0,1.25fr) minmax(340px,.85fr); gap: 1.25rem; align-items: start; }
-.route-planning-main, .route-planning-aside { display: grid; gap: 1rem; min-width: 0; }
-.route-planning-aside { position: sticky; top: 90px; }
-.route-fields { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1rem; }
-.route-fields label { font-size: .875rem; font-weight: 600; display: flex; flex-direction: column; gap: .4rem; }
-.route-planning-map { height: 350px; border-radius: 12px; z-index: 0; }
-.route-stop-list { list-style: none; padding: 0; margin: 0; }
-.route-stop-list li, .route-available-list article { display: flex; justify-content: space-between; gap: .75rem; padding: 1rem 0; border-bottom: 1px solid #dce7df; }
-.route-stop-list li > div:first-child, .route-available-list article > div { min-width: 0; overflow-wrap: anywhere; }
-.route-stop-title { border: 0; padding: 0; background: transparent; color: #176944; text-align: left; font-weight: 700; }
-.route-stop-selected { background: #f2f7f3; }
-.route-stop-actions { display: flex; gap: .25rem; flex-shrink: 0; align-items: start; }
-.route-stop-actions button { border: 1px solid #dce7df; background: white; color: #203b2d; border-radius: 6px; padding: .4rem; }
-.route-stop-actions button:disabled { opacity: .4; }
-.route-available-list .btn { flex-shrink: 0; align-self: center; }
-@media(max-width:1150px) { .route-planning-layout { grid-template-columns: 1fr; } .route-planning-aside { position: static; } }
-@media(max-width:600px) { .route-fields { grid-template-columns: 1fr; } .route-stop-list li, .route-available-list article { flex-direction: column; } .route-available-list .btn { align-self: start; } .route-planning-map { height: 300px; } .route-planner .card { padding: 1rem !important; } }
+.route-planner {
+  min-width: 0;
+  max-width: 1700px;
+  margin: auto;
+}
+.route-planner h2 {
+  font-size: 1.05rem;
+  color: #203b2d;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+.route-planner p,
+.route-planner dd {
+  overflow-wrap: anywhere;
+}
+.route-planner fieldset {
+  min-width: 0;
+}
+.route-planning-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(340px, 0.85fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+.route-planning-main,
+.route-planning-aside {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+.route-planning-aside {
+  position: sticky;
+  top: 90px;
+}
+.route-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+.route-fields label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.route-planning-map {
+  height: 350px;
+  border-radius: 12px;
+  z-index: 0;
+}
+.route-stop-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.route-stop-list li,
+.route-available-list article {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid #dce7df;
+}
+.route-stop-list li > div:first-child,
+.route-available-list article > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.route-stop-title {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: #176944;
+  text-align: left;
+  font-weight: 700;
+}
+.route-stop-selected {
+  background: #f2f7f3;
+}
+.route-stop-actions {
+  display: flex;
+  gap: 0.25rem;
+  flex-shrink: 0;
+  align-items: start;
+}
+.route-stop-actions button {
+  border: 1px solid #dce7df;
+  background: white;
+  color: #203b2d;
+  border-radius: 6px;
+  padding: 0.4rem;
+}
+.route-stop-actions button:disabled {
+  opacity: 0.4;
+}
+.route-available-list .btn {
+  flex-shrink: 0;
+  align-self: center;
+}
+@media (max-width: 1150px) {
+  .route-planning-layout {
+    grid-template-columns: 1fr;
+  }
+  .route-planning-aside {
+    position: static;
+  }
+}
+@media (max-width: 600px) {
+  .route-fields {
+    grid-template-columns: 1fr;
+  }
+  .route-stop-list li,
+  .route-available-list article {
+    flex-direction: column;
+  }
+  .route-available-list .btn {
+    align-self: start;
+  }
+  .route-planning-map {
+    height: 300px;
+  }
+  .route-planner .card {
+    padding: 1rem !important;
+  }
+}
+.route-source-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 16px;
+}
+.route-source-grid h3,
+.route-point-draft h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #14532d;
+}
+.route-source-options {
+  max-height: 190px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.route-point-draft {
+  border: 1px solid #b7d9c8;
+  border-radius: 16px;
+  background: #f7fcf9;
+  padding: 20px;
+}
+.route-point-draft .generator-location-map {
+  height: 260px;
+  border-radius: 12px;
+  margin: 12px 0;
+}
+.route-optimization {
+  background: #eef8f2;
+  border-radius: 12px;
+  padding: 16px;
+  margin: 16px 0;
+}
+.route-plan-nav {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 12px 0 24px;
+}
+.route-plan-card {
+  border: 1px solid #dce6e0;
+  border-radius: 14px;
+  padding: 18px;
+  background: white;
+  margin-bottom: 12px;
+}
+.route-plan-card h3 {
+  font-size: 17px;
+  margin: 0 0 8px;
+}
+.route-plan-schedule {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 0;
+}
+.route-endpoints details {
+  min-width: 0;
+}
+.route-planner input,
+.route-planner select,
+.route-planner textarea {
+  max-width: 100%;
+}
+.route-planner details .generator-location-map {
+  height: 220px;
+}
+.route-planner h3 {
+  font-size: 17px;
+}
+.route-plan-metrics {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  background: #14532d;
+  color: white;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+@media (max-width: 600px) {
+  .route-source-grid {
+    grid-template-columns: 1fr;
+  }
+  .route-point-draft {
+    padding: 12px;
+  }
+  .route-points-editor .route-stop-list li {
+    flex-wrap: wrap;
+  }
+  .route-points-editor .route-stop-actions {
+    flex-wrap: wrap;
+  }
+}
