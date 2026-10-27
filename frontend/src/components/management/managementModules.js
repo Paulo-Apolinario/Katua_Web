@@ -34,6 +34,7 @@ const driverRoutes = [
   "driver-history",
 ];
 const collectorRoutes = [
+  "collector-teams",
   "collector-list",
   "create-collector",
   "collector-documents",
@@ -52,25 +53,26 @@ const teamRoutes = [
   "edit-staff-document",
 ];
 const link = (to, label, paths) => ({ to, label, paths });
-const teamLinks = [
+const driverLinks = [
   link("/staff-list", "Motoristas", [
     "staff-list",
     "create-staff",
     "edit-staff",
   ]),
-  link("/collector-list", "Catadores", ["collector-list", "create-collector"]),
-  link("/collector-documents", "Documentos dos catadores", [
-    "collector-documents",
-  ]),
-  link("/driver-documents", "Documentos dos motoristas", ["driver-documents"]),
-  link("/driver-history", "Histórico dos motoristas", ["driver-history"]),
-  link("/collector-history", "Histórico dos catadores", ["collector-history"]),
-  link("/assign-list", "Rotas delegadas", [
-    "assign-list",
-    "create-assign",
-    "edit-assign",
-  ]),
+  link("/driver-documents", "Documentos", ["driver-documents"]),
+  link("/driver-history", "Histórico", ["driver-history"]),
 ];
+const collectorLinks = [
+  link("/collector-list", "Catadores", [
+    "collector-list",
+    "create-collector",
+    "collector-profile",
+  ]),
+  link("/collector-teams", "Equipes", ["collector-teams"]),
+  link("/collector-documents", "Documentos", ["collector-documents"]),
+  link("/collector-history", "Histórico", ["collector-history"]),
+];
+const teamLinks = [...driverLinks, ...collectorLinks];
 const modules = [
   {
     id: "settings",
@@ -91,6 +93,7 @@ const modules = [
     label: "Relatórios e Análises",
     paths: [
       "",
+      "environmental-impact",
       "analytics-dashboard",
       "waste-collection-reports",
       "waste-type-reports",
@@ -162,7 +165,7 @@ const modules = [
     paths: driverRoutes,
     description:
       "Mantenha os dados dos motoristas e seus vínculos com a operação atualizados.",
-    links: teamLinks,
+    links: driverLinks,
   },
   {
     id: "collectors",
@@ -170,7 +173,7 @@ const modules = [
     paths: collectorRoutes,
     description:
       "Acompanhe o cadastro, a documentação e o histórico dos catadores da cooperativa.",
-    links: teamLinks,
+    links: collectorLinks,
   },
   {
     id: "team",

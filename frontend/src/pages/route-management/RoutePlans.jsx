@@ -1,3 +1,4 @@
+import TeamPicker from "../../components/routes/TeamPicker";
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { ManagementHeader } from "../../components/management/ManagementWorkspace";
@@ -40,6 +41,7 @@ const makeDraft = (base) => ({
   estimatedMinutes: 240,
   driverId: "",
   vehicleId: "",
+  teamId: null,
   collectorIds: [],
   points: [],
   startPoint: base,
@@ -285,7 +287,10 @@ export default function RoutePlans() {
                       </label>
                     ))}
                   </div>
-                  <p className="small">Na frequência quinzenal, a semana da data de início é a referência para alternar as semanas.</p>
+                  <p className="small">
+                    Na frequência quinzenal, a semana da data de início é a
+                    referência para alternar as semanas.
+                  </p>
                   <label className="d-block">
                     Orientações
                     <textarea
@@ -378,6 +383,18 @@ export default function RoutePlans() {
                       </select>
                     </label>
                   </div>
+                  <TeamPicker
+                    teams={sources.teams}
+                    teamId={draft.teamId}
+                    disabled={busy}
+                    onChange={(t) =>
+                      setDraft((p) => ({
+                        ...p,
+                        teamId: t?.id || null,
+                        collectorIds: t ? [...t.memberIds] : p.collectorIds,
+                      }))
+                    }
+                  />
                   <p className="mt-3 mb-2">
                     Catadores da equipe — o primeiro selecionado é o responsável
                     padrão.
@@ -387,6 +404,7 @@ export default function RoutePlans() {
                       <label key={c.id}>
                         <input
                           type="checkbox"
+                          disabled={!!draft.teamId}
                           checked={draft.collectorIds.includes(c.id)}
                           onChange={(e) =>
                             patch(

@@ -1,3 +1,5 @@
+import EnvironmentalImpact from "../pages/reports/EnvironmentalImpact";
+import CollectorTeams from "../pages/staff-management/CollectorTeams";
 import RoutePlans from "../pages/route-management/RoutePlans";
 import DocumentVault from "../components/documents/DocumentVault";
 import OwnerHistory from "../components/documents/OwnerHistory";
@@ -247,6 +249,7 @@ const Router = () => {
 
             <Route path="edit-staff/:id" element={<EditStaff />} />
 
+            <Route path="collector-teams" element={<CollectorTeams />} />
             <Route path="collector-list" element={<CollectorList />} />
 
             <Route path="create-collector" element={<AddCollector />} />
@@ -316,6 +319,7 @@ const Router = () => {
 
             <Route path="waste-type-reports" element={<WasteTypeReports />} />
 
+            <Route path="environmental-impact" element={<EnvironmentalImpact />} />
             <Route path="staff-reports" element={<StaffReports />} />
 
             <Route path="vehicle-reports" element={<VehicleReports />} />

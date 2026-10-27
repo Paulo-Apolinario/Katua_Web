@@ -82,13 +82,15 @@ export default function OwnerHistory({ kind }) {
   const filtered = rows
       .filter(
         (c) =>
-          selected.includes(
-            c[`${kind}Id`] ||
-              c[kind]?.id ||
-              (kind === "generator"
-                ? c.schedule?.generatorId || c.schedule?.generator?.id
-                : ""),
-          ) &&
+          ((kind === "collector" &&
+            c.participants?.some((p) => selected.includes(p.collectorId))) ||
+            selected.includes(
+              c[`${kind}Id`] ||
+                c[kind]?.id ||
+                (kind === "generator"
+                  ? c.schedule?.generatorId || c.schedule?.generator?.id
+                  : ""),
+            )) &&
           (!status || c.status === status) &&
           inPeriod(c.collectedAt || c.createdAt, start, end),
       )

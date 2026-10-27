@@ -1,3 +1,4 @@
+import TeamPicker from "./TeamPicker";
 import RoutePointsEditor from "./RoutePointsEditor";
 import RouteOptimization, { RouteEndpoints } from "./RouteOptimization";
 import {
@@ -54,6 +55,7 @@ const empty = {
   driverId: "",
   vehicleId: "",
   stops: [],
+  teamId: null,
   collectorIds: [],
   startPoint: null,
   endPoint: null,
@@ -112,6 +114,7 @@ export default function RoutePlanner({ id }) {
               driverId: route.driverId || "",
               vehicleId: route.vehicleId || "",
               stops: route.stops || [],
+              teamId: route.teamId || null,
               collectorIds: route.collectorIds || [],
               startPoint: route.startPoint || sources.base,
               endPoint: route.endPoint || sources.base,
@@ -131,6 +134,7 @@ export default function RoutePlanner({ id }) {
                 driverId: route.driverId || "",
                 vehicleId: route.vehicleId || "",
                 stops: route.stops || [],
+                teamId: route.teamId || null,
                 collectorIds: route.collectorIds || [],
                 startPoint: route.startPoint || sources.base,
                 endPoint: route.endPoint || sources.base,
@@ -256,6 +260,7 @@ export default function RoutePlanner({ id }) {
         name: form.name,
         description: form.description,
         scheduledDate: toBr(form.date),
+        teamId: form.teamId || null,
         collectorIds: form.collectorIds,
         startPoint: hasCoordinates(form.startPoint)
           ? form.startPoint
@@ -531,6 +536,18 @@ export default function RoutePlanner({ id }) {
                   </section>
                   <section className="card p-4">
                     <h2>Catadores e horário</h2>
+                    <TeamPicker
+                      teams={data.sources.teams}
+                      teamId={form.teamId}
+                      disabled={saving || data.route?.status === "IN_PROGRESS"}
+                      onChange={(t) =>
+                        setForm((p) => ({
+                          ...p,
+                          teamId: t?.id || null,
+                          collectorIds: t ? [...t.memberIds] : p.collectorIds,
+                        }))
+                      }
+                    />
                     <div className="route-fields">
                       <label>
                         Saída prevista
@@ -565,6 +582,10 @@ export default function RoutePlanner({ id }) {
                           <input
                             type="checkbox"
                             disabled={locked}
+                            disabled={
+                              !!form.teamId ||
+                              data.route?.status === "IN_PROGRESS"
+                            }
                             checked={form.collectorIds.includes(c.id)}
                             onChange={(e) =>
                               patch(

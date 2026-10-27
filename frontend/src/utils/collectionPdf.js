@@ -111,6 +111,36 @@ export function buildCollectionPdf(
       : [["Sem material efetivo registrado", "—"]],
     y,
   );
+  if (c.participants?.length) {
+    const confirmed =
+      c.allocationVersion > 0 &&
+      c.allocationQuantityVersion === c.quantityReviewVersion;
+    y = table(
+      ["Equipe", "Conferência da divisão"],
+      [
+        [
+          c.teamNameSnapshot || "Equipe",
+          confirmed
+            ? `Divisão confirmada · versão ${c.allocationVersion}`
+            : "Divisão pendente ou pesagem alterada",
+        ],
+      ],
+      y,
+    );
+    y = table(
+      ["Participante", "Material", "Parcela individual"],
+      c.participants.flatMap((p) =>
+        confirmed && p.allocations?.length
+          ? p.allocations.map((m) => [
+              p.nameSnapshot,
+              m.name,
+              quantity(m.quantity, m.unit),
+            ])
+          : [[p.nameSnapshot, "Aguardando conferência", "—"]],
+      ),
+      y,
+    );
+  }
   for (const review of c.quantityReviews || []) {
     y = table(
       ["Conferência", "Registro"],

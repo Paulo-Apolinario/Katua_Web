@@ -895,7 +895,7 @@ function Form({ id }) {
                     onChange={(e) => set("publicAccess", e.target.checked)}
                   />
                   <span className="form-check-label">
-                    PEV de acesso público · exibir no App e permitir relatos de
+                    PEV de acesso público · exibir para pessoas físicas e permitir relatos de
                     pessoas físicas
                   </span>
                 </label>
@@ -903,7 +903,7 @@ function Form({ id }) {
                   Somente modalidades PEV/Ecoponto com localização salva e
                   funcionamento ativo ou em manutenção aparecem para o público.
                   Endereço e materiais aceitos serão exibidos; contatos internos
-                  não são publicados.
+                  não são publicados. Outras cooperativas e seus catadores não recebem acesso ao ponto.
                 </p>
                 <label className="form-check mt-3">
                   <input

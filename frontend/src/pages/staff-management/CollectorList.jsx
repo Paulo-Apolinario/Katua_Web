@@ -71,6 +71,7 @@ const calculateMaterialsTotal = (materials) => {
 const getCollectorCollections = (collections, collectorId) => {
   return collections.filter((collection) => {
     return (
+      collection?.participants?.some((p) => p.collectorId === collectorId) ||
       collection?.collectorId === collectorId ||
       collection?.collector?.id === collectorId
     );
@@ -125,6 +126,28 @@ const CollectorList = () => {
       );
 
       const totalKg = collectorCollections.reduce((total, collection) => {
+        if (collection.status === "CANCELLED") return total;
+        if (collection.participants?.length) {
+          if (
+            !collection.allocationVersion ||
+            collection.allocationQuantityVersion !==
+              collection.quantityReviewVersion
+          )
+            return total;
+          const own = collection.participants.find(
+            (p) => p.collectorId === collector.id,
+          );
+          return (
+            total +
+            (own?.allocations || []).reduce(
+              (s, m) =>
+                s +
+                Number(m.quantity) *
+                  (m.unit === "TON" ? 1000 : m.unit === "KG" ? 1 : 0),
+              0,
+            )
+          );
+        }
         const collectionTotal = Number(collection.totalWeightKg || 0);
         const materialsTotal = calculateMaterialsTotal(collection.materials);
 
@@ -173,6 +196,9 @@ const CollectorList = () => {
         description="Gerencie os catadores vinculados à cooperativa."
         actions={
           <>
+            <Link to="/collector-teams" className="secondary-btn btn-sm">
+              Equipes de catadores
+            </Link>
             <button
               className="secondary-btn btn-sm border-0"
               onClick={loadData}

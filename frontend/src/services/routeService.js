@@ -23,6 +23,7 @@ export const normalizeRoutePayload = (payload = {}) => {
     "plannedPoints",
     "visitOrder",
     "collectorIds",
+    "teamId",
     "startPoint",
     "endPoint",
     "departureTime",

@@ -86,26 +86,27 @@ const Sidebar = ({ active, setActive }) => {
     location.pathname.startsWith("/operational-calendar") ||
     location.pathname.startsWith("/mtr-online");
 
-  const isStaffSectionActive =
-    location.pathname.startsWith("/staff-list") ||
-    location.pathname.startsWith("/create-staff") ||
-    location.pathname.startsWith("/edit-staff") ||
-    location.pathname.startsWith("/collector-list") ||
-    location.pathname.startsWith("/create-collector") ||
-    location.pathname.startsWith("/driver-documents") ||
-    location.pathname.startsWith("/driver-history") ||
-    location.pathname.startsWith("/collector-history") ||
-    location.pathname.startsWith("/collector-profile") ||
-    location.pathname.startsWith("/collector-documents") ||
-    location.pathname.startsWith("/assign-list") ||
-    location.pathname.startsWith("/create-assign") ||
-    location.pathname.startsWith("/edit-assign") ||
-    location.pathname.startsWith("/attendance-list") ||
-    location.pathname.startsWith("/create-attendance") ||
-    location.pathname.startsWith("/edit-attendance") ||
-    location.pathname.startsWith("/staff-document-list") ||
-    location.pathname.startsWith("/create-staff-document") ||
-    location.pathname.startsWith("/edit-staff-document");
+  const isDriverSectionActive = [
+    "/staff-list",
+    "/create-staff",
+    "/edit-staff",
+    "/driver-documents",
+    "/driver-history",
+    "/attendance-list",
+    "/create-attendance",
+    "/edit-attendance",
+    "/staff-document-list",
+    "/create-staff-document",
+    "/edit-staff-document",
+  ].some((p) => location.pathname.startsWith(p));
+  const isCollectorSectionActive = [
+    "/collector-list",
+    "/create-collector",
+    "/collector-documents",
+    "/collector-history",
+    "/collector-profile",
+    "/collector-teams",
+  ].some((p) => location.pathname.startsWith(p));
 
   const isWasteManagementSectionActive =
     location.pathname.startsWith("/collected-waste") ||
@@ -120,7 +121,8 @@ const Sidebar = ({ active, setActive }) => {
     location.pathname.startsWith("/waste-collection-reports") ||
     location.pathname.startsWith("/waste-type-reports") ||
     location.pathname.startsWith("/vehicle-reports") ||
-    location.pathname.startsWith("/staff-reports");
+    location.pathname.startsWith("/staff-reports") ||
+    location.pathname.startsWith("/environmental-impact");
 
   const isSettingSectionActive =
     location.pathname.startsWith("/system-alerts") ||
@@ -580,145 +582,66 @@ const Sidebar = ({ active, setActive }) => {
             </ul>
           </li>
 
-          {/* Staff */}
-          <li className="nav-item">
-            <a
-              href="#driver"
-              className={`nav-link ${isStaffSectionActive ? "active" : ""}`}
-              data-bs-toggle="collapse"
-              data-bs-target="#driver"
-              aria-expanded={isStaffSectionActive}
-              aria-controls="driver"
-            >
-              <div className="icon-wrap">
-                <Users />
-              </div>
-
-              <span className="text">Motoristas e Catadores</span>
-
-              <ChevronRight className="ms-auto arrow align-middle" />
-            </a>
-
-            <ul
-              className={`submenu collapse transition ${
-                isStaffSectionActive ? "show" : ""
-              }`}
-              id="driver"
-            >
-              <li>
-                <NavLink
-                  to="/staff-list"
-                  className={({ isActive }) => (isActive ? "active" : "")}
-                >
-                  <span className="dot-wrap">
-                    <span className="dot" />
-                  </span>
-
-                  <span className="submenu-text">Listar Motoristas</span>
-                </NavLink>
-              </li>
-
-              <li>
-                <NavLink
-                  to="/create-staff"
-                  className={({ isActive }) => (isActive ? "active" : "")}
-                >
-                  <span className="dot-wrap">
-                    <span className="dot" />
-                  </span>
-
-                  <span className="submenu-text">Adicionar Motorista</span>
-                </NavLink>
-              </li>
-
-              <li>
-                <NavLink
-                  to="/collector-list"
-                  className={({ isActive }) => (isActive ? "active" : "")}
-                >
-                  <span className="dot-wrap">
-                    <span className="dot" />
-                  </span>
-
-                  <span className="submenu-text">Listar Catadores</span>
-                </NavLink>
-              </li>
-
-              <li>
-                <NavLink
-                  to="/create-collector"
-                  className={({ isActive }) => (isActive ? "active" : "")}
-                >
-                  <span className="dot-wrap">
-                    <span className="dot" />
-                  </span>
-
-                  <span className="submenu-text">Adicionar Catador</span>
-                </NavLink>
-              </li>
-
-              <li>
-                <NavLink
-                  to="/collector-documents"
-                  className={({ isActive }) => (isActive ? "active" : "")}
-                >
-                  <span className="dot-wrap">
-                    <span className="dot" />
-                  </span>
-
-                  <span className="submenu-text">Documentos dos Catadores</span>
-                </NavLink>
-              </li>
-              <li>
-                <NavLink
-                  to="/driver-documents"
-                  className={({ isActive }) => (isActive ? "active" : "")}
-                >
-                  <span className="dot-wrap">
-                    <span className="dot" />
-                  </span>
-                  <span className="submenu-text">
-                    Documentos dos Motoristas
-                  </span>
-                </NavLink>
-              </li>
-              <li>
-                <NavLink
-                  to="/driver-history"
-                  className={({ isActive }) => (isActive ? "active" : "")}
-                >
-                  <span className="dot-wrap">
-                    <span className="dot" />
-                  </span>
-                  <span className="submenu-text">Histórico dos Motoristas</span>
-                </NavLink>
-              </li>
-              <li>
-                <NavLink
-                  to="/collector-history"
-                  className={({ isActive }) => (isActive ? "active" : "")}
-                >
-                  <span className="dot-wrap">
-                    <span className="dot" />
-                  </span>
-                  <span className="submenu-text">Histórico dos Catadores</span>
-                </NavLink>
-              </li>
-
-              <li>
-                <NavLink
-                  to="/assign-list"
-                  className={({ isActive }) => (isActive ? "active" : "")}
-                >
-                  <span className="dot-wrap">
-                    <span className="dot" />
-                  </span>
-
-                  <span className="submenu-text">Rotas Delegadas</span>
-                </NavLink>
-              </li>
-            </ul>
-          </li>
+          {[
+            {
+              id: "drivers",
+              label: "Gestão de Motoristas",
+              active: isDriverSectionActive,
+              links: [
+                ["/staff-list", "Listar motoristas"],
+                ["/create-staff", "Adicionar motorista"],
+                ["/driver-documents", "Documentos dos motoristas"],
+                ["/driver-history", "Histórico dos motoristas"],
+              ],
+            },
+            {
+              id: "collectors",
+              label: "Gestão de Catadores",
+              active: isCollectorSectionActive,
+              links: [
+                ["/collector-list", "Listar catadores"],
+                ["/create-collector", "Adicionar catador"],
+                ["/collector-teams", "Equipes de catadores"],
+                ["/collector-documents", "Documentos dos catadores"],
+                ["/collector-history", "Histórico dos catadores"],
+              ],
+            },
+          ].map((section) => (
+            <li className="nav-item" key={section.id}>
+              <a
+                href={"#" + section.id}
+                className={`nav-link ${section.active ? "active" : ""}`}
+                data-bs-toggle="collapse"
+                data-bs-target={"#" + section.id}
+                aria-expanded={section.active}
+                aria-controls={section.id}
+              >
+                <div className="icon-wrap">
+                  <Users />
+                </div>
+                <span className="text">{section.label}</span>
+                <ChevronRight className="ms-auto arrow align-middle" />
+              </a>
+              <ul
+                id={section.id}
+                className={`submenu collapse transition ${section.active ? "show" : ""}`}
+              >
+                {section.links.map(([to, label]) => (
+                  <li key={to}>
+                    <NavLink
+                      to={to}
+                      className={({ isActive }) => (isActive ? "active" : "")}
+                    >
+                      <span className="dot-wrap">
+                        <span className="dot" />
+                      </span>
+                      <span className="submenu-text">{label}</span>
+                    </NavLink>
+                  </li>
+                ))}
+              </ul>
+            </li>
+          ))}
 
           {/* Waste Management */}
           <li className="nav-item">
@@ -893,6 +816,17 @@ const Sidebar = ({ active, setActive }) => {
                 </NavLink>
               </li>
 
+              <li>
+                <NavLink
+                  to="/environmental-impact"
+                  className={({ isActive }) => (isActive ? "active" : "")}
+                >
+                  <span className="dot-wrap">
+                    <span className="dot" />
+                  </span>
+                  <span className="submenu-text">Impacto ambiental</span>
+                </NavLink>
+              </li>
               <li>
                 <NavLink
                   to="/staff-reports"
