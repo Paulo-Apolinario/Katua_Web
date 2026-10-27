@@ -581,8 +581,8 @@ export default function RoutePlanner({ id }) {
                         <label key={c.id}>
                           <input
                             type="checkbox"
-                            disabled={locked}
                             disabled={
+                              locked ||
                               !!form.teamId ||
                               data.route?.status === "IN_PROGRESS"
                             }
