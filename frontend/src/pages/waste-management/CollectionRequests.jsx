@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
+import { RefreshCw } from "lucide-react";
 import toast from "react-hot-toast";
 import HeadTags from "../../components/HeadTags";
 import { useAdminAuth } from "../../context/AdminAuthContext";
@@ -272,7 +273,7 @@ function RequestWorkspace() {
   return (
     <main className="container-fluid py-4 collection-workspace">
       <HeadTags title="Coletas Solicitadas | KATUÁ" />
-      <div className="d-flex justify-content-between flex-wrap gap-3 mb-4">
+      <div className="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
         <div>
           <h1 className="h3">Coletas Solicitadas</h1>
           <p className="text-muted">
@@ -282,11 +283,14 @@ function RequestWorkspace() {
           <Link to="/waste-list">Acompanhar coletas operacionais</Link>
         </div>
         <button
-          className="btn btn-outline-success"
+          type="button"
+          className="btn btn-outline-success d-inline-flex align-items-center gap-2 flex-shrink-0"
+          aria-busy={loading}
           disabled={loading || busy}
           onClick={load}
         >
-          Atualizar solicitações
+          <RefreshCw size={16} aria-hidden="true" />
+          {loading ? "Atualizando…" : "Atualizar solicitações"}
         </button>
       </div>
       {created && (
