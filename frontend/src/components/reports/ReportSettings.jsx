@@ -65,9 +65,10 @@ export default function ReportSettings({ context, onSaved, onClose }) {
             ))}
           </div>
           <p className="small text-muted mt-3">
-            Os fatores abaixo calculam potencial estimado a partir da massa
-            coletada, não emissão evitada comprovada. Materiais em litros, m³ ou
-            unidades não entram no cálculo.
+            Campos sem fator permanecem sem estimativa, em vez de aparecerem
+            como zero. Os fatores abaixo calculam potencial estimado a partir da
+            massa coletada, não emissão evitada comprovada. Materiais em litros,
+            m³ ou unidades não entram no cálculo.
           </p>
           {form.methodology.factors.map((f, i) => (
             <div className="report-grid report-rule" key={i}>
@@ -90,19 +91,27 @@ export default function ReportSettings({ context, onSaved, onClose }) {
                   )
                 }
               />
-              <Field
-                label={`Fator ${i + 1} — kg CO2 por kg de material`}
-                type="number"
-                value={f.co2PerKg}
-                onChange={(v) =>
-                  setMethod(
-                    "factors",
-                    form.methodology.factors.map((x, j) =>
-                      i === j ? { ...x, co2PerKg: v } : x,
-                    ),
-                  )
-                }
-              />
+              {[
+                ["co2PerKg", "kg CO2e por kg de material"],
+                ["waterPerKg", "litros de água por kg de material"],
+                ["energyPerKg", "kWh por kg de material"],
+                ["treesPerKg", "árvores equivalentes por kg de material"],
+              ].map(([key, label]) => (
+                <Field
+                  key={key}
+                  label={`Fator ${i + 1} — ${label}`}
+                  type="number"
+                  value={f[key] ?? null}
+                  onChange={(v) =>
+                    setMethod(
+                      "factors",
+                      form.methodology.factors.map((x, j) =>
+                        i === j ? { ...x, [key]: v } : x,
+                      ),
+                    )
+                  }
+                />
+              ))}
               <button
                 type="button"
                 className="btn btn-outline-danger"
