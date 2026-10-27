@@ -19,7 +19,7 @@ export function PevPage({ title, description, actions, children }) {
         </div>
         <div className="d-flex gap-2 flex-wrap">{actions}</div>
       </header>
-      <nav className="d-flex gap-2 mb-4" aria-label="Gestão de PEVs">
+      <nav className="d-flex gap-2 flex-wrap mb-4" aria-label="Gestão de PEVs">
         <NavLink
           end
           className={({ isActive }) =>
@@ -37,6 +37,12 @@ export function PevPage({ title, description, actions, children }) {
         >
           Cadastrar PEV
         </NavLink>
+        <a
+          className="btn btn-sm btn-outline-secondary"
+          href="#pev-app-requests"
+        >
+          Pedidos pelo App
+        </a>
       </nav>
       {children}
     </main>

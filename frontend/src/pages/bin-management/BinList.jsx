@@ -1,3 +1,4 @@
+import PevRequests from "../../components/pevs/PevRequests";
 import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { getAllBins } from "../../services/binService";
@@ -448,6 +449,7 @@ function List() {
           </section>
         )}
       </PevState>
+      <PevRequests />
     </PevPage>
   );
 }

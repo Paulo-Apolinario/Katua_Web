@@ -36,6 +36,7 @@ const initial = () => ({
   bin_id: "",
   name: "",
   pointKind: "PEV",
+  publicAccess: false,
   zipCode: "",
   street: "",
   number: "",
@@ -126,7 +127,7 @@ function Form({ id }) {
               b[k] ??
                 (k === "openingHours" || k === "acceptedMaterials"
                   ? []
-                  : k === "needsPickup"
+                  : k === "needsPickup" || k === "publicAccess"
                     ? false
                     : ""),
             ]),
@@ -177,6 +178,10 @@ function Form({ id }) {
   const set = (key, value) => {
     if (formRef.current[key] === value) return;
     op.setError("");
+    if (key === "pointKind" && !["PEV", "ECOPONTO"].includes(value)) {
+      updateForm((f) => ({ ...f, [key]: value, publicAccess: false }));
+      return;
+    }
     if (
       [
         "zipCode",
@@ -879,6 +884,27 @@ function Form({ id }) {
                     </button>
                   </div>
                 )}
+                <label className="form-check mt-3">
+                  <input
+                    type="checkbox"
+                    className="form-check-input"
+                    checked={Boolean(form.publicAccess)}
+                    disabled={
+                      op.busy || !["PEV", "ECOPONTO"].includes(form.pointKind)
+                    }
+                    onChange={(e) => set("publicAccess", e.target.checked)}
+                  />
+                  <span className="form-check-label">
+                    PEV de acesso público · exibir no App e permitir relatos de
+                    pessoas físicas
+                  </span>
+                </label>
+                <p className="small text-muted">
+                  Somente modalidades PEV/Ecoponto com localização salva e
+                  funcionamento ativo ou em manutenção aparecem para o público.
+                  Endereço e materiais aceitos serão exibidos; contatos internos
+                  não são publicados.
+                </p>
                 <label className="form-check mt-3">
                   <input
                     className="form-check-input"

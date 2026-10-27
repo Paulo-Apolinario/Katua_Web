@@ -1,3 +1,4 @@
+import PevRequests from "./PevRequests";
 import { useCallback, useState } from "react";
 import { Link, useLocation, useParams } from "react-router";
 import {
@@ -570,6 +571,7 @@ function Detail({ id }) {
           </button>
         </CollectionDialog>
       )}
+      <PevRequests binId={id} />
     </PevPage>
   );
 }

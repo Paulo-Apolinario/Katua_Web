@@ -31,6 +31,7 @@ export const EVENTS = {
   INSPECTION: "Vistoria",
   INCIDENT: "Ocorrência",
   PICKUP_REQUESTED: "Retirada solicitada",
+  APP_REQUEST: "Solicitação recebida pelo App",
   PICKUP_COLLECTED: "Retirada em campo",
 };
 export const DAYS = [
@@ -152,6 +153,7 @@ export function formPayload(form) {
     ...p,
     bin_id: form.bin_id.trim(),
     pointKind: form.pointKind,
+    publicAccess: Boolean(form.publicAccess),
     status: form.status,
     zipCode: form.zipCode.replace(/\D/g, "") || null,
     latitude: latitude === null ? null : Number(latitude),
