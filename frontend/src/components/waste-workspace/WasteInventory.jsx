@@ -60,6 +60,34 @@ function InventoryList({ catalog }) {
   const resource = useWasteResource(catalogLoader),
     operation = useWasteOperation(),
     location = useLocation();
+  const [params, setParams] = useSearchParams(),
+    history = !catalog && params.get("view") === "history",
+    selectedItemId = !catalog ? params.get("itemId") || "" : "";
+  const allLots = (resource.data || []).flatMap((i) => i.lots || []),
+    cancelledCount = allLots.filter((l) => l.status === "CANCELLED").length,
+    currentCount = allLots.length - cancelledCount;
+  function changeView(nextHistory, itemId = "") {
+    const next = new URLSearchParams(params);
+    if (nextHistory) next.set("view", "history");
+    else next.delete("view");
+    if (itemId) next.set("itemId", itemId);
+    else next.delete("itemId");
+    setParams(next);
+    setPage(1);
+    setExpanded({});
+    setQ("");
+    setCategory("");
+    setUnit("");
+    setStatus("");
+    setLotStatus("");
+    setProcessingStage("");
+    setOrigin("");
+  }
+  useEffect(() => {
+    setPage(1);
+    setExpanded({});
+    setLotStatus("");
+  }, [history, selectedItemId]);
   const [q, setQ] = useState(""),
     [category, setCategory] = useState(""),
     [unit, setUnit] = useState(""),
@@ -82,6 +110,8 @@ function InventoryList({ catalog }) {
         processingStage,
         origin,
         catalog,
+        lotScope: history ? "cancelled" : "current",
+        itemId: selectedItemId,
       }),
     [
       resource.data,
@@ -93,6 +123,8 @@ function InventoryList({ catalog }) {
       processingStage,
       origin,
       catalog,
+      history,
+      selectedItemId,
     ],
   );
   function exportRows() {
@@ -126,13 +158,17 @@ function InventoryList({ catalog }) {
       );
     } else {
       downloadCsv(
-        "katua-estoque-filtrado.csv",
+        history
+          ? "katua-historico-cancelamentos.csv"
+          : "katua-estoque-filtrado.csv",
         [
           "ID material",
           "Material",
           "ID lote",
           "Código lote",
-          "Quantidade registrada",
+          history
+            ? "Quantidade histórica anulada (sem saldo)"
+            : "Quantidade registrada",
           "Saldo controlado",
           "Unidade",
           "Situação",
@@ -141,6 +177,7 @@ function InventoryList({ catalog }) {
           "Origem",
           "ID entrada",
           "Recebido em",
+          ...(history ? ["Motivo / observações", "Última atualização"] : []),
         ],
         rows.flatMap((i) =>
           (i.lots || []).map((l) => [
@@ -157,6 +194,7 @@ function InventoryList({ catalog }) {
             l.origin,
             l.originCollectionWasteEntryId,
             l.receivedAt || l.createdAt,
+            ...(history ? [l.notes, l.updatedAt] : []),
           ]),
         ),
       );
@@ -186,11 +224,19 @@ function InventoryList({ catalog }) {
   }
   return (
     <WastePage
-      title={catalog ? "Catálogo de Resíduos" : "Visão do Estoque"}
+      title={
+        catalog
+          ? "Catálogo de Resíduos"
+          : history
+            ? "Histórico de Cancelamentos"
+            : "Visão do Estoque"
+      }
       description={
         catalog
           ? "Cadastros de materiais, suas unidades e classificação. Cadastrar um tipo não movimenta estoque."
-          : "Acompanhe quantidades por unidade e situação dos lotes, com origem preservada."
+          : history
+            ? "Registros anulados, motivos e vínculo de origem para consulta. Não representam estoque disponível."
+            : "Acompanhe os lotes válidos, com os cancelamentos separados do estoque e dos contadores."
       }
       actions={
         <>
@@ -209,27 +255,73 @@ function InventoryList({ catalog }) {
           >
             Atualizar
           </button>
-          <Link
-            className="btn btn-success"
-            to={catalog ? "/create-type" : "/waste-stock/create"}
-          >
-            {catalog ? "Cadastrar tipo" : "Adicionar lote manual"}
-          </Link>
+          {!history && (
+            <Link
+              className="btn btn-success"
+              to={catalog ? "/create-type" : "/waste-stock/create"}
+            >
+              {catalog ? "Cadastrar tipo" : "Adicionar lote manual"}
+            </Link>
+          )}
         </>
       }
     >
+      {!catalog && (
+        <nav
+          className="d-flex flex-wrap gap-2 mb-4"
+          aria-label="Visões do estoque"
+        >
+          <button
+            className={`btn ${!history ? "btn-success" : "btn-outline-success"}`}
+            aria-current={!history ? "page" : undefined}
+            onClick={() => changeView(false)}
+          >
+            Lotes válidos (
+            {resource.loading || resource.error ? "—" : currentCount})
+          </button>
+          <button
+            className={`btn ${history ? "btn-success" : "btn-outline-success"}`}
+            aria-current={history ? "page" : undefined}
+            onClick={() => changeView(true)}
+          >
+            Histórico de cancelamentos (
+            {resource.loading || resource.error ? "—" : cancelledCount})
+          </button>
+        </nav>
+      )}
+      {selectedItemId && (
+        <div className="alert alert-light d-flex flex-wrap gap-3 justify-content-between align-items-center">
+          <span>
+            Material selecionado:{" "}
+            <strong>
+              {resource.data?.find((i) => i.id === selectedItemId)?.name ||
+                selectedItemId}
+            </strong>
+          </span>
+          <button
+            className="btn btn-sm btn-outline-secondary"
+            onClick={() => changeView(history)}
+          >
+            Ver todos os materiais
+          </button>
+        </div>
+      )}
       <WasteGuide
         title={
           catalog
             ? "Um catálogo consistente começa na identificação"
-            : "Do recebimento ao estoque disponível"
+            : history
+              ? "Rastreabilidade dos registros anulados"
+              : "Do recebimento ao estoque disponível"
         }
         to={catalog ? "/create-type" : "/collected-waste"}
         label={catalog ? "Cadastrar material" : "Consultar entradas"}
       >
         {catalog
           ? "Use nomes, categorias e unidades padronizados. Inative materiais sem uso para manter o histórico e evitar novos registros incorretos."
-          : "Confira o material, a etapa de processamento e o local antes de movimentar um lote. Use a entrada coletada para gerar lotes com vínculo de origem."}
+          : history
+            ? "Cada registro cancelado documenta uma anulação. Consulte o motivo e a entrada original. As quantidades são históricas e não devem ser somadas como saldo ou novas coletas."
+            : "Confira o material, a etapa de processamento e o local antes de movimentar um lote. Use a entrada coletada para gerar lotes com vínculo de origem."}
       </WasteGuide>
       {location.state?.notice && (
         <p role="status" className="alert alert-success">
@@ -263,30 +355,57 @@ function InventoryList({ catalog }) {
                     : new Set(rows.map((i) => i.category)).size,
                 ],
               ]
-            : [
-                [
-                  "Materiais encontrados",
-                  resource.loading || resource.error ? "—" : rows.length,
-                ],
-                [
-                  "Disponível",
-                  resource.loading || resource.error
-                    ? "—"
-                    : unitSummary(balances, "available"),
-                ],
-                [
-                  "Reservado",
-                  resource.loading || resource.error
-                    ? "—"
-                    : unitSummary(balances, "reserved"),
-                ],
-                [
-                  "Lotes registrados",
-                  resource.loading || resource.error
-                    ? "—"
-                    : rows.reduce((n, i) => n + (i.lots?.length || 0), 0),
-                ],
-              ]
+            : history
+              ? [
+                  [
+                    "Materiais no histórico",
+                    resource.loading || resource.error ? "—" : rows.length,
+                  ],
+                  [
+                    "Registros cancelados",
+                    resource.loading || resource.error
+                      ? "—"
+                      : rows.reduce((n, i) => n + i.lots.length, 0),
+                  ],
+                  [
+                    "Com vínculo de coleta",
+                    resource.loading || resource.error
+                      ? "—"
+                      : rows.flatMap((i) => i.lots).filter(traceableLot).length,
+                  ],
+                  [
+                    "Sem vínculo de coleta",
+                    resource.loading || resource.error
+                      ? "—"
+                      : rows
+                          .flatMap((i) => i.lots)
+                          .filter((l) => !traceableLot(l)).length,
+                  ],
+                ]
+              : [
+                  [
+                    "Materiais encontrados",
+                    resource.loading || resource.error ? "—" : rows.length,
+                  ],
+                  [
+                    "Disponível",
+                    resource.loading || resource.error
+                      ? "—"
+                      : unitSummary(balances, "available"),
+                  ],
+                  [
+                    "Reservado",
+                    resource.loading || resource.error
+                      ? "—"
+                      : unitSummary(balances, "reserved"),
+                  ],
+                  [
+                    "Lotes válidos",
+                    resource.loading || resource.error
+                      ? "—"
+                      : rows.reduce((n, i) => n + (i.lots?.length || 0), 0),
+                  ],
+                ]
         }
       />
       <section className="card p-3 mb-4">
@@ -344,16 +463,17 @@ function InventoryList({ catalog }) {
                       { value: "MANUAL", label: "Sem vínculo de coleta" },
                     ],
                   ],
-                  [
-                    "inventory-lot-status",
-                    "Situação do lote",
-                    lotStatus,
-                    setLotStatus,
-                    [
-                      ...WASTE_LOT_STATUS_OPTIONS,
-                      { value: "CANCELLED", label: "Cancelado" },
-                    ],
-                  ],
+                  ...(!history
+                    ? [
+                        [
+                          "inventory-lot-status",
+                          "Situação do lote",
+                          lotStatus,
+                          setLotStatus,
+                          WASTE_LOT_STATUS_OPTIONS,
+                        ],
+                      ]
+                    : []),
                 ]
               : []),
           ].map(([id, label, value, set, options]) => (
@@ -396,7 +516,11 @@ function InventoryList({ catalog }) {
       <section className="card p-3">
         <div className="d-flex justify-content-between flex-wrap gap-2 mb-2">
           <h2 className="fs-18 mb-0">
-            {catalog ? "Materiais do catálogo" : "Materiais e lotes"}
+            {catalog
+              ? "Materiais do catálogo"
+              : history
+                ? "Registros cancelados por material"
+                : "Materiais e lotes válidos"}
           </h2>
           <small className="text-muted">
             {catalog
@@ -420,7 +544,13 @@ function InventoryList({ catalog }) {
                   <tr>
                     <th>Material / Identificação</th>
                     <th>Classificação / Unidade</th>
-                    <th>{catalog ? "Situação" : "Quantidades dos lotes"}</th>
+                    <th>
+                      {catalog
+                        ? "Situação"
+                        : history
+                          ? "Registros cancelados"
+                          : "Quantidades dos lotes"}
+                    </th>
                     <th>Ações</th>
                   </tr>
                 </thead>
@@ -430,6 +560,8 @@ function InventoryList({ catalog }) {
                       key={i.id}
                       item={i}
                       catalog={catalog}
+                      history={history}
+                      onHistory={() => changeView(true, i.id)}
                       expanded={expanded[i.id]}
                       onExpand={() =>
                         setExpanded((e) => ({ ...e, [i.id]: !e[i.id] }))
@@ -461,10 +593,11 @@ function InventoryList({ catalog }) {
       {!catalog && (
         <p className="small text-muted mt-3">
           Disponível soma lotes disponíveis; reservado soma lotes reservados.
-          Vendidos, descartados e cancelados ficam no histórico e não entram no
-          estoque disponível. Quantidades são separadas por unidade e não
-          representam valor financeiro. Lotes manuais antigos sem saldo
-          controlado usam a quantidade registrada.
+          Vendidos e descartados continuam identificados entre os lotes válidos,
+          mas não entram no estoque disponível. Cancelados aparecem
+          exclusivamente no histórico de cancelamentos. Quantidades são
+          separadas por unidade e não representam valor financeiro. Lotes
+          manuais antigos sem saldo controlado usam a quantidade registrada.
         </p>
       )}
       {target && (
@@ -509,7 +642,15 @@ function InventoryList({ catalog }) {
     </WastePage>
   );
 }
-function InventoryRow({ item: i, catalog, expanded, onExpand, onStatus }) {
+function InventoryRow({
+  item: i,
+  catalog,
+  history = false,
+  onHistory,
+  expanded,
+  onExpand,
+  onStatus,
+}) {
   const b = stockBalances([i]);
   return (
     <>
@@ -535,6 +676,13 @@ function InventoryRow({ item: i, catalog, expanded, onExpand, onStatus }) {
             >
               {i.status === "ACTIVE" ? "Ativo" : "Inativo"}
             </span>
+          ) : history ? (
+            <>
+              <div>{i.lots?.length || 0} registro(s) cancelado(s)</div>
+              <small className="text-muted">
+                Histórico · sem saldo de estoque
+              </small>
+            </>
           ) : !i.lots?.length ? (
             <span className="text-muted">Sem lotes registrados</span>
           ) : (
@@ -546,13 +694,15 @@ function InventoryRow({ item: i, catalog, expanded, onExpand, onStatus }) {
         </td>
         <td>
           <div className="d-flex flex-wrap gap-2">
-            <Link
-              className="btn btn-sm btn-outline-secondary"
-              to={`/edit-waste-type/${encodeURIComponent(i.id)}`}
-            >
-              Editar cadastro
-            </Link>
-            {i.status === "ACTIVE" && (
+            {!history && (
+              <Link
+                className="btn btn-sm btn-outline-secondary"
+                to={`/edit-waste-type/${encodeURIComponent(i.id)}`}
+              >
+                Editar cadastro
+              </Link>
+            )}
+            {!history && i.status === "ACTIVE" && (
               <Link
                 className="btn btn-sm btn-outline-success"
                 to={`/waste-stock/create?itemId=${encodeURIComponent(i.id)}`}
@@ -572,11 +722,24 @@ function InventoryRow({ item: i, catalog, expanded, onExpand, onStatus }) {
                 className="btn btn-sm btn-outline-success"
                 onClick={onExpand}
                 aria-controls={`lots-${i.id}`}
+                disabled={!i.lots?.length}
                 aria-expanded={!!expanded}
               >
                 {expanded
-                  ? "Ocultar lotes"
-                  : `Ver lotes (${i.lots?.length || 0})`}
+                  ? history
+                    ? "Ocultar registros"
+                    : "Ocultar lotes"
+                  : history
+                    ? `Ver registros (${i.lots?.length || 0})`
+                    : `Ver lotes (${i.lots?.length || 0})`}
+              </button>
+            )}
+            {!catalog && !history && i.cancelledLotsCount > 0 && (
+              <button
+                className="btn btn-sm btn-outline-secondary"
+                onClick={onHistory}
+              >
+                Ver histórico ({i.cancelledLotsCount})
               </button>
             )}
           </div>
@@ -592,7 +755,11 @@ function InventoryRow({ item: i, catalog, expanded, onExpand, onStatus }) {
                 <thead>
                   <tr>
                     <th>Lote / Entrada</th>
-                    <th>Quantidade / Situação</th>
+                    <th>
+                      {history
+                        ? "Quantidade histórica / Situação"
+                        : "Quantidade / Situação"}
+                    </th>
                     <th>Local / Processamento</th>
                     <th>Origem / Ações</th>
                   </tr>
@@ -941,11 +1108,19 @@ function LotForm({ lotId }) {
   }
   return (
     <WastePage
-      title={lotId ? "Detalhes e Edição do Lote" : "Adicionar Lote"}
+      title={
+        lot?.status === "CANCELLED"
+          ? "Consulta do Lote Cancelado"
+          : lotId
+            ? "Detalhes e Edição do Lote"
+            : "Adicionar Lote"
+      }
       description={
-        lotId
-          ? "Consulte a origem e atualize os dados operacionais sem romper a rastreabilidade."
-          : "Entrada manual de estoque. Para materiais de uma coleta, registre a destinação da entrada para gerar o lote vinculado."
+        lot?.status === "CANCELLED"
+          ? "Registro anulado, preservado para consulta do motivo e da origem. Este lote não compõe saldo de estoque."
+          : lotId
+            ? "Consulte a origem e atualize os dados operacionais sem romper a rastreabilidade."
+            : "Entrada manual de estoque. Para materiais de uma coleta, registre a destinação da entrada para gerar o lote vinculado."
       }
     >
       <ResourceState resource={resource}>
@@ -957,7 +1132,11 @@ function LotForm({ lotId }) {
           loaded && (
             <form onSubmit={submit} className="card p-4">
               <div className="waste-form-heading mb-4">
-                <h2 className="fs-18">Registro operacional do lote</h2>
+                <h2 className="fs-18">
+                  {lot?.status === "CANCELLED"
+                    ? "Registro histórico do lote"
+                    : "Registro operacional do lote"}
+                </h2>
                 <p className="small text-muted mb-0">
                   Campos com * são obrigatórios. Identifique o material, o local
                   e a origem para facilitar a conferência física.
@@ -1116,15 +1295,26 @@ function LotForm({ lotId }) {
                 </div>
               )}
               <div className="d-flex justify-content-end gap-2">
-                <Link className="btn btn-outline-secondary" to="/waste-stock">
-                  Voltar ao estoque
-                </Link>
-                <button
-                  className="btn btn-success"
-                  disabled={op.busy || lot?.status === "CANCELLED"}
+                <Link
+                  className="btn btn-outline-secondary"
+                  to={
+                    lot?.status === "CANCELLED"
+                      ? `/waste-stock?view=history&itemId=${encodeURIComponent(lot.item.id)}`
+                      : "/waste-stock"
+                  }
                 >
-                  {op.busy ? "Salvando..." : "Salvar lote"}
-                </button>
+                  {lot?.status === "CANCELLED"
+                    ? "Voltar ao histórico"
+                    : "Voltar ao estoque"}
+                </Link>
+                {lot?.status !== "CANCELLED" && (
+                  <button
+                    className="btn btn-success"
+                    disabled={op.busy || lot?.status === "CANCELLED"}
+                  >
+                    {op.busy ? "Salvando..." : "Salvar lote"}
+                  </button>
+                )}
               </div>
             </form>
           )

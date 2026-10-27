@@ -12,11 +12,14 @@ export function filterInventory(
     processingStage = "",
     origin = "",
     catalog = false,
+    lotScope = "all",
+    itemId = "",
   } = {},
 ) {
   const query = searchText(search);
   return items.flatMap((item) => {
     if (
+      (itemId && item.id !== itemId) ||
       (category && item.category !== category) ||
       (status && item.status !== status)
     )
@@ -42,6 +45,11 @@ export function filterInventory(
         lot.originCollectionMaterialId
       );
       return (
+        (lotScope === "cancelled"
+          ? lot.status === "CANCELLED"
+          : lotScope === "current"
+            ? lot.status !== "CANCELLED"
+            : true) &&
         (!unit || lot.unit === unit) &&
         (!lotStatus || lot.status === lotStatus) &&
         (!processingStage || lot.processingStage === processingStage) &&
@@ -55,16 +63,32 @@ export function filterInventory(
               lot.storageLocation,
               lot.origin,
               lot.originCollectionWasteEntryId,
+              lot.originCollectionId,
+              ...(lotScope === "cancelled" ? [lot.notes] : []),
             ].join(" "),
           ).includes(query))
       );
     });
     if (
       !lots.length &&
-      (unit || lotStatus || processingStage || origin || !materialMatch)
+      (lotScope === "cancelled" ||
+        (lotScope === "current" && item.lots?.length) ||
+        unit ||
+        lotStatus ||
+        processingStage ||
+        origin ||
+        !materialMatch)
     )
       return [];
-    return [{ ...item, lots }];
+    return [
+      {
+        ...item,
+        lots,
+        cancelledLotsCount: (item.lots || []).filter(
+          (l) => l.status === "CANCELLED",
+        ).length,
+      },
+    ];
   });
 }
 

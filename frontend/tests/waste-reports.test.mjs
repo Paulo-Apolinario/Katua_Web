@@ -87,3 +87,115 @@ test("CSV preserva acentos, aspas, quebras de linha e neutraliza fórmulas", () 
   assert.ok(csv.includes('"\' =HYPERLINK(1)";"\'@SUM(1)"'));
   assert.ok(csv.endsWith('"";"0"'));
 });
+
+test("Visão de lotes válidos separa anulações sem apagar a origem ou alterar os dados", () => {
+  const original = [
+    {
+      id: "paper",
+      name: "Papelão",
+      unit: "KG",
+      lots: [
+        { id: "sold", unit: "KG", status: "SOLD", quantity: 50 },
+        {
+          id: "cancel-a",
+          unit: "KG",
+          status: "CANCELLED",
+          quantity: 50,
+          originCollectionWasteEntryId: "same-entry",
+        },
+        {
+          id: "cancel-b",
+          unit: "KG",
+          status: "CANCELLED",
+          quantity: 50,
+          originCollectionWasteEntryId: "same-entry",
+        },
+      ],
+    },
+    {
+      id: "only-cancelled",
+      name: "Vidro",
+      lots: [
+        { id: "cancel-c", status: "CANCELLED", unit: "LITER", quantity: 8 },
+      ],
+    },
+    { id: "empty", name: "Novo cadastro", lots: [] },
+  ];
+  const snapshot = JSON.stringify(original),
+    current = filterInventory(original, { lotScope: "current" }),
+    history = filterInventory(original, { lotScope: "cancelled" });
+  assert.deepEqual(
+    current.map((i) => i.id),
+    ["paper", "empty"],
+  );
+  assert.deepEqual(
+    current[0].lots.map((l) => l.id),
+    ["sold"],
+  );
+  assert.equal(current[0].cancelledLotsCount, 2);
+  assert.deepEqual(
+    history.map((i) => i.id),
+    ["paper", "only-cancelled"],
+  );
+  assert.deepEqual(
+    history[0].lots.map((l) => l.id),
+    ["cancel-a", "cancel-b"],
+  );
+  assert.equal(history[0].lots[0].originCollectionWasteEntryId, "same-entry");
+  assert.equal(JSON.stringify(original), snapshot);
+});
+test("Histórico filtra o material selecionado e não mistura outros lotes ou status", () => {
+  const source = [
+    {
+      id: "a",
+      name: "Papel",
+      lots: [
+        {
+          id: "old",
+          lotCode: "CANCEL-OLD",
+          status: "CANCELLED",
+          unit: "KG",
+          processingStage: "ARMAZENADO",
+          notes: "Mudança de destinação",
+          originCollectionId: "collection",
+        },
+        { id: "new", status: "AVAILABLE", unit: "KG" },
+      ],
+    },
+    {
+      id: "b",
+      name: "Metal",
+      lots: [{ id: "other", status: "CANCELLED", unit: "UNIT" }],
+    },
+  ];
+  assert.deepEqual(
+    filterInventory(source, { lotScope: "cancelled", itemId: "a" })[0].lots.map(
+      (l) => l.id,
+    ),
+    ["old"],
+  );
+  assert.equal(
+    filterInventory(source, { lotScope: "current", search: "CANCEL-OLD" })
+      .length,
+    0,
+  );
+  assert.equal(
+    filterInventory(source, {
+      lotScope: "cancelled",
+      unit: "KG",
+      origin: "COLLECTION",
+      processingStage: "ARMAZENADO",
+    })[0].lots[0].id,
+    "old",
+  );
+  assert.equal(
+    filterInventory(source, { lotScope: "cancelled", lotStatus: "AVAILABLE" })
+      .length,
+    0,
+  );
+  assert.equal(
+    filterInventory(source, { lotScope: "cancelled", itemId: "unknown" })
+      .length,
+    0,
+  );
+});

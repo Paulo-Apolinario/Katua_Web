@@ -1,0 +1,62 @@
+{
+  "dateLocal": "2026-10-26T21:43:56.716489-03:00",
+  "repository": "Paulo-Apolinario/Katua_Web",
+  "branch": "main",
+  "passed": 20,
+  "unitAndRegression": {
+    "passed": 11,
+    "command": "node --test tests/waste-reports.test.mjs tests/waste-workspace.test.mjs"
+  },
+  "browser": {
+    "passed": 9,
+    "failed": 0,
+    "checks": [
+      {
+        "name": "Visão principal conta um lote válido de papelão e oculta as três anulações",
+        "status": "PASS"
+      },
+      {
+        "name": "CSV operacional exclui cancelados e mantém os lotes válidos",
+        "status": "PASS"
+      },
+      {
+        "name": "Atalho do material abre histórico separado com motivos e sem edição",
+        "status": "PASS"
+      },
+      {
+        "name": "CSV histórico contém apenas anulações e seus motivos",
+        "status": "PASS"
+      },
+      {
+        "name": "Histórico preserva filtro de material na recarga e permite ver todos",
+        "status": "PASS"
+      },
+      {
+        "name": "Busca histórica encontra o motivo e oculta lotes irmãos",
+        "status": "PASS"
+      },
+      {
+        "name": "Consulta de lote cancelado é somente leitura e retorna ao histórico",
+        "status": "PASS"
+      },
+      {
+        "name": "Voltar aos lotes válidos restaura contador e navegação de catálogo",
+        "status": "PASS"
+      },
+      {
+        "name": "Histórico cabe no celular e não gera mutações de dados",
+        "status": "PASS"
+      }
+    ]
+  },
+  "checks": {
+    "targetedEslint": "PASS",
+    "viteBuild": "PASS; preexisting large bundle warning",
+    "gitDiffCheck": "PASS"
+  },
+  "environment": "Real Vite panel in Chromium, controlled authenticated API responses; fixture includes one sold paper lot and three cancelled revisions; no VPS or database access",
+  "databaseMigrationRequired": false,
+  "apiChanges": false,
+  "expoAppChanges": false,
+  "vpsDeployed": false
+}
