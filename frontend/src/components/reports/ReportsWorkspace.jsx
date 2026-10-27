@@ -232,7 +232,7 @@ export default function ReportsWorkspace({ kind }) {
           className="management-nav d-flex gap-2 mb-4"
           aria-label="Relatórios e Análises"
         >
-          <Link className="btn btn-sm btn-outline-secondary" to="/environmental-impact">Impacto ambiental mensal</Link>
+          <Link className="btn btn-sm btn-outline-secondary" to="/environmental-impact">Impacto ambiental</Link>
           {Object.entries(REPORTS).map(([key, r]) => (
             <Link
               key={key}

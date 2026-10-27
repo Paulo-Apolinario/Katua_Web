@@ -27,8 +27,9 @@ export default function ReportSettings({ context, onSaved, onClose }) {
     <section className="card p-4 mb-4">
       <h2>Metas e metodologia da cooperativa</h2>
       <p>
-        Metas mensais e fatores definidos pela organização. O sistema não
-        fornece fatores ambientais genéricos ou comprova reciclagem.
+        Metas mensais e fatores opcionais para os relatórios detalhados. O resumo
+        ambiental utiliza automaticamente a referência simplificada do sistema;
+        não é necessário configurar fatores para visualizá-lo.
       </p>
       {error && (
         <p role="alert" className="alert alert-danger">

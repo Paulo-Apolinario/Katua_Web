@@ -9,7 +9,7 @@ const MENU_LINKS = [
   { name: "Motoristas", path: "/staff-list" },
   { name: "Catadores", path: "/collector-list" },
   { name: "Equipes de catadores", path: "/collector-teams" },
-  { name: "Impacto ambiental mensal", path: "/environmental-impact" },
+  { name: "Impacto ambiental", path: "/environmental-impact" },
   { name: "Cadastrar equipe", path: "/create-staff" },
   { name: "Rotas", path: "/route-list" },
   { name: "Criar rota", path: "/create-route" },
