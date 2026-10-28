@@ -441,3 +441,18 @@
   font-size: 0.8125rem;
   font-variant-numeric: tabular-nums;
 }
+
+.operational-calendar-grid { min-width: 1050px; width: 100%; table-layout: fixed; border-collapse: collapse; }
+.operational-calendar-grid th { padding: 0.75rem; background: #f2f7f3; color: #496153; }
+.operational-calendar-grid td { height: 170px; padding: 0.6rem; vertical-align: top; border: 1px solid #dfe8e2; overflow-wrap: anywhere; }
+.operational-calendar-grid .calendar-today { background: #f0faf4; }
+.calendar-day-button { background: transparent; border: 0; padding: 0.25rem 0.5rem; color: #176944; cursor: pointer; font-weight: 700; }
+.calendar-day-button[aria-pressed="true"] { background: #d4eddf; border-radius: 6px; }
+.calendar-day-button:focus-visible, .calendar-event-link:focus-visible, .calendar-more-button:focus-visible { outline: 3px solid #176944; outline-offset: 2px; }
+.calendar-event-link { display: block; color: inherit; text-decoration: none; border-radius: 6px; padding: 0.5rem; background: #f2f7f3; border-left: 3px solid #198754; font-size: 0.8rem; }
+.calendar-event-link:hover { background: #e4f2e9; color: inherit; }
+.calendar-more-button { background: transparent; color: #176944; border: 0; text-align: left; padding: 0.25rem; text-decoration: underline; }
+.calendar-day-detail { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.5rem; padding: 1rem; border: 1px solid #d9e6de; border-radius: 10px; text-decoration: none; color: #176944; }
+
+.calendar-event-link strong { overflow-wrap: normal; word-break: normal; }
+.management-workspace .calendar-events-table td:nth-child(3) { white-space: nowrap; }

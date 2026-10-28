@@ -102,7 +102,7 @@ export default function Dashboard() {
               <td>{dateLabel(c.date)}</td>
               <td>{unitsLabel(c.units)}</td>
               <td>
-                <Link to={"/edit-waste/" + c.id}>Conferir coleta</Link>
+                <Link to={"/waste-list?coleta=" + encodeURIComponent(c.id)}>Conferir coleta</Link>
               </td>
             </tr>
           ))}
@@ -193,7 +193,7 @@ export default function Dashboard() {
                       Não usa criação como agendamento.
                     </p>
                   </div>
-                  <Link to="/calendar">Abrir calendário</Link>
+                  <Link to="/operational-calendar">Abrir calendário</Link>
                 </div>
                 {table(
                   data.todayRows,

@@ -1,0 +1,11 @@
+import assert from "node:assert/strict";import fs from "node:fs";
+import {calendarDateKey,calendarDateLabel,collectionCalendarDate,scheduleCalendarDate,unlinkedSchedules,calendarEventLink,collectionMassKg} from "../src/utils/operationalCalendar.js";
+const checks=[];const check=(name,fn)=>{fn();checks.push(name);console.log("PASS "+name);};
+check("Dia do Ceará respeita a virada UTC",()=>{assert.equal(calendarDateKey("2026-10-28T02:59:00Z"),"2026-10-27");assert.equal(calendarDateKey("2026-10-28T03:00:00Z"),"2026-10-28");assert.equal(calendarDateLabel("2026-10-28"),"28/10/2026");});
+check("Ausência de programação não é substituída por criação; data impossível é rejeitada",()=>{assert.equal(calendarDateKey("2026-02-30"),null);assert.equal(collectionCalendarDate({createdAt:"2026-10-27"}),null);assert.equal(scheduleCalendarDate({createdAt:"2026-10-27"}),null);});
+check("Rota fixa usa data programada em vez de data de criação",()=>{assert.equal(collectionCalendarDate({createdAt:"2026-10-27",route:{scheduledDate:"2026-10-28"}}),"2026-10-28");});
+check("Coleta realizada conserva a data efetiva",()=>{assert.equal(collectionCalendarDate({collectedAt:"2026-10-29",route:{scheduledDate:"2026-10-28"}}),"2026-10-29");});
+check("Agendamento vinculado não duplica o evento",()=>{assert.deepEqual(unlinkedSchedules([{id:"linked"},{id:"unlinked"}],[{id:"c",scheduleId:"linked"}]).map(s=>s.id),["unlinked"]);assert.deepEqual(unlinkedSchedules([{id:"s",collections:[{id:"c"}]}],[{id:"c"}]),[]);});
+check("Atalho abre o registro exato com identificador codificado",()=>{assert.equal(calendarEventLink({type:"COLLECTION",raw:{id:"a&b"}}),"/waste-list?coleta=a%26b");assert.equal(calendarEventLink({type:"SCHEDULE",raw:{id:"s"}}),"/collection-requests?solicitacao=s");});
+check("Litros e unidades não se transformam em kg; toneladas são convertidas",()=>{assert.equal(collectionMassKg({collectionMaterials:[{quantity:50,unit:"LITER"},{quantity:4,unit:"UNIT"}]}),0);assert.equal(collectionMassKg({collectionMaterials:[{quantity:2,unit:"TON"},{quantity:40,unit:"KG"}]}),2040);});
+if(process.env.KATUA_CALENDAR_TEST_REPORT)fs.writeFileSync(process.env.KATUA_CALENDAR_TEST_REPORT,JSON.stringify({passed:checks.length,checks},null,2));

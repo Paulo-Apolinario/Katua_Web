@@ -5,7 +5,7 @@ import DocumentVault from "../components/documents/DocumentVault";
 import OwnerHistory from "../components/documents/OwnerHistory";
 import ExtraOrdersWorkspace from "../components/extra-orders/ExtraOrdersWorkspace";
 import SettingsWorkspace from "../components/settings/SettingsWorkspace";
-import { BrowserRouter, Routes, Route } from "react-router";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router";
 
 import { AdminAuthProvider } from "../context/AdminAuthContext";
 import AdminPrivateRoute from "./AdminPrivateRoute";
@@ -249,6 +249,7 @@ const Router = () => {
 
             <Route path="edit-staff/:id" element={<EditStaff />} />
 
+            <Route path="calendar" element={<Navigate to="/operational-calendar" replace />} />
             <Route path="collector-teams" element={<CollectorTeams />} />
             <Route path="collector-list" element={<CollectorList />} />
 

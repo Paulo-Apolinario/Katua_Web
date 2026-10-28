@@ -1,413 +1,262 @@
-import { COLLECTION_STAGES, STAGE_COLORS } from "../../utils/collectionWorkspace";
-import { ManagementHeader } from "../../components/management/ManagementWorkspace";
-import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import {
   CalendarDays,
   ChevronLeft,
   ChevronRight,
-  House,
-  MapPin,
-  PackageCheck,
-  Recycle,
-  Route,
-  Search,
-  UserRound,
+  RefreshCw,
 } from "lucide-react";
-import SimpleBar from "simplebar-react";
-import "simplebar-react/dist/simplebar.min.css";
-import moment from "moment";
-
+import { ManagementHeader } from "../../components/management/ManagementWorkspace";
 import HeadTags from "../../components/HeadTags";
 import TopProgressBar from "../../components/TopProgressBar";
 import { apiRequest } from "../../services/apiClient";
-
-const monthNames = [
-  "Janeiro",
-  "Fevereiro",
-  "Março",
-  "Abril",
-  "Maio",
-  "Junho",
-  "Julho",
-  "Agosto",
-  "Setembro",
-  "Outubro",
-  "Novembro",
-  "Dezembro",
-];
-
-const dayNames = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
-
-const statusLabels = {
+import {
+  COLLECTION_STAGES,
+  STAGE_COLORS,
+  generatorName,
+  personName,
+} from "../../utils/collectionWorkspace";
+import {
+  calendarDateKey,
+  calendarDateLabel,
+  calendarEventLink,
+  collectionCalendarDate,
+  scheduleCalendarDate,
+  unlinkedSchedules,
+  collectionMassKg,
+} from "../../utils/operationalCalendar";
+const labels = {
   ...COLLECTION_STAGES,
   REQUESTED: "Solicitada",
   SCHEDULED: "Agendada",
-  PENDING: "Pendente",
-  IN_PROGRESS: "Em andamento",
-  COMPLETED: "Concluída",
-  CANCELLED: "Cancelada",
 };
-
-const statusClasses = {
-  ...STAGE_COLORS,
-  REQUESTED: "warning",
-  SCHEDULED: "primary",
-  PENDING: "warning",
-  IN_PROGRESS: "info",
-  COMPLETED: "success",
-  CANCELLED: "danger",
-};
-
-const getArray = (response) => {
-  if (Array.isArray(response)) return response;
-  if (Array.isArray(response?.data)) return response.data;
-  if (Array.isArray(response?.items)) return response.items;
-  if (Array.isArray(response?.collections)) return response.collections;
-  if (Array.isArray(response?.schedules)) return response.schedules;
-  return [];
-};
-
-const getStatusLabel = (status) => statusLabels[status] || status || "N/A";
-
-const getStatusClass = (status) => statusClasses[status] || "secondary";
-
-const getGeneratorName = (item) => {
-  return (
-    item?.generator?.companyName ||
-    item?.generator?.name ||
-    item?.schedule?.generator?.companyName ||
-    item?.schedule?.generator?.name ||
-    item?.requestedBy?.displayName ||
-    item?.schedule?.requestedBy?.displayName ||
-    "Gerador não informado"
+const colors = { ...STAGE_COLORS, REQUESTED: "warning", SCHEDULED: "primary" };
+const array = (r) =>
+  Array.isArray(r)
+    ? r
+    : r?.collections || r?.schedules || r?.items || r?.data || [];
+const badge = (event) => (
+  <span className={`badge text-bg-${colors[event.status] || "secondary"}`}>
+    {labels[event.status] || "Situação não informada"}
+  </span>
+);
+export default function OperationalCalendar() {
+  const navigate = useNavigate();
+  const [params, setParams] = useSearchParams();
+  const [selected, setSelected] = useState(() =>
+    calendarDateKey(params.get("dia")),
   );
-};
-
-const getResponsibleName = (item) => {
-  return (
-    item?.collector?.name ||
-    item?.driver?.name ||
-    item?.collector?.user?.displayName ||
-    item?.driver?.user?.displayName ||
-    "Responsável não definido"
+  const [month, setMonth] = useState(() =>
+    (calendarDateKey(params.get("dia")) || calendarDateKey(new Date())).slice(
+      0,
+      7,
+    ),
   );
-};
-
-const getRouteName = (item) => {
-  return item?.route?.name || item?.route?.description || "Sem rota";
-};
-
-const getCollectionWeight = (collection) => {
-  const directWeight = Number(collection?.totalWeightKg || 0);
-
-  if (directWeight > 0) return directWeight;
-
-  const materials = Array.isArray(collection?.materials)
-    ? collection.materials
-    : [];
-
-  return materials.reduce((sum, material) => {
-    return (
-      sum +
-      Number(
-        material?.quantityKg ||
-          material?.weightKg ||
-          material?.quantity ||
-          material?.totalKg ||
-          0
-      )
-    );
-  }, 0);
-};
-
-const getEventDate = (event) => {
-  return (
-    event?.date ||
-    event?.collectedAt ||
-    event?.scheduledDate ||
-    event?.preferredDate ||
-    event?.createdAt ||
-    null
-  );
-};
-
-const getDaysInMonth = (date) => {
-  const year = date.getFullYear();
-  const month = date.getMonth();
-
-  const firstDay = new Date(year, month, 1);
-  const lastDay = new Date(year, month + 1, 0);
-  const daysInMonth = lastDay.getDate();
-
-  let firstDayOfWeek = firstDay.getDay();
-  firstDayOfWeek = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
-
-  const days = [];
-
-  for (let i = 0; i < firstDayOfWeek; i += 1) {
-    days.push(null);
-  }
-
-  for (let day = 1; day <= daysInMonth; day += 1) {
-    days.push(day);
-  }
-
-  return days;
-};
-
-const isToday = (currentDate, day) => {
-  if (!day) return false;
-
-  const today = new Date();
-  const dateToCheck = new Date(
-    currentDate.getFullYear(),
-    currentDate.getMonth(),
-    day
-  );
-
-  return dateToCheck.toDateString() === today.toDateString();
-};
-
-const OperationalCalendar = () => {
-  const [currentDate, setCurrentDate] = useState(() => {
-    const now = new Date();
-    return new Date(now.getFullYear(), now.getMonth(), 1);
-  });
-
-  const [collections, setCollections] = useState([]);
-  const [schedules, setSchedules] = useState([]);
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [typeFilter, setTypeFilter] = useState("");
-  const [loading, setLoading] = useState(true);
-
-  const loadCalendar = async () => {
-    try {
-      setLoading(true);
-
-      const [collectionsRes, schedulesRes] = await Promise.allSettled([
-        apiRequest("/collections"),
-        apiRequest("/schedules"),
-      ]);
-
-      setCollections(
-        collectionsRes.status === "fulfilled"
-          ? getArray(collectionsRes.value)
-          : []
-      );
-
-      setSchedules(
-        schedulesRes.status === "fulfilled" ? getArray(schedulesRes.value) : []
-      );
-    } catch (error) {
-      console.error("Erro ao carregar calendário operacional:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  const [collections, setCollections] = useState([]),
+    [schedules, setSchedules] = useState([]);
+  const [loading, setLoading] = useState(true),
+    [error, setError] = useState(""),
+    [revision, setRevision] = useState(0);
+  const [search, setSearch] = useState(""),
+    [status, setStatus] = useState(""),
+    [type, setType] = useState("");
+  const details = useRef(null);
   useEffect(() => {
-    loadCalendar();
-  }, []);
-
-  const events = useMemo(() => {
-    const collectionEvents = collections.map((collection) => ({
-      id: `collection-${collection.id}`,
-      type: "COLLECTION",
-      label: "Coleta",
-      status: collection.status,
-      date:
-        collection.collectedAt ||
-        collection.createdAt ||
-        collection.schedule?.scheduledDate ||
-        collection.schedule?.preferredDate,
-      generator: getGeneratorName(collection),
-      responsible: getResponsibleName(collection),
-      route: getRouteName(collection),
-      weightKg: getCollectionWeight(collection),
-      raw: collection,
-    }));
-
-    const scheduleEvents = schedules.map((schedule) => ({
-      id: `schedule-${schedule.id}`,
-      type: "SCHEDULE",
-      label: "Agendamento",
-      status: schedule.status,
-      date: schedule.scheduledDate || schedule.preferredDate || schedule.createdAt,
-      generator: getGeneratorName(schedule),
-      responsible: schedule?.requestedBy?.displayName || "Solicitante não informado",
-      route: "Ainda sem rota",
-      weightKg: 0,
-      raw: schedule,
-    }));
-
-    return [...collectionEvents, ...scheduleEvents].filter((event) =>
-      Boolean(getEventDate(event))
-    );
-  }, [collections, schedules]);
-
-  const filteredEvents = useMemo(() => {
-    const term = search.toLowerCase().trim();
-
-    return events.filter((event) => {
-      const eventText = [
-        event.generator,
-        event.responsible,
-        event.route,
-        event.status,
-        event.label,
-      ]
-        .join(" ")
-        .toLowerCase();
-
-      const matchesSearch = !term || eventText.includes(term);
-      const matchesStatus = !statusFilter || event.status === statusFilter;
-      const matchesType = !typeFilter || event.type === typeFilter;
-
-      return matchesSearch && matchesStatus && matchesType;
-    });
-  }, [events, search, statusFilter, typeFilter]);
-
-  const eventsByDate = useMemo(() => {
-    const map = new Map();
-
-    filteredEvents.forEach((event) => {
-      const date = getEventDate(event);
-      const key = moment(date).format("YYYY-MM-DD");
-
-      if (!map.has(key)) {
-        map.set(key, []);
-      }
-
-      map.get(key).push(event);
-    });
-
-    return map;
-  }, [filteredEvents]);
-
-  const stats = useMemo(() => {
-    return {
-      total: filteredEvents.length,
-      schedules: filteredEvents.filter((event) => event.type === "SCHEDULE")
-        .length,
-      collections: filteredEvents.filter((event) => event.type === "COLLECTION")
-        .length,
-      completed: filteredEvents.filter((event) => event.status === "COMPLETED")
-        .length,
+    let active = true;
+    const controller = new AbortController();
+    setLoading(true);
+    setError("");
+    Promise.allSettled([
+      apiRequest("/collections", { signal: controller.signal }),
+      apiRequest("/schedules", { signal: controller.signal }),
+    ])
+      .then(([c, s]) => {
+        if (!active) return;
+        if (c.status === "fulfilled") setCollections(array(c.value));
+        if (s.status === "fulfilled") setSchedules(array(s.value));
+        if (c.status === "rejected" || s.status === "rejected")
+          setError(
+            "Não foi possível atualizar todos os eventos. Os dados exibidos podem estar incompletos ou desatualizados. Tente atualizar novamente.",
+          );
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+      controller.abort();
     };
-  }, [filteredEvents]);
-
-  const navigateMonth = (direction) => {
-    const newDate = new Date(currentDate);
-    newDate.setMonth(currentDate.getMonth() + direction);
-    setCurrentDate(newDate);
-  };
-
-  const goToday = () => {
-    const today = new Date();
-    setCurrentDate(new Date(today.getFullYear(), today.getMonth(), 1));
-  };
-
-  const days = getDaysInMonth(currentDate);
-  const weeks = [];
-
-  for (let i = 0; i < days.length; i += 7) {
-    weeks.push(days.slice(i, i + 7));
+  }, [revision]);
+  const events = useMemo(
+    () => [
+      ...collections.map((c) => ({
+        id: `collection-${c.id}`,
+        type: "COLLECTION",
+        label: "Coleta",
+        status: c.status,
+        date: collectionCalendarDate(c),
+        origin: generatorName(c),
+        responsible: personName(c.collector || c.driver),
+        route: c.route?.name || "Sem rota",
+        weight: collectionMassKg(c),
+        raw: c,
+      })),
+      ...unlinkedSchedules(schedules, collections).map((s) => ({
+        id: `schedule-${s.id}`,
+        type: "SCHEDULE",
+        label: "Agendamento",
+        status: s.status,
+        date: scheduleCalendarDate(s),
+        origin: generatorName(s),
+        responsible: personName(s.requestedBy),
+        route: "Aguardando atribuição",
+        weight: 0,
+        raw: s,
+      })),
+    ],
+    [collections, schedules],
+  );
+  const filtered = useMemo(
+    () =>
+      events.filter(
+        (e) =>
+          (!status || e.status === status) &&
+          (!type || e.type === type) &&
+          (!search.trim() ||
+            [e.origin, e.responsible, e.route, labels[e.status], e.label]
+              .join(" ")
+              .toLocaleLowerCase("pt-BR")
+              .includes(search.trim().toLocaleLowerCase("pt-BR"))),
+      ),
+    [events, status, type, search],
+  );
+  const dated = filtered.filter((e) => calendarDateKey(e.date));
+  const visible = dated.filter((e) =>
+    calendarDateKey(e.date).startsWith(month),
+  );
+  const byDate = new Map();
+  for (const event of dated) {
+    const key = calendarDateKey(event.date);
+    byDate.set(key, [...(byDate.get(key) || []), event]);
   }
-
+  const undated = filtered.length - dated.length;
+  const [year, number] = month.split("-").map(Number),
+    first = new Date(year, number - 1, 1),
+    offset = (first.getDay() + 6) % 7,
+    length = new Date(year, number, 0).getDate();
+  const cells = Array.from(
+    { length: Math.ceil((offset + length) / 7) * 7 },
+    (_, i) => (i >= offset && i < offset + length ? i - offset + 1 : null),
+  );
+  const today = calendarDateKey(new Date());
+  function changeMonth(delta) {
+    const d = new Date(year, number - 1 + delta, 1);
+    setMonth(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
+    setSelected(null);
+  }
+  function selectDay(key, items, showAll = false) {
+    if (!showAll && items.length === 1)
+      return navigate(calendarEventLink(items[0]));
+    setSelected(key);
+    setParams({ dia: key }, { replace: true });
+    requestAnimationFrame(() => {
+      details.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      details.current?.focus({ preventScroll: true });
+    });
+  }
   return (
     <>
       <HeadTags title="Calendário Operacional" />
       <TopProgressBar loading={loading} />
-
-      <ManagementHeader title="Calendário Operacional" />
-
-      <div className="row g-4 mb-4">
-        <div className="col-xl-3 col-md-6">
-          <div className="card p-25 h-100">
-            <p className="text-muted mb-1">Eventos no calendário</p>
-            <h4 className="mb-0">{stats.total}</h4>
-          </div>
+      <ManagementHeader
+        title="Calendário Operacional"
+        description="Programação e execução das coletas. Abra um evento para consultar seus detalhes."
+        actions={
+          <button
+            className="secondary-btn btn-sm"
+            disabled={loading}
+            onClick={() => setRevision((n) => n + 1)}
+          >
+            <RefreshCw size={16} />
+            {loading ? "Atualizando..." : "Atualizar calendário"}
+          </button>
+        }
+      />
+      {error && (
+        <div className="alert alert-warning" role="alert">
+          {error}
         </div>
-
-        <div className="col-xl-3 col-md-6">
-          <div className="card p-25 h-100">
-            <p className="text-muted mb-1">Agendamentos</p>
-            <h4 className="mb-0">{stats.schedules}</h4>
-          </div>
+      )}
+      {undated > 0 && (
+        <div className="alert alert-info">
+          {undated} {undated === 1 ? "registro sem data" : "registros sem data"} de coleta ou programação.{" "}
+          <Link to="/waste-list">Consultar coletas</Link> ·{" "}
+          <Link to="/collection-requests">Consultar solicitações</Link>. A data
+          de criação não é usada como agendamento.
         </div>
-
-        <div className="col-xl-3 col-md-6">
-          <div className="card p-25 h-100">
-            <p className="text-muted mb-1">Coletas</p>
-            <h4 className="mb-0">{stats.collections}</h4>
-          </div>
-        </div>
-
-        <div className="col-xl-3 col-md-6">
-          <div className="card p-25 h-100">
-            <p className="text-muted mb-1">Concluídas</p>
-            <h4 className="mb-0">{stats.completed}</h4>
-          </div>
-        </div>
-      </div>
-
-      <div className="card p-25 mb-4">
-        <div className="row g-3 align-items-center">
-          <div className="col-lg-4 col-md-6">
-            <div className="filter-section search w-100">
-              <div className="icon">
-                <Search />
-              </div>
-
-              <input
-                className="form-control"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar por gerador, rota ou responsável..."
-               aria-label="Buscar por gerador, rota ou responsável..." />
+      )}
+      <div className="row g-3 mb-4">
+        {[
+          ["Eventos no mês", visible.length],
+          ["Agendamentos", visible.filter((e) => e.type === "SCHEDULE").length],
+          ["Coletas", visible.filter((e) => e.type === "COLLECTION").length],
+          [
+            "Concluídas",
+            visible.filter((e) => e.status === "COMPLETED").length,
+          ],
+        ].map(([label, value]) => (
+          <div className="col-sm-6 col-xl-3" key={label}>
+            <div className="card p-4 h-100">
+              <p className="text-muted mb-1">{label}</p>
+              <strong className="fs-4">{value}</strong>
             </div>
           </div>
-
-          <div className="col-lg-3 col-md-6">
+        ))}
+      </div>
+      <div className="card p-4 mb-4">
+        <div className="row g-3">
+          <label className="col-md-4">
+            Buscar por ponto, rota ou responsável
+            <input
+              className="form-control"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </label>
+          <label className="col-md-3">
+            Tipo
             <select
               className="form-select"
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
+              value={type}
+              onChange={(e) => setType(e.target.value)}
             >
               <option value="">Todos os tipos</option>
-              <option value="SCHEDULE">Agendamentos</option>
               <option value="COLLECTION">Coletas</option>
+              <option value="SCHEDULE">Agendamentos</option>
             </select>
-          </div>
-
-          <div className="col-lg-3 col-md-6">
+          </label>
+          <label className="col-md-3">
+            Status
             <select
               className="form-select"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
             >
               <option value="">Todos os status</option>
-              <option value="REQUESTED">Solicitada</option>
-              <option value="SCHEDULED">Agendada</option>
-              <option value="PENDING">Pendente</option>
-              <option value="IN_PROGRESS">Em andamento</option>
-              <option value="COLLECTED">Finalizada em campo</option>
-              <option value="RECEIVED">Recebida</option>
-              <option value="SORTING">Em triagem</option>
-              <option value="COMPLETED">Concluída</option>
-              <option value="CANCELLED">Cancelada</option>
+              {Object.entries(labels).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
             </select>
-          </div>
-
-          <div className="col-lg-2 col-md-6">
+          </label>
+          <div className="col-md-2 d-flex align-items-end">
             <button
-              className="clear-filter w-100"
+              className="secondary-btn w-100"
               onClick={() => {
                 setSearch("");
-                setTypeFilter("");
-                setStatusFilter("");
+                setStatus("");
+                setType("");
               }}
             >
               Limpar filtros
@@ -415,132 +264,104 @@ const OperationalCalendar = () => {
           </div>
         </div>
       </div>
-
-      <div className="card p-25">
-        <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+      <section className="card p-4">
+        <div className="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
           <div className="d-flex align-items-center gap-3">
-            <button className="secondary-btn btn-sm" onClick={() => navigateMonth(-1)}>
+            <button
+              className="secondary-btn btn-sm"
+              aria-label="Mês anterior"
+              onClick={() => changeMonth(-1)}
+            >
               <ChevronLeft size={18} />
             </button>
-
-            <div>
-              <h3 className="fw-600 mb-0">
-                {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
-              </h3>
-              <p className="text-muted mb-0">
-                Visão mensal de agendamentos e coletas.
-              </p>
-            </div>
-
-            <button className="secondary-btn btn-sm" onClick={() => navigateMonth(1)}>
+            <h2 className="mb-0">
+              {new Intl.DateTimeFormat("pt-BR", {
+                month: "long",
+                year: "numeric",
+              }).format(first)}
+            </h2>
+            <button
+              className="secondary-btn btn-sm"
+              aria-label="Próximo mês"
+              onClick={() => changeMonth(1)}
+            >
               <ChevronRight size={18} />
             </button>
           </div>
-
-          <button className="primary-btn btn-sm border-0" onClick={goToday}>
-            <CalendarDays size={18} />
+          <button
+            className="primary-btn btn-sm"
+            onClick={() => {
+              setMonth(today.slice(0, 7));
+              selectDay(today, byDate.get(today) || [], true);
+            }}
+          >
+            <CalendarDays size={16} />
             Hoje
           </button>
         </div>
-
-        <SimpleBar forceVisible="x" autoHide>
-          <table className="calendar-grid" style={{ minWidth: 1100 }}>
+        <p className="small text-muted">
+          Clique no evento para abrir seus detalhes. Dias com vários eventos
+          permitem consultar a agenda completa.
+        </p>
+        <div className="table-responsive">
+          <table className="calendar-grid operational-calendar-grid">
             <thead>
               <tr>
-                {dayNames.map((day) => (
-                  <th key={day} className="day-header">
-                    {day}
+                {["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"].map((d) => (
+                  <th key={d} scope="col">
+                    {d}
                   </th>
                 ))}
               </tr>
             </thead>
-
             <tbody>
-              {weeks.map((week, weekIndex) => (
-                <tr key={weekIndex}>
-                  {week.map((day, dayIndex) => {
-                    const dateKey = day
-                      ? moment(
-                          new Date(
-                            currentDate.getFullYear(),
-                            currentDate.getMonth(),
-                            day
-                          )
-                        ).format("YYYY-MM-DD")
-                      : null;
-
-                    const dayEvents = dateKey ? eventsByDate.get(dateKey) || [] : [];
-
+              {Array.from({ length: cells.length / 7 }, (_, week) => (
+                <tr key={week}>
+                  {cells.slice(week * 7, week * 7 + 7).map((day, i) => {
+                    const key = day
+                        ? `${month}-${String(day).padStart(2, "0")}`
+                        : null,
+                      items = key ? byDate.get(key) || [] : [];
                     return (
                       <td
-                        key={`${weekIndex}-${dayIndex}`}
-                        className={`calendar-cell ${!day ? "empty-cell" : ""}`}
-                        style={{
-                          verticalAlign: "top",
-                          minHeight: 180,
-                          height: 180,
-                          width: 157,
-                          padding: 10,
-                        }}
+                        key={i}
+                        className={key === today ? "calendar-today" : ""}
                       >
                         {day && (
                           <>
-                            <div
-                              className={`day-number ${
-                                isToday(currentDate, day) ? "today" : ""
-                              }`}
+                            <button
+                              className="calendar-day-button"
+                              aria-label={`Ver agenda de ${calendarDateLabel(key)}`}
+                              aria-pressed={selected === key}
+                              onClick={() => selectDay(key, items)}
                             >
                               {day}
-                            </div>
-
-                            <div className="d-flex flex-column gap-2 mt-2">
-                              {dayEvents.slice(0, 3).map((event) => (
-                                <div
-                                  key={event.id}
-                                  className="event-card"
-                                  style={{
-                                    borderLeft: `4px solid var(--bs-${getStatusClass(
-                                      event.status
-                                    )})`,
-                                  }}
+                            </button>
+                            <div className="d-grid gap-2 mt-2">
+                              {items.slice(0, 3).map((e) => (
+                                <Link
+                                  className="calendar-event-link"
+                                  key={e.id}
+                                  to={calendarEventLink(e)}
+                                  aria-label={`Abrir ${e.label.toLowerCase()} de ${e.origin}: ${labels[e.status]}`}
                                 >
-                                  <div className="d-flex justify-content-between align-items-start gap-2 mb-1">
-                                    <strong className="fs-14">{event.label}</strong>
-
-                                    <span
-                                      className={`badge text-bg-${getStatusClass(
-                                        event.status
-                                      )}`}
-                                    >
-                                      {getStatusLabel(event.status)}
-                                    </span>
+                                  <div className="d-flex justify-content-between flex-wrap gap-1">
+                                    <strong>{e.label}</strong>
+                                    {badge(e)}
                                   </div>
-
-                                  <div className="event-subtitle fs-14 mb-1">
-                                    <MapPin size={13} /> {event.generator}
-                                  </div>
-
-                                  <div className="event-code fs-14 mb-1">
-                                    <UserRound size={13} /> {event.responsible}
-                                  </div>
-
-                                  <div className="event-code fs-14 mb-1">
-                                    <Route size={13} /> {event.route}
-                                  </div>
-
-                                  {event.type === "COLLECTION" && (
-                                    <div className="event-code fs-14">
-                                      <Recycle size={13} />{" "}
-                                      {Number(event.weightKg || 0).toFixed(2)} KG
-                                    </div>
-                                  )}
-                                </div>
+                                  <div>{e.origin}</div>
+                                  <small>
+                                    {e.responsible} · {e.route}
+                                  </small>
+                                </Link>
                               ))}
-
-                              {dayEvents.length > 3 && (
-                                <div className="text-muted small">
-                                  +{dayEvents.length - 3} eventos
-                                </div>
+                              {items.length > 3 && (
+                                <button
+                                  className="calendar-more-button"
+                                  onClick={() => selectDay(key, items, true)}
+                                >
+                                  Ver todos os {items.length} eventos
+                                </button>
                               )}
                             </div>
                           </>
@@ -552,84 +373,107 @@ const OperationalCalendar = () => {
               ))}
             </tbody>
           </table>
-        </SimpleBar>
-      </div>
-
-      <div className="card p-25 mt-4">
-        <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
-          <div>
-            <h3 className="fw-600 mb-1">Eventos recentes</h3>
-            <p className="text-muted mb-0">
-              Lista complementar dos eventos exibidos no calendário.
-            </p>
-          </div>
-
-          <PackageCheck color="#028C56" />
         </div>
-
-        <SimpleBar forceVisible="x" autoHide>
-          <table className="table nowrap w-100">
+      </section>
+      {selected && (
+        <section
+          className="card p-4 mt-4"
+          ref={details}
+          tabIndex={-1}
+          aria-label={`Agenda de ${calendarDateLabel(selected)}`}
+        >
+          <h3>Agenda de {calendarDateLabel(selected)}</h3>
+          {!(byDate.get(selected) || []).length && (
+            <p>
+              Nenhum evento corresponde a esta data e aos filtros selecionados.
+            </p>
+          )}
+          <div className="d-grid gap-2">
+            {(byDate.get(selected) || []).map((e) => (
+              <Link
+                className="calendar-day-detail"
+                key={e.id}
+                to={calendarEventLink(e)}
+              >
+                <strong>{e.origin}</strong>
+                <span>
+                  {e.label} · {labels[e.status]} · {e.responsible}
+                </span>
+                <span>
+                  Abrir {e.type === "COLLECTION" ? "coleta" : "solicitação"} →
+                </span>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+      <section className="card p-4 mt-4">
+        <h3>Eventos do mês</h3>
+        <p className="text-muted">
+          Até 12 eventos, por data de programação ou coleta. Selecione um dia no
+          calendário para consultar todos os registros daquela data.
+        </p>
+        <div className="table-responsive">
+          <table className="table calendar-events-table">
             <thead>
               <tr>
-                <th>Tipo</th>
-                <th>Gerador</th>
-                <th>Responsável</th>
-                <th>Rota</th>
-                <th>Quantidade</th>
-                <th>Data</th>
-                <th>Status</th>
+                {[
+                  "Origem",
+                  "Tipo",
+                  "Data",
+                  "Responsável",
+                  "Rota",
+                  "Peso em kg",
+                  "Situação",
+                  "Ação",
+                ].map((h) => (
+                  <th key={h}>{h}</th>
+                ))}
               </tr>
             </thead>
-
             <tbody>
-              {filteredEvents.length === 0 ? (
+              {!visible.length ? (
                 <tr>
-                  <td colSpan="7">Nenhum evento encontrado.</td>
+                  <td colSpan={8}>
+                    {loading
+                      ? "Carregando eventos..."
+                      : "Nenhum evento corresponde ao mês e aos filtros selecionados."}
+                  </td>
                 </tr>
               ) : (
-                filteredEvents
+                visible
                   .slice()
-                  .sort((a, b) => {
-                    const dateA = new Date(getEventDate(a) || 0).getTime();
-                    const dateB = new Date(getEventDate(b) || 0).getTime();
-
-                    return dateB - dateA;
-                  })
+                  .sort((a, b) => new Date(a.date) - new Date(b.date))
                   .slice(0, 12)
-                  .map((event) => (
-                    <tr key={event.id}>
-                      <td>{event.label}</td>
-                      <td>{event.generator}</td>
-                      <td>{event.responsible}</td>
-                      <td>{event.route}</td>
+                  .map((e) => (
+                    <tr key={e.id}>
+                      <td>{e.origin}</td>
+                      <td>{e.label}</td>
+                      <td>{calendarDateLabel(e.date)}</td>
+                      <td>{e.responsible}</td>
+                      <td>{e.route}</td>
                       <td>
-                        {event.type === "COLLECTION" ? (
-                          <strong>
-                            {Number(event.weightKg || 0).toFixed(2)} KG
-                          </strong>
-                        ) : (
-                          "N/A"
-                        )}
+                        {e.weight > 0
+                          ? `${e.weight.toLocaleString("pt-BR")} kg`
+                          : "Sem peso registrado"}
                       </td>
-                      <td>{moment(getEventDate(event)).format("DD/MM/YYYY")}</td>
+                      <td>{badge(e)}</td>
                       <td>
-                        <span
-                          className={`badge text-bg-${getStatusClass(
-                            event.status
-                          )}`}
+                        <Link
+                          className="secondary-btn btn-sm"
+                          to={calendarEventLink(e)}
                         >
-                          {getStatusLabel(event.status)}
-                        </span>
+                          Abrir{" "}
+                          {e.type === "COLLECTION" ? "coleta" : "solicitação"}
+                        </Link>
                       </td>
                     </tr>
                   ))
               )}
             </tbody>
           </table>
-        </SimpleBar>
-      </div>
+        </div>
+      </section>
     </>
   );
-};
-
-export default OperationalCalendar;
+}

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { RefreshCw } from "lucide-react";
 import toast from "react-hot-toast";
 import HeadTags from "../../components/HeadTags";
@@ -58,6 +58,8 @@ export default function CollectionRequests() {
   return admin?.id ? <RequestWorkspace key={admin.id} /> : null;
 }
 function RequestWorkspace() {
+  const [params,setParams] = useSearchParams();
+  const requestId = params.get("solicitacao");
   const [schedules, setSchedules] = useState([]),
     [loading, setLoading] = useState(true),
     [error, setError] = useState("");
@@ -138,7 +140,7 @@ function RequestWorkspace() {
       g.options++;
     };
   }, [load]);
-  async function open(s) {
+  const open = useCallback(async (s) => {
     const g = guard.current,
       n = ++g.detail;
     setDialog(true);
@@ -157,9 +159,14 @@ function RequestWorkspace() {
     } finally {
       if (n === g.detail) setDetailLoading(false);
     }
-  }
+  }, [loadOptions]);
+  useEffect(() => {
+    if (requestId) void open({id:requestId});
+    else {guard.current.detail++;setDialog(false);setSelected(null);}
+  }, [requestId,open]);
   function close() {
     if (busy) return;
+    setParams(current => {const next=new URLSearchParams(current);next.delete("solicitacao");return next;},{replace:true});
     guard.current.detail++;
     guard.current.options++;
     setDialog(false);
