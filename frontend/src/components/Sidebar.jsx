@@ -102,6 +102,7 @@ const Sidebar = ({ active, setActive }) => {
   const isCollectorSectionActive = [
     "/collector-list",
     "/create-collector",
+    "/edit-collector",
     "/collector-documents",
     "/collector-history",
     "/collector-profile",

@@ -1,6 +1,6 @@
 import { ManagementHeader } from "../../components/management/ManagementWorkspace";
-import { useRef, useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { useEffect, useRef, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router";
 import {
   ArrowLeft,
   ChevronRight,
@@ -15,7 +15,7 @@ import toast from "react-hot-toast";
 
 import HeadTags from "../../components/HeadTags";
 import TopProgressBar from "../../components/TopProgressBar";
-import { createCollector } from "../../services/collectorService";
+import { createCollector, getCollectorById, updateCollector } from "../../services/collectorService";
 
 const MAX_FILES = 10;
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -39,6 +39,8 @@ const initialForm = {
   gender: "",
   address: "",
   associationDate: "",
+  registrationNumber: "",
+  membershipCategory: "",
   isAutonomous: "false",
   incomeRange: "",
   socialBenefits: "",
@@ -149,10 +151,30 @@ const isValidCpfLength = (value) => {
 
 const AddCollector = () => {
   const navigate = useNavigate();
+  const { id } = useParams();
+  const isEditing = Boolean(id);
+  const [loading, setLoading] = useState(Boolean(id));
+  const [loadError, setLoadError] = useState("");
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const fileInputRef = useRef(null);
 
   const [form, setForm] = useState(initialForm);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    setLoadError("");
+    if (!id) { setForm(initialForm); setLoading(false); return () => { active = false; }; }
+    setLoading(true);
+    getCollectorById(id).then(response => {
+      if (!active) return;
+      const collector = response?.collector;
+      if (!collector?.id) throw new Error("Cadastro não encontrado.");
+      const values = Object.fromEntries(Object.keys(initialForm).map(key => [key, collector[key] ?? initialForm[key]]));
+      setForm({ ...values, associationDate: collector.associationDate?.slice(0, 10) || "", isAutonomous: collector.isAutonomous ? "true" : "false", status: collector.status === "INACTIVE" ? "INACTIVE" : "AVAILABLE", documents: [] });
+    }).catch(error => { if (active) setLoadError(error?.error || error?.message || "Não foi possível carregar o cadastro."); }).finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [id, loadAttempt]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -291,7 +313,8 @@ const AddCollector = () => {
     try {
       setSaving(true);
 
-      const response = await createCollector({
+      const save = isEditing ? payload => updateCollector(id, payload) : createCollector;
+      const response = await save({
         ...form,
         name: form.name.trim(),
         socialName: form.socialName.trim(),
@@ -353,14 +376,16 @@ const AddCollector = () => {
     }
   };
 
+  if (loading || loadError) return <><ManagementHeader title="Editar Catador" description="Atualize os dados cadastrais e de filiação." /><div className="card p-25" role={loadError ? "alert" : "status"}>{loading ? "Carregando cadastro..." : <><p>{loadError}</p><button className="primary-btn" onClick={() => setLoadAttempt(n => n + 1)}>Tentar novamente</button><Link className="secondary-btn ms-2" to="/collector-list">Voltar para catadores</Link></>}</div></>;
+
   return (
     <>
-      <HeadTags title="Adicionar Catador | KATUÁ" />
+      <HeadTags title={`${isEditing ? "Editar" : "Adicionar"} Catador | KATUÁ`} />
       <TopProgressBar loading={saving} />
 
       <ManagementHeader
-        title="Adicionar Catador"
-        description="Cadastre dados pessoais, cooperativos, socioeconômicos e documentos do catador."
+        title={isEditing ? "Editar Catador" : "Adicionar Catador"}
+        description={isEditing ? "Atualize os dados pessoais, de filiação e socioeconômicos do catador." : "Cadastre dados pessoais, cooperativos, socioeconômicos e documentos do catador."}
         actions={
           <>
             <Link to="/collector-list" className="secondary-btn btn-sm">
@@ -649,7 +674,7 @@ const AddCollector = () => {
             </h4>
 
             <p className="text-muted mb-0">
-              Informe o vínculo e a situação operacional
+              Informe a filiação e a situação cadastral
               do catador.
             </p>
           </div>
@@ -660,7 +685,7 @@ const AddCollector = () => {
                 htmlFor="associationDate"
                 className="form-label"
               >
-                Data de associação
+                Data de Filiação
               </label>
 
               <input
@@ -675,6 +700,20 @@ const AddCollector = () => {
             </div>
 
             <div className="col-md-4">
+              <label htmlFor="registrationNumber" className="form-label">Número de Inscrição</label>
+              <input id="registrationNumber" name="registrationNumber" className="form-control" maxLength={50} value={form.registrationNumber} onChange={handleChange} disabled={saving} placeholder="Ex.: 001/2026" />
+            </div>
+            <div className="col-md-4">
+              <label htmlFor="membershipCategory" className="form-label">Categoria</label>
+              <select id="membershipCategory" name="membershipCategory" className="form-select" value={form.membershipCategory} onChange={handleChange} disabled={saving}>
+                <option value="">Selecione a categoria</option>
+                <option value="FOUNDER">Fundador</option>
+                <option value="EFFECTIVE">Efetivo</option>
+                <option value="BENEFICIARY">Beneficiado</option>
+                <option value="CONTRIBUTOR">Contribuinte</option>
+              </select>
+            </div>
+            <div className="col-md-6">
               <label
                 htmlFor="isAutonomous"
                 className="form-label"
@@ -695,7 +734,7 @@ const AddCollector = () => {
               </select>
             </div>
 
-            <div className="col-md-4">
+            <div className="col-md-6">
               <label
                 htmlFor="status"
                 className="form-label"
@@ -712,11 +751,7 @@ const AddCollector = () => {
                 disabled={saving}
               >
                 <option value="AVAILABLE">
-                  Disponível
-                </option>
-
-                <option value="ON_ROUTE">
-                  Em rota
+                  Ativo
                 </option>
 
                 <option value="INACTIVE">
@@ -836,6 +871,7 @@ const AddCollector = () => {
           </div>
         </div>
 
+        {isEditing ? <div className="card p-25 mb-4"><h4 className="mb-2">Documentos do catador</h4><p className="text-muted">Os documentos já anexados permanecem vinculados a este cadastro.</p><Link to={`/collector-documents?collectorId=${id}`} className="secondary-btn btn-sm"><FileText size={16} />Gerenciar documentos</Link></div> : <>
         <div className="card p-25 mb-4">
           <div className="d-flex align-items-center gap-3 mb-4">
             <div
@@ -966,6 +1002,8 @@ const AddCollector = () => {
           </div>
         </div>
 
+        </>}
+
         <div className="card p-25">
           <div className="d-flex justify-content-end gap-2 flex-wrap">
             <Link
@@ -984,7 +1022,7 @@ const AddCollector = () => {
 
               {saving
                 ? "Salvando..."
-                : "Salvar Catador"}
+                : isEditing ? "Salvar alterações" : "Salvar Catador"}
             </button>
           </div>
         </div>

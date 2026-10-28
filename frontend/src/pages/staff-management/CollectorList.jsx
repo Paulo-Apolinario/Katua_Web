@@ -6,6 +6,7 @@ import {
   Eye,
   House,
   Plus,
+  Pencil,
   RefreshCw,
   Search,
 } from "lucide-react";
@@ -25,10 +26,12 @@ const getArray = (response) => {
   return [];
 };
 
+const CATEGORY_LABELS = { FOUNDER: "Fundador", EFFECTIVE: "Efetivo", BENEFICIARY: "Beneficiado", CONTRIBUTOR: "Contribuinte" };
+
 const getStatusLabel = (status) => {
   const labels = {
-    AVAILABLE: "Disponível",
-    ON_ROUTE: "Em rota",
+    AVAILABLE: "Ativo",
+    ON_ROUTE: "Ativo",
     INACTIVE: "Inativo",
   };
 
@@ -38,7 +41,7 @@ const getStatusLabel = (status) => {
 const getStatusClass = (status) => {
   const classes = {
     AVAILABLE: "success",
-    ON_ROUTE: "info",
+    ON_ROUTE: "success",
     INACTIVE: "secondary",
   };
 
@@ -175,7 +178,9 @@ const CollectorList = () => {
         collector.email,
         collector.phone,
         collector.rg,
-        collector.status,
+        getStatusLabel(collector.status),
+        collector.registrationNumber,
+        CATEGORY_LABELS[collector.membershipCategory],
       ];
 
       return values.some((value) =>
@@ -268,6 +273,8 @@ const CollectorList = () => {
                     <tr key={collector.id}>
                       <td>
                         <strong>{collector.name}</strong>
+                        {collector.registrationNumber && <div className="small text-muted">Inscrição: {collector.registrationNumber}</div>}
+                        {collector.membershipCategory && <div className="small text-muted">{CATEGORY_LABELS[collector.membershipCategory]}</div>}
                       </td>
 
                       <td>{collector.email || "N/A"}</td>
@@ -299,6 +306,7 @@ const CollectorList = () => {
                       </td>
 
                       <td>
+                        <Link to={`/edit-collector/${collector.id}`} className="secondary-btn btn-sm me-2 mb-1"><Pencil size={16} />Editar cadastro</Link>
                         <Link
                           to={`/collector-documents?collectorId=${collector.id}`}
                           className="secondary-btn btn-sm"

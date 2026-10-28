@@ -32,6 +32,8 @@ const normalizeCollectorJsonPayload = (payload = {}) => {
     "gender",
     "address",
     "associationDate",
+    "registrationNumber",
+    "membershipCategory",
     "incomeRange",
     "socialBenefits",
     "occupationalDiseases",
@@ -159,6 +161,8 @@ const normalizeCollectorFormData = (payload = {}) => {
     normalizeText(payload.socioeconomicNotes)
   );
 
+  for (const key of ["registrationNumber", "membershipCategory"]) appendFormDataValue(formData, key, normalizeText(payload[key]));
+
   if (payload.documentType) {
     appendFormDataValue(
       formData,
@@ -258,13 +262,14 @@ export const updateCollector = async (id, payload) => {
     throw new Error("ID do catador não informado.");
   }
 
-  if (!payload?.status) {
-    throw new Error(
-      "A atualização completa do catador ainda não possui endpoint próprio."
-    );
+  const fields = ["name", "email", "status", "isAutonomous", "socialName", "phone", "cpf", "rg", "birthDate", "sex", "gender", "address", "associationDate", "registrationNumber", "membershipCategory", "incomeRange", "socialBenefits", "occupationalDiseases", "socioeconomicNotes"];
+  const body = {};
+  for (const key of fields) {
+    if (!Object.prototype.hasOwnProperty.call(payload, key)) continue;
+    body[key] = key === "isAutonomous" ? payload[key] === true || payload[key] === "true" : key === "cpf" ? normalizeCpf(payload[key]) : normalizeText(payload[key]);
   }
-
-  return updateCollectorStatus(id, payload.status);
+  if (body.email) body.email = body.email.toLowerCase();
+  return apiRequest(`/collectors/${id}`, { method: "PATCH", body });
 };
 
 export const getCollectorDocuments = async (collectorId) => {

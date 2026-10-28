@@ -253,6 +253,7 @@ const Router = () => {
             <Route path="collector-list" element={<CollectorList />} />
 
             <Route path="create-collector" element={<AddCollector />} />
+            <Route path="edit-collector/:id" element={<AddCollector />} />
 
             <Route
               path="collector-documents"

@@ -37,6 +37,7 @@ const collectorRoutes = [
   "collector-teams",
   "collector-list",
   "create-collector",
+  "edit-collector",
   "collector-documents",
   "collector-history",
   "collector-profile",
@@ -66,6 +67,7 @@ const collectorLinks = [
   link("/collector-list", "Catadores", [
     "collector-list",
     "create-collector",
+  "edit-collector",
     "collector-profile",
   ]),
   link("/collector-teams", "Equipes", ["collector-teams"]),
