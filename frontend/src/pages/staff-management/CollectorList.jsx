@@ -240,7 +240,7 @@ const CollectorList = () => {
         <h4 className="mb-4 fw-600">Lista de Catadores</h4>
 
         <div className="table-responsive">
-          <table className="table nowrap w-100">
+          <table className="table nowrap w-100 collector-table">
             <thead>
               <tr>
                 <th>Nome</th>
@@ -306,7 +306,8 @@ const CollectorList = () => {
                       </td>
 
                       <td>
-                        <Link to={`/edit-collector/${collector.id}`} className="secondary-btn btn-sm me-2 mb-1"><Pencil size={16} />Editar cadastro</Link>
+                        <div className="collector-row-actions">
+                        <Link to={`/edit-collector/${collector.id}`} className="secondary-btn btn-sm"><Pencil size={16} />Editar cadastro</Link>
                         <Link
                           to={`/collector-documents?collectorId=${collector.id}`}
                           className="secondary-btn btn-sm"
@@ -316,10 +317,11 @@ const CollectorList = () => {
                         </Link>
                         <Link
                           to={`/collector-history?collectorId=${collector.id}`}
-                          className="outline-btn btn-sm ms-2"
+                          className="secondary-btn btn-sm"
                         >
                           Histórico
                         </Link>
+                        </div>
                       </td>
                     </tr>
                   );

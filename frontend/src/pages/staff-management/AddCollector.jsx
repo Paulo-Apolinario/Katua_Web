@@ -871,7 +871,7 @@ const AddCollector = () => {
           </div>
         </div>
 
-        {isEditing ? <div className="card p-25 mb-4"><h4 className="mb-2">Documentos do catador</h4><p className="text-muted">Os documentos já anexados permanecem vinculados a este cadastro.</p><Link to={`/collector-documents?collectorId=${id}`} className="secondary-btn btn-sm"><FileText size={16} />Gerenciar documentos</Link></div> : <>
+        {!isEditing && <>
         <div className="card p-25 mb-4">
           <div className="d-flex align-items-center gap-3 mb-4">
             <div

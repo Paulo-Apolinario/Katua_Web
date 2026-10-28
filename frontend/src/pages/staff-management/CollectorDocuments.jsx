@@ -1,3 +1,4 @@
+import { COLLECTION_STAGES, STAGE_COLORS } from "../../utils/collectionWorkspace";
 import { ManagementHeader } from "../../components/management/ManagementWorkspace";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router";
@@ -70,23 +71,13 @@ const getStatusClass = (status) => {
 };
 
 const getCollectionStatusLabel = (status) => {
-  const labels = {
-    PENDING: "Pendente",
-    IN_PROGRESS: "Em andamento",
-    COMPLETED: "Concluída",
-    CANCELLED: "Cancelada",
-  };
+  const labels = COLLECTION_STAGES;
 
   return labels[status] || status || "N/A";
 };
 
 const getCollectionStatusClass = (status) => {
-  const classes = {
-    PENDING: "warning",
-    IN_PROGRESS: "info",
-    COMPLETED: "success",
-    CANCELLED: "danger",
-  };
+  const classes = STAGE_COLORS;
 
   return classes[status] || "secondary";
 };

@@ -1,3 +1,4 @@
+import { COLLECTION_STAGES } from "../utils/collectionWorkspace";
 import OperationalOverviewCards from "../components/dashboard/OperationalOverviewCards";
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
@@ -97,7 +98,7 @@ export default function Dashboard() {
                   {c.route} · {c.vehicle}
                 </small>
               </td>
-              <td>{c.status}</td>
+              <td>{COLLECTION_STAGES[c.status] || c.status}</td>
               <td>{dateLabel(c.date)}</td>
               <td>{unitsLabel(c.units)}</td>
               <td>

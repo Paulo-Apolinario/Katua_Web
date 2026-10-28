@@ -1,3 +1,4 @@
+import { COLLECTION_STAGES, STAGE_COLORS } from "../../utils/collectionWorkspace";
 import { ManagementHeader } from "../../components/management/ManagementWorkspace";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
@@ -39,6 +40,7 @@ const monthNames = [
 const dayNames = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
 
 const statusLabels = {
+  ...COLLECTION_STAGES,
   REQUESTED: "Solicitada",
   SCHEDULED: "Agendada",
   PENDING: "Pendente",
@@ -48,6 +50,7 @@ const statusLabels = {
 };
 
 const statusClasses = {
+  ...STAGE_COLORS,
   REQUESTED: "warning",
   SCHEDULED: "primary",
   PENDING: "warning",
@@ -390,6 +393,9 @@ const OperationalCalendar = () => {
               <option value="SCHEDULED">Agendada</option>
               <option value="PENDING">Pendente</option>
               <option value="IN_PROGRESS">Em andamento</option>
+              <option value="COLLECTED">Finalizada em campo</option>
+              <option value="RECEIVED">Recebida</option>
+              <option value="SORTING">Em triagem</option>
               <option value="COMPLETED">Concluída</option>
               <option value="CANCELLED">Cancelada</option>
             </select>
