@@ -97,3 +97,41 @@
     flex: 1 1 120px;
   }
 }
+
+.collection-advanced-filters > summary {
+  cursor: pointer;
+  color: #176944;
+  font-weight: 600;
+}
+@media (max-width: 575px) {
+  .fixed-route-operation .fixed-route-points-table {
+    display: block;
+    min-width: 0 !important;
+    width: 100%;
+  }
+  .fixed-route-points-table thead {
+    display: none;
+  }
+  .fixed-route-points-table tbody,
+  .fixed-route-points-table tr,
+  .fixed-route-points-table td {
+    display: block;
+    width: 100%;
+  }
+  .fixed-route-points-table tr {
+    border-bottom: 1px solid #dfe8e2;
+    padding: 0.75rem 0;
+  }
+  .fixed-route-operation .fixed-route-points-table td {
+    border: 0;
+    padding: 0.4rem 0.25rem;
+  }
+  .fixed-route-points-table td::before {
+    content: attr(data-label);
+    display: block;
+    color: #49645a;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+  }
+}

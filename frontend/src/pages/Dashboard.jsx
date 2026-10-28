@@ -98,7 +98,7 @@ export default function Dashboard() {
                   {c.route} · {c.vehicle}
                 </small>
               </td>
-              <td>{COLLECTION_STAGES[c.status] || c.status}</td>
+              <td>{c.operationLabel || COLLECTION_STAGES[c.status] || c.status}</td>
               <td>{dateLabel(c.date)}</td>
               <td>{unitsLabel(c.units)}</td>
               <td>

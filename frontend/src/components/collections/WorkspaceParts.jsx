@@ -12,7 +12,14 @@ export function CollectionBadge({ status }) {
     </span>
   );
 }
-export function WorkspacePagination({ page, size, total, onPage, onSize }) {
+export function WorkspacePagination({
+  page,
+  size,
+  total,
+  onPage,
+  onSize,
+  maxSize = 100,
+}) {
   const pages = Math.max(1, Math.ceil(total / size));
   return (
     <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mt-3">
@@ -24,9 +31,11 @@ export function WorkspacePagination({ page, size, total, onPage, onSize }) {
           value={size}
           onChange={(e) => onSize(Number(e.target.value))}
         >
-          {[10, 20, 25, 50, 100].map((n) => (
-            <option key={n}>{n}</option>
-          ))}
+          {[10, 20, 25, 50, 100]
+            .filter((n) => n <= maxSize)
+            .map((n) => (
+              <option key={n}>{n}</option>
+            ))}
         </select>
       </label>
       <span className="small">

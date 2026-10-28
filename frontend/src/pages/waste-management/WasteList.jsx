@@ -1,5 +1,8 @@
+import FixedRouteOperations from "../../components/collections/FixedRouteOperations";
+import FieldOperationBadge from "../../components/collections/FieldOperationBadge";
 import {
   getFieldCollections,
+  getFieldRoutes,
   getFieldOptions,
 } from "../../services/wasteWorkspaceService";
 import CollectionTeam from "../../components/collections/CollectionTeam";
@@ -14,7 +17,6 @@ import { getCollectionById } from "../../services/collectionService";
 import CollectionStageActions from "../../components/collections/CollectionStageActions";
 import CollectionDialog from "../../components/collections/CollectionDialog";
 import {
-  CollectionBadge,
   MaterialTable,
   Summary,
   WorkspacePagination,
@@ -42,6 +44,7 @@ const defaults = {
   start: "",
   end: "",
   dateField: "scheduled",
+  inField: "",
 };
 const errorText = (err) =>
   err?.error || err?.message || "Não foi possível carregar as coletas.";
@@ -55,7 +58,9 @@ export default function WasteList() {
   ) : null;
 }
 function CollectionList({ cooperativeName }) {
-  const [params] = useSearchParams();
+  const [params, setParams] = useSearchParams();
+  const kind = params.get("tipo") === "fixed" ? "fixed" : "normal";
+  const [revision, setRevision] = useState(0);
   const [operationBusy, setOperationBusy] = useState(false);
   const [items, setItems] = useState([]),
     [loading, setLoading] = useState(true),
@@ -63,6 +68,8 @@ function CollectionList({ cooperativeName }) {
   const [filters, setFilters] = useState(() => ({
       ...defaults,
       status: params.get("status") || "",
+      route: params.get("execucao") || "",
+      inField: params.get("emCampo") === "true" ? "true" : "",
     })),
     [page, setPage] = useState(1),
     [size, setSize] = useState(10);
@@ -99,15 +106,19 @@ function CollectionList({ cooperativeName }) {
       }
       setError("");
       try {
-        const res = await getFieldCollections({
+        const fetch = kind === "fixed" ? getFieldRoutes : getFieldCollections;
+        const res = await fetch({
           ...filters,
+          kind,
           page,
           limit: size,
         });
-        if (!Array.isArray(res?.collections))
-          throw Error("Resposta de coletas inválida.");
+        const rows = kind === "fixed" ? res.routes : res.collections;
+        if (!Array.isArray(rows))
+          throw Error("Resposta de operações inválida.");
         if (request === guard.current.list) {
-          setItems(res.collections);
+          setItems(rows);
+          setRevision((n) => n + 1);
           setMeta(res);
         }
       } catch (e) {
@@ -116,7 +127,7 @@ function CollectionList({ cooperativeName }) {
         if (request === guard.current.list) setLoading(false);
       }
     },
-    [filters, page, size],
+    [filters, page, size, kind],
   );
   const openDetail = useCallback(async (id) => {
     const request = ++guard.current.detail;
@@ -168,6 +179,14 @@ function CollectionList({ cooperativeName }) {
     guard.current.detail++;
     setDialog(false);
     setSelected(null);
+    setParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        next.delete("coleta");
+        return next;
+      },
+      { replace: true },
+    );
   }
   const timeline = selected
     ? [
@@ -203,9 +222,16 @@ function CollectionList({ cooperativeName }) {
             tratamento em Ver detalhes.
           </p>
           <Link to="/extra-collection-orders">Ordens de coleta extras</Link>
+          <span className="mx-2">·</span>
           <Link to="/collection-requests">Coletas solicitadas</Link>
           <span className="mx-2">·</span>
           <Link to="/collected-waste">Gestão dos materiais coletados</Link>
+          {kind === "fixed" && (
+            <>
+              <span className="mx-2">·</span>
+              <Link to="/route-plans">Gerenciar rotas fixas</Link>
+            </>
+          )}
         </div>
         <button
           className="btn btn-outline-success"
@@ -215,6 +241,42 @@ function CollectionList({ cooperativeName }) {
           Atualizar coletas
         </button>
       </div>
+      <nav className="d-flex flex-wrap gap-2 mb-3" aria-label="Tipos de coleta">
+        {[
+          ["normal", "Coletas normais"],
+          ["fixed", "Rotas fixas"],
+        ].map(([value, label]) => (
+          <button
+            key={value}
+            className={`btn btn-sm ${kind === value ? "btn-success" : "btn-outline-success"}`}
+            aria-pressed={kind === value}
+            onClick={() => {
+              setPage(1);
+              setItems([]);
+              setLoading(true);
+              setFilters((f) => ({ ...f, route: "" }));
+              setParams(
+                (current) => {
+                  const next = new URLSearchParams(current);
+                  next.set("tipo", value);
+                  next.delete("execucao");
+                  return next;
+                },
+                { replace: true },
+              );
+            }}
+          >
+            {label}
+          </button>
+        ))}
+      </nav>
+      {kind === "fixed" && (
+        <p className="small text-muted">
+          Uma linha por execução e data. Os filtros selecionam execuções; ao
+          expandir, todos os pontos da execução ficam disponíveis com seus
+          próprios status.
+        </p>
+      )}
       <Summary
         cards={
           loading || error
@@ -225,7 +287,12 @@ function CollectionList({ cooperativeName }) {
                 ["Quantidades registradas", "—"],
               ]
             : [
-                ["Coletas encontradas", meta?.pagination.total ?? 0],
+                [
+                  kind === "fixed"
+                    ? "Execuções encontradas"
+                    : "Coletas encontradas",
+                  meta?.pagination.total ?? 0,
+                ],
                 ["Pendentes / em andamento", meta?.stats.active ?? 0],
                 ["Aguardando recebimento", meta?.stats.awaitingReceipt ?? 0],
                 [
@@ -257,7 +324,7 @@ function CollectionList({ cooperativeName }) {
               type="search"
             />
           </div>
-          <div className="col-md-3">
+          <div className="col-md-6">
             <label htmlFor="collection-status" className="form-label">
               Etapa da coleta
             </label>
@@ -269,6 +336,7 @@ function CollectionList({ cooperativeName }) {
               onChange={change}
             >
               <option value="">Todas</option>
+              <option value="IN_FIELD">Em campo (saída confirmada)</option>
               {Object.entries(COLLECTION_STAGES).map(([id, label]) => (
                 <option value={id} key={id}>
                   {label}
@@ -276,79 +344,120 @@ function CollectionList({ cooperativeName }) {
               ))}
             </select>
           </div>
-          {[
-            ["generator", "Gerador"],
-            ["route", "Rota"],
-            ["collector", "Catador"],
-            ["driver", "Motorista"],
-            ["vehicle", "Veículo"],
-          ].map(([field, label]) => (
-            <div className="col-md-3" key={field}>
-              <label htmlFor={`collection-${field}`} className="form-label">
-                {label}
+        </div>
+        <details className="mt-3 collection-advanced-filters">
+          <summary>
+            Origem, equipe e período
+            {[
+              "generator",
+              "route",
+              "collector",
+              "driver",
+              "vehicle",
+              "start",
+              "end",
+            ].some((key) => filters[key])
+              ? " · filtros ativos"
+              : ""}
+          </summary>
+          <div className="row g-3 mt-1">
+            {[
+              ["generator", "Gerador"],
+              ["route", "Rota"],
+              ["collector", "Catador"],
+              ["driver", "Motorista"],
+              ["vehicle", "Veículo"],
+            ].map(([field, label]) => (
+              <div className="col-md-3" key={field}>
+                <label htmlFor={`collection-${field}`} className="form-label">
+                  {label}
+                </label>
+                <select
+                  id={`collection-${field}`}
+                  name={field}
+                  className="form-select"
+                  value={filters[field]}
+                  onChange={change}
+                >
+                  <option value="">Todos</option>
+                  {options(field).map((o) => (
+                    <option key={o.id} value={o.id}>
+                      {field === "vehicle" ? o.plate : personName(o)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ))}
+            <div className="col-md-3">
+              <label htmlFor="collection-date-field" className="form-label">
+                Período por
               </label>
               <select
-                id={`collection-${field}`}
-                name={field}
+                id="collection-date-field"
+                name="dateField"
                 className="form-select"
-                value={filters[field]}
+                value={filters.dateField}
                 onChange={change}
               >
-                <option value="">Todos</option>
-                {options(field).map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {field === "vehicle" ? o.plate : personName(o)}
-                  </option>
-                ))}
+                <option value="scheduled">Data programada</option>
+                <option value="collected">Finalização em campo</option>
+                <option value="created">Criação da coleta</option>
               </select>
             </div>
-          ))}
-          <div className="col-md-3">
-            <label htmlFor="collection-date-field" className="form-label">
-              Período por
-            </label>
-            <select
-              id="collection-date-field"
-              name="dateField"
-              className="form-select"
-              value={filters.dateField}
-              onChange={change}
-            >
-              <option value="scheduled">Data programada</option>
-              <option value="collected">Finalização em campo</option>
-              <option value="created">Criação da coleta</option>
-            </select>
+            {[
+              ["start", "Data inicial"],
+              ["end", "Data final"],
+            ].map(([field, label]) => (
+              <div className="col-md-3" key={field}>
+                <label htmlFor={`collection-${field}`} className="form-label">
+                  {label}
+                </label>
+                <input
+                  id={`collection-${field}`}
+                  name={field}
+                  type="date"
+                  className="form-control"
+                  value={filters[field]}
+                  onChange={change}
+                />
+              </div>
+            ))}
           </div>
-          {[
-            ["start", "Data inicial"],
-            ["end", "Data final"],
-          ].map(([field, label]) => (
-            <div className="col-md-3" key={field}>
-              <label htmlFor={`collection-${field}`} className="form-label">
-                {label}
-              </label>
-              <input
-                id={`collection-${field}`}
-                name={field}
-                type="date"
-                className="form-control"
-                value={filters[field]}
-                onChange={change}
-              />
-            </div>
-          ))}
-        </div>
+        </details>
         <div className="mt-3">
           <button
             className="btn btn-outline-secondary"
             onClick={() => {
               setFilters(defaults);
               setPage(1);
+              setParams(
+                (current) => {
+                  const next = new URLSearchParams(current);
+                  for (const key of ["execucao", "emCampo", "status"])
+                    next.delete(key);
+                  return next;
+                },
+                { replace: true },
+              );
             }}
           >
             Limpar filtros
           </button>
         </div>
+        <label className="d-flex align-items-center gap-2 mt-3">
+          <input
+            type="checkbox"
+            checked={filters.inField === "true"}
+            onChange={(e) => {
+              setPage(1);
+              setFilters((f) => ({
+                ...f,
+                inField: e.target.checked ? "true" : "",
+              }));
+            }}
+          />
+          Somente operações em campo
+        </label>
         <p className="small text-muted mt-3 mb-0">
           Cartões e quantidades seguem os filtros. Totais excluem coletas
           canceladas e mantêm cada unidade separada. Registros sem a data
@@ -374,10 +483,18 @@ function CollectionList({ cooperativeName }) {
           <>
             {!filtered.length ? (
               <p className="text-center py-4">
-                {items.length
-                  ? "Nenhuma coleta corresponde aos filtros."
-                  : "Nenhuma coleta operacional cadastrada. Aceite uma solicitação para começar."}
+                {kind === "fixed"
+                  ? "Nenhuma execução de rota fixa corresponde aos filtros."
+                  : "Nenhuma coleta corresponde aos filtros selecionados."}
               </p>
+            ) : kind === "fixed" ? (
+              <FixedRouteOperations
+                routes={visible}
+                onDetail={openDetail}
+                highlight={params.get("execucao")}
+                revision={revision}
+                busy={operationBusy}
+              />
             ) : (
               <div className="table-responsive">
                 <table className="table align-middle">
@@ -414,7 +531,7 @@ function CollectionList({ cooperativeName }) {
                           </div>
                         </td>
                         <td>
-                          <CollectionBadge status={c.status} />
+                          <FieldOperationBadge collection={c} />
                         </td>
                         <td>
                           <button
@@ -431,6 +548,7 @@ function CollectionList({ cooperativeName }) {
               </div>
             )}
             <WorkspacePagination
+              maxSize={50}
               page={currentPage}
               size={size}
               total={meta?.pagination.total ?? 0}
@@ -461,7 +579,7 @@ function CollectionList({ cooperativeName }) {
             selected && (
               <>
                 <div className="d-flex align-items-center flex-wrap gap-2 collection-detail-toolbar">
-                  <CollectionBadge status={selected.status} />
+                  <FieldOperationBadge collection={selected} />
                   <button
                     type="button"
                     className="btn btn-sm btn-outline-success"
@@ -512,10 +630,10 @@ function CollectionList({ cooperativeName }) {
                   className="workflow-details"
                   open={Boolean(
                     selected.participants?.length &&
-                      ["RECEIVED", "SORTING"].includes(selected.status) &&
-                      (!selected.allocationVersion ||
-                        selected.allocationQuantityVersion !==
-                          selected.quantityReviewVersion),
+                    ["RECEIVED", "SORTING"].includes(selected.status) &&
+                    (!selected.allocationVersion ||
+                      selected.allocationQuantityVersion !==
+                        selected.quantityReviewVersion),
                   )}
                 >
                   <summary>Equipe e divisão dos materiais</summary>

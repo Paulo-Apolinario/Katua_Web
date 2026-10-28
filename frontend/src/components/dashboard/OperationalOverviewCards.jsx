@@ -32,7 +32,7 @@ export default function OperationalOverviewCards({ refresh }) {
   useEffect(() => {
     const timer = setInterval(() => {
       if (document.visibilityState === "visible") setRevision((n) => n + 1);
-    }, 60000);
+    }, 30000);
     return () => clearInterval(timer);
   }, []);
   if (!data)
@@ -63,7 +63,9 @@ export default function OperationalOverviewCards({ refresh }) {
     {
       label: "Operações em campo",
       value: data.inProgress,
-      description: `${data.scheduled} coleta(s) programada(s) ainda não iniciada(s)`,
+      description: data.fieldSources
+        ? `${data.fieldSources.fixedRoutes} rota(s) fixa(s) · ${data.fieldSources.otherRoutes} outra(s) rota(s) · ${data.fieldSources.collections} coleta(s) individual(is) em campo`
+        : `${data.scheduled} ponto(s) aguardando saída`,
       action: () => setSection("field"),
       labelAction: "Ver operação",
     },
@@ -170,33 +172,57 @@ export default function OperationalOverviewCards({ refresh }) {
             {data.field.map((c) => (
               <li
                 className="list-group-item d-flex justify-content-between gap-3 flex-wrap"
-                key={c.id}
+                key={(c.kind || "COLLECTION") + c.id}
               >
                 <div>
                   <strong>
-                    {c.bin?.name ||
-                      c.bin?.binId ||
-                      c.generator?.name ||
-                      "Coleta avulsa"}
+                    {c.kind === "ROUTE"
+                      ? c.name
+                      : c.bin?.name ||
+                        c.bin?.binId ||
+                        c.generator?.name ||
+                        "Coleta avulsa"}
                   </strong>
                   <small className="d-block text-muted">
-                    {c.collector?.name || "Catador não informado"} ·{" "}
-                    {c.vehicle?.plate || "Sem veículo"} ·{" "}
-                    {c.route?.name || "Sem rota"}
+                    {c.kind === "ROUTE"
+                      ? `${c.points - c.remainingPoints} de ${c.points} visitas encerradas`
+                      : c.collector?.name || "Catador não informado"}{" "}
+                    · {c.vehicle?.plate || "Sem veículo"} ·{" "}
+                    {c.kind === "ROUTE"
+                      ? c.driver?.name || "Motorista não informado"
+                      : c.route?.name || "Sem rota"}
                   </small>
                 </div>
-                <Link to={`/waste-list?coleta=${encodeURIComponent(c.id)}`}>
-                  Acompanhar coleta
+                <Link
+                  to={
+                    c.href || `/waste-list?coleta=${encodeURIComponent(c.id)}`
+                  }
+                >
+                  {c.kind === "ROUTE" ? "Acompanhar rota" : "Acompanhar coleta"}
                 </Link>
               </li>
             ))}
           </ul>
         ) : (
           <p className="text-muted mb-0">
-            Nenhuma coleta iniciada.{" "}
+            Nenhuma operação em campo.{" "}
             <Link to="/waste-list?status=PENDING">
-              Ver as {data.scheduled} programadas
+              Ver {data.scheduled} pontos aguardando saída
             </Link>
+          </p>
+        )}
+        {section === "field" && (
+          <p className="small text-muted mt-3 mb-0">
+            Cada rota iniciada conta uma operação até seu encerramento; seus
+            pontos não são contados novamente.{" "}
+            <Link to="/waste-list?tipo=normal&emCampo=true">
+              Coletas normais em campo
+            </Link>{" "}
+            ·{" "}
+            <Link to="/waste-list?tipo=fixed&emCampo=true">
+              Rotas fixas em campo
+            </Link>
+            .
           </p>
         )}
       </section>

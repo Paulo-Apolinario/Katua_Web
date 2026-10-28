@@ -51,3 +51,11 @@ export const getFieldCollections = (params) =>
   apiRequest("/waste-workspace/field-collections?" + query(params));
 export const getFieldOptions = () =>
   apiRequest("/waste-workspace/field-options");
+
+export const getFieldRoutes = (params) =>
+  apiRequest("/waste-workspace/field-routes?" + query(params));
+export const getFieldRoutePoints = (id, params) =>
+  apiRequest(
+    `/waste-workspace/field-routes/${encodeURIComponent(id)}/collections?` +
+      query(params),
+  );
