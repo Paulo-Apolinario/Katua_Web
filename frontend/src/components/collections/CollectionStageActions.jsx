@@ -36,7 +36,11 @@ export default function CollectionStageActions({
     [error, setError] = useState("");
   const guard = useRef(false);
   const stage = stages[collection.status];
-  if (!stage) return null;
+  if (
+    !stage ||
+    (collection.status === "RECEIVED" && !collection.quantityReviewVersion)
+  )
+    return null;
   async function submit(e) {
     e.preventDefault();
     if (!confirmed || guard.current) return;

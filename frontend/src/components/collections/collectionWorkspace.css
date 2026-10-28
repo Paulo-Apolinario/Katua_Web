@@ -21,3 +21,79 @@
 .collection-workspace-dialog .table {
   min-width: 480px;
 }
+
+.collection-workspace-dialog .quantity-review-table {
+  min-width: 580px;
+}
+.quantity-review-table th:first-child,
+.quantity-review-table td:first-child {
+  min-width: 120px;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+.workflow-details {
+  margin-top: 12px;
+  border: 1px solid #dce7e2;
+  border-radius: 12px;
+  padding: 14px;
+}
+.workflow-details > summary {
+  color: #145846;
+  font-weight: 600;
+  cursor: pointer;
+}
+.workflow-details[open] > summary {
+  margin-bottom: 16px;
+}
+
+.collection-workspace-dialog .quantity-review-table {
+  min-width: 680px;
+}
+.collection-workspace-dialog .quantity-review-table th,
+.collection-workspace-dialog .quantity-review-table td {
+  min-width: 150px;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+.collection-workspace-dialog .quantity-review-table th:nth-child(3) {
+  min-width: 180px;
+}
+@media (max-width: 575px) {
+  .collection-workspace-dialog .quantity-review-table {
+    display: block;
+    min-width: 0 !important;
+    width: 100%;
+  }
+  .quantity-review-table thead {
+    display: none;
+  }
+  .quantity-review-table tbody {
+    display: block;
+  }
+  .quantity-review-table tr {
+    display: grid;
+    gap: 10px;
+    padding: 12px 0;
+  }
+  .collection-workspace-dialog .quantity-review-table td {
+    display: block;
+    width: 100%;
+    min-width: 0 !important;
+    padding: 6px 4px;
+    border: 0;
+  }
+  .quantity-review-table td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #49645a;
+    margin-bottom: 4px;
+  }
+  .quantity-review-table input {
+    width: 100%;
+  }
+  .collection-detail-toolbar .btn {
+    flex: 1 1 120px;
+  }
+}

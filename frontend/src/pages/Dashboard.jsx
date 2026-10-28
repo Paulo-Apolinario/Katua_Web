@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import OperationalOverviewCards from "../components/dashboard/OperationalOverviewCards";
+import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import {
   BarChart,
@@ -64,38 +65,6 @@ export default function Dashboard() {
   }, [query, refresh]);
   const today = civilToday(),
     reportQuery = new URLSearchParams(query).toString();
-  const kpis = useMemo(
-    () =>
-      data
-        ? [
-            [
-              "Solicitações pendentes",
-              data.operational.requested,
-              "Aguardando análise",
-              "/collection-requests",
-            ],
-            [
-              "Operações em campo",
-              data.operational.inProgress,
-              "Coletas em andamento",
-              "/waste-list",
-            ],
-            [
-              "Aguardando recebimento",
-              data.operational.awaitingReceipt,
-              "Coletadas em campo, ainda não recebidas",
-              "/waste-list",
-            ],
-            [
-              "Aguardando destinação",
-              data.operational.pendingDestination,
-              unitsLabel(data.operational.pendingUnits) + " em saldo",
-              "/collected-waste",
-            ],
-          ]
-        : [],
-    [data],
-  );
   const units = {
     KG: "kg",
     TON: "t",
@@ -185,6 +154,7 @@ export default function Dashboard() {
             </button>
           </section>
         )}
+        <OperationalOverviewCards refresh={refresh} />
         {loading ? (
           <section role="status" className="card p-4">
             Carregando painel operacional...
@@ -192,21 +162,6 @@ export default function Dashboard() {
         ) : (
           data && (
             <>
-              <section
-                className="dashboard-kpis mb-4"
-                aria-label="Situação atual da operação"
-              >
-                {kpis.map(([label, value, description, to]) => (
-                  <article className="card p-4" key={label}>
-                    <h2>{label}</h2>
-                    <strong className="dashboard-kpi-value">
-                      {num(value)}
-                    </strong>
-                    <p>{description}</p>
-                    <Link to={to}>Abrir gestão →</Link>
-                  </article>
-                ))}
-              </section>
               <section className="card p-4 mb-4">
                 <div className="d-flex justify-content-between align-items-center flex-wrap gap-3">
                   <div>

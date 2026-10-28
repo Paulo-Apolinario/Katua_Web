@@ -110,3 +110,40 @@
     padding: 1rem;
   }
 }
+
+.waste-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.waste-compact-table {
+  min-width: 680px;
+}
+.waste-compact-table th,
+.waste-compact-table td {
+  padding: 14px 12px;
+  vertical-align: middle;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+.waste-compact-table th:first-child {
+  min-width: 180px;
+}
+.waste-material-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  padding: 8px;
+}
+.waste-workspace .card {
+  border-color: #dce6e1;
+  border-radius: 14px;
+}
+.waste-workspace details > summary {
+  cursor: pointer;
+  color: #155b49;
+}
+.waste-workspace .waste-freshness {
+  margin-bottom: 12px;
+}

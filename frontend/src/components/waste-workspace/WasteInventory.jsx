@@ -1,12 +1,11 @@
-import { useWasteResource, useWasteOperation } from "./useWasteResource";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import WorkspaceInventoryList from "./WorkspaceInventoryList";
 import {
-  Link,
-  useLocation,
-  useNavigate,
-  useParams,
-  useSearchParams,
-} from "react-router";
+  getWorkspaceCatalog,
+  getWorkspaceLot,
+} from "../../services/wasteWorkspaceService";
+import { useWasteResource, useWasteOperation } from "./useWasteResource";
+import { useCallback, useEffect, useState, useRef } from "react";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import {
   getWasteTypeById,
   createWasteType,
@@ -14,10 +13,8 @@ import {
   WASTE_UNIT_OPTIONS,
   WASTE_CLASS_OPTIONS,
   WASTE_STATUS_OPTIONS,
-  getWasteClassLabel,
 } from "../../services/wasteTypeService";
 import {
-  getWasteStockOverview,
   createWasteStockLot,
   patchWasteStockLot,
   WASTE_LOT_STATUS_OPTIONS,
@@ -35,813 +32,14 @@ import {
 } from "./WastePage";
 import CollectionDialog from "../collections/CollectionDialog";
 import { Summary, WorkspacePagination } from "../collections/WorkspaceParts";
-import { quantity, shortId, dateLabel } from "../../utils/collectionWorkspace";
-import {
-  stockBalances,
-  unitSummary,
-  lotQuantity,
-  traceableLot,
-  numeric,
-} from "../../utils/wasteWorkspace";
-import { filterInventory, downloadCsv } from "../../utils/wasteReports";
-const catalogLoader = async () => {
-  const r = await getWasteStockOverview();
-  if (!Array.isArray(r?.items)) throw Error("Resposta do catálogo inválida.");
-  return r.items;
-};
+import { quantity, shortId } from "../../utils/collectionWorkspace";
+import { lotQuantity, traceableLot } from "../../utils/wasteWorkspace";
+
 export function InventoryScreen({ catalog = false }) {
   return (
     <WasteScope>
-      <InventoryList key={catalog ? "catalog" : "stock"} catalog={catalog} />
+      <WorkspaceInventoryList catalog={catalog} />
     </WasteScope>
-  );
-}
-function InventoryList({ catalog }) {
-  const resource = useWasteResource(catalogLoader),
-    operation = useWasteOperation(),
-    location = useLocation();
-  const [params, setParams] = useSearchParams(),
-    history = !catalog && params.get("view") === "history",
-    selectedItemId = !catalog ? params.get("itemId") || "" : "";
-  const allLots = (resource.data || []).flatMap((i) => i.lots || []),
-    cancelledCount = allLots.filter((l) => l.status === "CANCELLED").length,
-    currentCount = allLots.length - cancelledCount;
-  function changeView(nextHistory, itemId = "") {
-    const next = new URLSearchParams(params);
-    if (nextHistory) next.set("view", "history");
-    else next.delete("view");
-    if (itemId) next.set("itemId", itemId);
-    else next.delete("itemId");
-    setParams(next);
-    setPage(1);
-    setExpanded({});
-    setQ("");
-    setCategory("");
-    setUnit("");
-    setStatus("");
-    setLotStatus("");
-    setProcessingStage("");
-    setOrigin("");
-  }
-  useEffect(() => {
-    setPage(1);
-    setExpanded({});
-    setLotStatus("");
-  }, [history, selectedItemId]);
-  const [q, setQ] = useState(""),
-    [category, setCategory] = useState(""),
-    [unit, setUnit] = useState(""),
-    [status, setStatus] = useState(""),
-    [lotStatus, setLotStatus] = useState(""),
-    [processingStage, setProcessingStage] = useState(""),
-    [origin, setOrigin] = useState("");
-  const [page, setPage] = useState(1),
-    [size, setSize] = useState(10),
-    [expanded, setExpanded] = useState({}),
-    [target, setTarget] = useState(null);
-  const rows = useMemo(
-    () =>
-      filterInventory(resource.data || [], {
-        search: q,
-        category,
-        unit,
-        status,
-        lotStatus,
-        processingStage,
-        origin,
-        catalog,
-        lotScope: history ? "cancelled" : "current",
-        itemId: selectedItemId,
-      }),
-    [
-      resource.data,
-      q,
-      category,
-      unit,
-      status,
-      lotStatus,
-      processingStage,
-      origin,
-      catalog,
-      history,
-      selectedItemId,
-    ],
-  );
-  function exportRows() {
-    if (catalog) {
-      downloadCsv(
-        "katua-catalogo-filtrado.csv",
-        [
-          "ID",
-          "Material",
-          "Código interno",
-          "Categoria",
-          "Subcategoria",
-          "Unidade",
-          "Classificação",
-          "NCM",
-          "Situação",
-          "Descrição",
-        ],
-        rows.map((i) => [
-          i.id,
-          i.name,
-          i.internalCode,
-          i.category,
-          i.subcategory,
-          i.unit,
-          getWasteClassLabel(i.wasteClass),
-          i.ncm,
-          i.status,
-          i.description,
-        ]),
-      );
-    } else {
-      downloadCsv(
-        history
-          ? "katua-historico-cancelamentos.csv"
-          : "katua-estoque-filtrado.csv",
-        [
-          "ID material",
-          "Material",
-          "ID lote",
-          "Código lote",
-          history
-            ? "Quantidade histórica anulada (sem saldo)"
-            : "Quantidade registrada",
-          "Saldo controlado",
-          "Unidade",
-          "Situação",
-          "Processamento",
-          "Local",
-          "Origem",
-          "ID entrada",
-          "Recebido em",
-          ...(history ? ["Motivo / observações", "Última atualização"] : []),
-        ],
-        rows.flatMap((i) =>
-          (i.lots || []).map((l) => [
-            i.id,
-            i.name,
-            l.id,
-            l.lotCode || l.code,
-            lotQuantity(l),
-            l.availableQuantity,
-            l.unit,
-            getWasteLotStatusLabel(l.status),
-            getProcessingStageLabel(l.processingStage),
-            l.storageLocation,
-            l.origin,
-            l.originCollectionWasteEntryId,
-            l.receivedAt || l.createdAt,
-            ...(history ? [l.notes, l.updatedAt] : []),
-          ]),
-        ),
-      );
-    }
-  }
-  const balances = stockBalances(rows),
-    current = Math.min(page, Math.max(1, Math.ceil(rows.length / size))),
-    visible = rows.slice((current - 1) * size, current * size);
-  function filter(set, value) {
-    set(value);
-    setPage(1);
-  }
-  async function confirm() {
-    const res = await operation.run(() =>
-      patchWasteType(target.id, {
-        status: target.status === "ACTIVE" ? "INACTIVE" : "ACTIVE",
-      }),
-    );
-    if (res && !res.item?.id)
-      operation.setError(
-        "O servidor não confirmou a alteração. Atualize antes de repetir.",
-      );
-    if (res?.item?.id) {
-      setTarget(null);
-      await resource.refresh();
-    }
-  }
-  return (
-    <WastePage
-      title={
-        catalog
-          ? "Catálogo de Resíduos"
-          : history
-            ? "Histórico de Cancelamentos"
-            : "Visão do Estoque"
-      }
-      description={
-        catalog
-          ? "Cadastros de materiais, suas unidades e classificação. Cadastrar um tipo não movimenta estoque."
-          : history
-            ? "Registros anulados, motivos e vínculo de origem para consulta. Não representam estoque disponível."
-            : "Acompanhe os lotes válidos, com os cancelamentos separados do estoque e dos contadores."
-      }
-      actions={
-        <>
-          <ExportButton
-            disabled={
-              resource.loading ||
-              !!resource.error ||
-              !(catalog ? rows.length : rows.some((i) => i.lots?.length))
-            }
-            onClick={exportRows}
-          />
-          <button
-            className="btn btn-outline-success"
-            onClick={resource.refresh}
-            disabled={resource.loading || operation.busy}
-          >
-            Atualizar
-          </button>
-          {!history && (
-            <Link
-              className="btn btn-success"
-              to={catalog ? "/create-type" : "/waste-stock/create"}
-            >
-              {catalog ? "Cadastrar tipo" : "Adicionar lote manual"}
-            </Link>
-          )}
-        </>
-      }
-    >
-      {!catalog && (
-        <nav
-          className="d-flex flex-wrap gap-2 mb-4"
-          aria-label="Visões do estoque"
-        >
-          <button
-            className={`btn ${!history ? "btn-success" : "btn-outline-success"}`}
-            aria-current={!history ? "page" : undefined}
-            onClick={() => changeView(false)}
-          >
-            Lotes válidos (
-            {resource.loading || resource.error ? "—" : currentCount})
-          </button>
-          <button
-            className={`btn ${history ? "btn-success" : "btn-outline-success"}`}
-            aria-current={history ? "page" : undefined}
-            onClick={() => changeView(true)}
-          >
-            Histórico de cancelamentos (
-            {resource.loading || resource.error ? "—" : cancelledCount})
-          </button>
-        </nav>
-      )}
-      {selectedItemId && (
-        <div className="alert alert-light d-flex flex-wrap gap-3 justify-content-between align-items-center">
-          <span>
-            Material selecionado:{" "}
-            <strong>
-              {resource.data?.find((i) => i.id === selectedItemId)?.name ||
-                selectedItemId}
-            </strong>
-          </span>
-          <button
-            className="btn btn-sm btn-outline-secondary"
-            onClick={() => changeView(history)}
-          >
-            Ver todos os materiais
-          </button>
-        </div>
-      )}
-      <WasteGuide
-        title={
-          catalog
-            ? "Um catálogo consistente começa na identificação"
-            : history
-              ? "Rastreabilidade dos registros anulados"
-              : "Do recebimento ao estoque disponível"
-        }
-        to={catalog ? "/create-type" : "/collected-waste"}
-        label={catalog ? "Cadastrar material" : "Consultar entradas"}
-      >
-        {catalog
-          ? "Use nomes, categorias e unidades padronizados. Inative materiais sem uso para manter o histórico e evitar novos registros incorretos."
-          : history
-            ? "Cada registro cancelado documenta uma anulação. Consulte o motivo e a entrada original. As quantidades são históricas e não devem ser somadas como saldo ou novas coletas."
-            : "Confira o material, a etapa de processamento e o local antes de movimentar um lote. Use a entrada coletada para gerar lotes com vínculo de origem."}
-      </WasteGuide>
-      {location.state?.notice && (
-        <p role="status" className="alert alert-success">
-          {location.state.notice}
-        </p>
-      )}
-      <Summary
-        cards={
-          catalog
-            ? [
-                [
-                  "Tipos encontrados",
-                  resource.loading || resource.error ? "—" : rows.length,
-                ],
-                [
-                  "Ativos",
-                  resource.loading || resource.error
-                    ? "—"
-                    : rows.filter((i) => i.status === "ACTIVE").length,
-                ],
-                [
-                  "Inativos",
-                  resource.loading || resource.error
-                    ? "—"
-                    : rows.filter((i) => i.status === "INACTIVE").length,
-                ],
-                [
-                  "Categorias",
-                  resource.loading || resource.error
-                    ? "—"
-                    : new Set(rows.map((i) => i.category)).size,
-                ],
-              ]
-            : history
-              ? [
-                  [
-                    "Materiais no histórico",
-                    resource.loading || resource.error ? "—" : rows.length,
-                  ],
-                  [
-                    "Registros cancelados",
-                    resource.loading || resource.error
-                      ? "—"
-                      : rows.reduce((n, i) => n + i.lots.length, 0),
-                  ],
-                  [
-                    "Com vínculo de coleta",
-                    resource.loading || resource.error
-                      ? "—"
-                      : rows.flatMap((i) => i.lots).filter(traceableLot).length,
-                  ],
-                  [
-                    "Sem vínculo de coleta",
-                    resource.loading || resource.error
-                      ? "—"
-                      : rows
-                          .flatMap((i) => i.lots)
-                          .filter((l) => !traceableLot(l)).length,
-                  ],
-                ]
-              : [
-                  [
-                    "Materiais encontrados",
-                    resource.loading || resource.error ? "—" : rows.length,
-                  ],
-                  [
-                    "Disponível",
-                    resource.loading || resource.error
-                      ? "—"
-                      : unitSummary(balances, "available"),
-                  ],
-                  [
-                    "Reservado",
-                    resource.loading || resource.error
-                      ? "—"
-                      : unitSummary(balances, "reserved"),
-                  ],
-                  [
-                    "Lotes válidos",
-                    resource.loading || resource.error
-                      ? "—"
-                      : rows.reduce((n, i) => n + (i.lots?.length || 0), 0),
-                  ],
-                ]
-        }
-      />
-      <section className="card p-3 mb-4">
-        <h2 className="fs-18">Filtros</h2>
-        <div className="row g-3">
-          <div className="col-md-4">
-            <label htmlFor="inventory-search" className="form-label">
-              {catalog
-                ? "Buscar material ou código"
-                : "Buscar material, código ou lote"}
-            </label>
-            <input
-              id="inventory-search"
-              type="search"
-              className="form-control"
-              value={q}
-              onChange={(e) => filter(setQ, e.target.value)}
-            />
-          </div>
-          {[
-            [
-              "inventory-category",
-              "Categoria",
-              category,
-              setCategory,
-              [...new Set((resource.data || []).map((i) => i.category))]
-                .filter(Boolean)
-                .sort()
-                .map((v) => ({ value: v, label: v })),
-            ],
-            ["inventory-unit", "Unidade", unit, setUnit, WASTE_UNIT_OPTIONS],
-            [
-              "inventory-status",
-              "Situação do cadastro",
-              status,
-              setStatus,
-              WASTE_STATUS_OPTIONS,
-            ],
-            ...(!catalog
-              ? [
-                  [
-                    "inventory-processing",
-                    "Processamento",
-                    processingStage,
-                    setProcessingStage,
-                    WASTE_PROCESSING_STAGE_OPTIONS,
-                  ],
-                  [
-                    "inventory-origin",
-                    "Vínculo de origem",
-                    origin,
-                    setOrigin,
-                    [
-                      { value: "COLLECTION", label: "Vinculado à coleta" },
-                      { value: "MANUAL", label: "Sem vínculo de coleta" },
-                    ],
-                  ],
-                  ...(!history
-                    ? [
-                        [
-                          "inventory-lot-status",
-                          "Situação do lote",
-                          lotStatus,
-                          setLotStatus,
-                          WASTE_LOT_STATUS_OPTIONS,
-                        ],
-                      ]
-                    : []),
-                ]
-              : []),
-          ].map(([id, label, value, set, options]) => (
-            <div className="col-md-2" key={id}>
-              <label className="form-label" htmlFor={id}>
-                {label}
-              </label>
-              <select
-                id={id}
-                className="form-select"
-                value={value}
-                onChange={(e) => filter(set, e.target.value)}
-              >
-                <option value="">Todas</option>
-                {options.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          ))}
-        </div>
-        <button
-          className="btn btn-outline-secondary mt-3"
-          onClick={() => {
-            setQ("");
-            setCategory("");
-            setUnit("");
-            setStatus("");
-            setLotStatus("");
-            setProcessingStage("");
-            setOrigin("");
-            setPage(1);
-          }}
-        >
-          Limpar filtros
-        </button>
-      </section>
-      <section className="card p-3">
-        <div className="d-flex justify-content-between flex-wrap gap-2 mb-2">
-          <h2 className="fs-18 mb-0">
-            {catalog
-              ? "Materiais do catálogo"
-              : history
-                ? "Registros cancelados por material"
-                : "Materiais e lotes válidos"}
-          </h2>
-          <small className="text-muted">
-            {catalog
-              ? "Exportação inclui todos os materiais filtrados"
-              : "Filtros e exportação consideram somente os lotes correspondentes"}
-          </small>
-        </div>
-        <ResourceState resource={resource}>
-          {!rows.length ? (
-            <p>
-              {resource.data?.length
-                ? "Nenhum registro corresponde aos filtros. Limpe ou ajuste os critérios de busca."
-                : catalog
-                  ? "Nenhum material cadastrado. Cadastre o primeiro tipo de resíduo."
-                  : "Nenhum estoque registrado. Consulte as entradas coletadas ou adicione um lote manual."}
-            </p>
-          ) : (
-            <div className="table-responsive">
-              <table className="table align-middle">
-                <thead>
-                  <tr>
-                    <th>Material / Identificação</th>
-                    <th>Classificação / Unidade</th>
-                    <th>
-                      {catalog
-                        ? "Situação"
-                        : history
-                          ? "Registros cancelados"
-                          : "Quantidades dos lotes"}
-                    </th>
-                    <th>Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {visible.map((i) => (
-                    <InventoryRow
-                      key={i.id}
-                      item={i}
-                      catalog={catalog}
-                      history={history}
-                      onHistory={() => changeView(true, i.id)}
-                      expanded={expanded[i.id]}
-                      onExpand={() =>
-                        setExpanded((e) => ({ ...e, [i.id]: !e[i.id] }))
-                      }
-                      onStatus={() => {
-                        operation.setError("");
-                        setTarget(i);
-                      }}
-                    />
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-          {!resource.loading && !resource.error && (
-            <WorkspacePagination
-              page={current}
-              size={size}
-              total={rows.length}
-              onPage={setPage}
-              onSize={(n) => {
-                setSize(n);
-                setPage(1);
-              }}
-            />
-          )}
-        </ResourceState>
-      </section>
-      {!catalog && (
-        <p className="small text-muted mt-3">
-          Disponível soma lotes disponíveis; reservado soma lotes reservados.
-          Vendidos e descartados continuam identificados entre os lotes válidos,
-          mas não entram no estoque disponível. Cancelados aparecem
-          exclusivamente no histórico de cancelamentos. Quantidades são
-          separadas por unidade e não representam valor financeiro. Lotes
-          manuais antigos sem saldo controlado usam a quantidade registrada.
-        </p>
-      )}
-      {target && (
-        <CollectionDialog
-          title={
-            target.status === "ACTIVE"
-              ? "Inativar material"
-              : "Reativar material"
-          }
-          busy={operation.busy}
-          onClose={() => setTarget(null)}
-        >
-          <p>
-            <strong>{target.name}</strong>
-          </p>
-          <p>
-            A alteração afeta a disponibilidade do cadastro para novas
-            operações. Coletas, destinações e lotes existentes permanecem no
-            histórico.
-          </p>
-          {operation.error && (
-            <p role="alert" className="text-danger">
-              {operation.error}
-            </p>
-          )}
-          <button
-            className="btn btn-outline-secondary me-2"
-            disabled={operation.busy}
-            onClick={() => setTarget(null)}
-          >
-            Voltar
-          </button>
-          <button
-            className="btn btn-success"
-            disabled={operation.busy}
-            onClick={confirm}
-          >
-            {operation.busy ? "Confirmando..." : "Confirmar alteração"}
-          </button>
-        </CollectionDialog>
-      )}
-    </WastePage>
-  );
-}
-function InventoryRow({
-  item: i,
-  catalog,
-  history = false,
-  onHistory,
-  expanded,
-  onExpand,
-  onStatus,
-}) {
-  const b = stockBalances([i]);
-  return (
-    <>
-      <tr>
-        <td>
-          <strong>{i.name}</strong>
-          <div className="small text-muted">
-            {i.internalCode || "Sem código interno"} · #{shortId(i.id)}
-          </div>
-        </td>
-        <td>
-          {[i.category, i.subcategory].filter(Boolean).join(" / ")}
-          <div className="small">
-            {getWasteClassLabel(i.wasteClass)} ·{" "}
-            {WASTE_UNIT_OPTIONS.find((o) => o.value === i.unit)?.label ||
-              "Unidade não informada"}
-          </div>
-        </td>
-        <td>
-          {catalog ? (
-            <span
-              className={`badge text-bg-${i.status === "ACTIVE" ? "success" : "secondary"}`}
-            >
-              {i.status === "ACTIVE" ? "Ativo" : "Inativo"}
-            </span>
-          ) : history ? (
-            <>
-              <div>{i.lots?.length || 0} registro(s) cancelado(s)</div>
-              <small className="text-muted">
-                Histórico · sem saldo de estoque
-              </small>
-            </>
-          ) : !i.lots?.length ? (
-            <span className="text-muted">Sem lotes registrados</span>
-          ) : (
-            <>
-              <div>Disponível: {unitSummary(b, "available")}</div>
-              <div>Reservado: {unitSummary(b, "reserved")}</div>
-            </>
-          )}
-        </td>
-        <td>
-          <div className="d-flex flex-wrap gap-2">
-            {!history && (
-              <Link
-                className="btn btn-sm btn-outline-secondary"
-                to={`/edit-waste-type/${encodeURIComponent(i.id)}`}
-              >
-                Editar cadastro
-              </Link>
-            )}
-            {!history && i.status === "ACTIVE" && (
-              <Link
-                className="btn btn-sm btn-outline-success"
-                to={`/waste-stock/create?itemId=${encodeURIComponent(i.id)}`}
-              >
-                Adicionar lote
-              </Link>
-            )}
-            {catalog ? (
-              <button
-                className="btn btn-sm btn-outline-success"
-                onClick={onStatus}
-              >
-                {i.status === "ACTIVE" ? "Inativar" : "Reativar"}
-              </button>
-            ) : (
-              <button
-                className="btn btn-sm btn-outline-success"
-                onClick={onExpand}
-                aria-controls={`lots-${i.id}`}
-                disabled={!i.lots?.length}
-                aria-expanded={!!expanded}
-              >
-                {expanded
-                  ? history
-                    ? "Ocultar registros"
-                    : "Ocultar lotes"
-                  : history
-                    ? `Ver registros (${i.lots?.length || 0})`
-                    : `Ver lotes (${i.lots?.length || 0})`}
-              </button>
-            )}
-            {!catalog && !history && i.cancelledLotsCount > 0 && (
-              <button
-                className="btn btn-sm btn-outline-secondary"
-                onClick={onHistory}
-              >
-                Ver histórico ({i.cancelledLotsCount})
-              </button>
-            )}
-          </div>
-        </td>
-      </tr>
-      {!catalog && expanded && (
-        <tr>
-          <td colSpan={4} id={`lots-${i.id}`}>
-            {!i.lots?.length ? (
-              <p>Sem lotes registrados.</p>
-            ) : (
-              <table className="table table-sm">
-                <thead>
-                  <tr>
-                    <th>Lote / Entrada</th>
-                    <th>
-                      {history
-                        ? "Quantidade histórica / Situação"
-                        : "Quantidade / Situação"}
-                    </th>
-                    <th>Local / Processamento</th>
-                    <th>Origem / Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {i.lots.map((l) => (
-                    <tr key={l.id}>
-                      <td>
-                        <strong>{l.lotCode || l.code || shortId(l.id)}</strong>
-                        <div>{dateLabel(l.receivedAt || l.createdAt)}</div>
-                        {l.originCollectionId && (
-                          <Link
-                            className="small d-block"
-                            to={`/waste-list?coleta=${encodeURIComponent(l.originCollectionId)}`}
-                          >
-                            Coleta #{shortId(l.originCollectionId)}
-                          </Link>
-                        )}
-                        {l.status === "CANCELLED" && (
-                          <small className="d-block text-muted">
-                            Histórico anulado · sem saldo disponível. {l.notes}
-                          </small>
-                        )}
-                      </td>
-                      <td>
-                        {quantity(lotQuantity(l), l.unit)}
-                        <div>
-                          <span
-                            className={`badge text-bg-${{ AVAILABLE: "success", RESERVED: "warning", SOLD: "primary", DISCARDED: "secondary" }[l.status] || "secondary"}`}
-                          >
-                            {getWasteLotStatusLabel(l.status)}
-                          </span>
-                        </div>
-                        {traceableLot(l) &&
-                          ["AVAILABLE", "RESERVED"].includes(l.status) &&
-                          numeric(l.availableQuantity) !== null && (
-                            <small>
-                              Saldo controlado:{" "}
-                              {quantity(l.availableQuantity, l.unit)}
-                            </small>
-                          )}
-                      </td>
-                      <td>
-                        {l.storageLocation || "Local não informado"}
-                        <div>{getProcessingStageLabel(l.processingStage)}</div>
-                      </td>
-                      <td>
-                        <div className="small text-muted">
-                          {traceableLot(l)
-                            ? "Vinculado à coleta"
-                            : "Sem vínculo de coleta"}
-                        </div>
-                        {l.origin ||
-                          (traceableLot(l)
-                            ? "Gerado a partir de coleta"
-                            : "Origem não informada")}
-                        <div className="d-flex gap-2 flex-wrap">
-                          {l.originCollectionWasteEntryId && (
-                            <Link
-                              to={`/collected-waste/${encodeURIComponent(l.originCollectionWasteEntryId)}`}
-                            >
-                              Ver entrada de origem
-                            </Link>
-                          )}
-                          <Link
-                            to={`/waste-stock/lots/${encodeURIComponent(l.id)}/edit`}
-                          >
-                            {l.status === "CANCELLED"
-                              ? "Consultar lote"
-                              : "Ver / editar lote"}
-                          </Link>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </td>
-        </tr>
-      )}
-    </>
   );
 }
 const typeInitial = {
@@ -1018,10 +216,41 @@ export function LotFormScreen({ edit = false }) {
   );
 }
 function LotForm({ lotId }) {
+  const [catalogTerm, setCatalogTerm] = useState(""),
+    [catalogPage, setCatalogPage] = useState(1),
+    [catalogMore, setCatalogMore] = useState(false);
+  const choices = useRef([]),
+    chosen = useRef(null),
+    queryRef = useRef(catalogTerm);
+  queryRef.current = catalogTerm;
   const nav = useNavigate(),
     [params] = useSearchParams(),
     op = useWasteOperation(),
-    resource = useWasteResource(catalogLoader);
+    loader = useCallback(async () => {
+      const result = await getWorkspaceCatalog({
+        limit: 50,
+        q: catalogTerm,
+        page: catalogPage,
+      });
+      if (queryRef.current !== catalogTerm) return [];
+      setCatalogMore(result.pagination.hasNextPage);
+      let items =
+        catalogPage === 1
+          ? result.items
+          : [
+              ...new Map(
+                [...choices.current, ...result.items].map((i) => [i.id, i]),
+              ).values(),
+            ];
+      if (chosen.current && !items.some((i) => i.id === chosen.current.id))
+        items = [chosen.current, ...items];
+      choices.current = items;
+      if (!lotId) return items;
+      const { lot } = await getWorkspaceLot(lotId);
+      const other = items.filter((i) => i.id !== lot.stockItem.id);
+      return [...other, { ...lot.stockItem, lots: [lot] }];
+    }, [lotId, catalogTerm, catalogPage]),
+    resource = useWasteResource(loader);
   const [form, setForm] = useState(lotInitial),
     [loaded, setLoaded] = useState(false);
   const lot = (resource.data || [])
@@ -1049,6 +278,9 @@ function LotForm({ lotId }) {
     setLoaded(true);
   }, [resource, lotId, lot, loaded, params]);
   const selected = resource.data?.find((i) => i.id === form.itemId);
+  useEffect(() => {
+    if (selected) chosen.current = selected;
+  }, [selected]);
   function setLotForm(update) {
     setForm((f) => {
       const next = typeof update === "function" ? update(f) : update;
@@ -1165,6 +397,37 @@ function LotForm({ lotId }) {
               )}
               <fieldset disabled={op.busy || lot?.status === "CANCELLED"}>
                 <div className="row g-3">
+                  {!lotId && (
+                    <div className="col-12">
+                      <label
+                        htmlFor="lot-catalog-search"
+                        className="form-label"
+                      >
+                        Buscar material no catálogo
+                      </label>
+                      <input
+                        id="lot-catalog-search"
+                        type="search"
+                        className="form-control"
+                        value={catalogTerm}
+                        onChange={(e) => {
+                          setCatalogTerm(e.target.value);
+                          setCatalogPage(1);
+                        }}
+                        placeholder="Nome do material"
+                      />
+                      {catalogMore && (
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-secondary mt-2"
+                          disabled={resource.loading}
+                          onClick={() => setCatalogPage((n) => n + 1)}
+                        >
+                          Carregar mais materiais
+                        </button>
+                      )}
+                    </div>
+                  )}
                   <Field
                     name="itemId"
                     label="Material do catálogo"

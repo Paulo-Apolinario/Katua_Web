@@ -27,8 +27,6 @@ export function WastePage({ title, description, children, actions }) {
           ["/waste-destinations", "Destinações"],
           ["/waste-stock", "Estoque"],
           ["/waste-type-list", "Catálogo"],
-          ["/create-type", "Cadastrar tipo"],
-          ["/waste-stock/create", "Adicionar lote"],
         ].map(([url, label]) => (
           <NavLink
             key={url}
@@ -47,7 +45,7 @@ export function WastePage({ title, description, children, actions }) {
   );
 }
 export function ResourceState({ resource, children }) {
-  return resource.loading ? (
+  return resource.loading && !resource.data ? (
     <div role="status" className="waste-loading py-4">
       <span
         className="spinner-border spinner-border-sm me-2"
@@ -55,7 +53,7 @@ export function ResourceState({ resource, children }) {
       />
       Consultando os registros da cooperativa...
     </div>
-  ) : resource.error ? (
+  ) : resource.error && !resource.data ? (
     <div role="alert" className="alert alert-danger">
       {resource.error}
       <button
@@ -67,6 +65,23 @@ export function ResourceState({ resource, children }) {
     </div>
   ) : (
     <>
+      {resource.loading && (
+        <p role="status" className="small text-muted">
+          Atualizando dados…
+        </p>
+      )}
+      {resource.error && resource.data && (
+        <p role="alert" className="alert alert-warning">
+          {resource.error} Os dados anteriores continuam visíveis.{" "}
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-secondary"
+            onClick={resource.refresh}
+          >
+            Tentar novamente
+          </button>
+        </p>
+      )}
       {resource.updatedAt && (
         <p className="waste-freshness small text-muted">
           Dados consultados em{" "}

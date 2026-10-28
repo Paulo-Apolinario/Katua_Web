@@ -1,7 +1,9 @@
-import { useCallback, useState } from "react";
+import DestinationAudit from "../waste/DestinationAudit";
+import CollectedCollections from "./CollectedCollections";
+import { mutationIdentity } from "../../services/wasteWorkspaceService";
+import { useCallback, useState, useRef } from "react";
 import { Link, useParams, useSearchParams } from "react-router";
 import {
-  getCollectionEntries,
   getCollectionEntryById,
   COLLECTION_ENTRY_STATUS_OPTIONS,
   getCollectionEntryStatusLabel,
@@ -14,10 +16,7 @@ import {
   getWasteDestinationTypeLabel,
   WASTE_DESTINATION_TYPE_OPTIONS,
 } from "../../services/collectionWasteDestinationService";
-import {
-  getWasteCatalog,
-  WASTE_UNIT_OPTIONS,
-} from "../../services/wasteTypeService";
+import { WASTE_UNIT_OPTIONS } from "../../services/wasteTypeService";
 import {
   WasteScope,
   WastePage,
@@ -60,11 +59,6 @@ const allowed = (e) =>
   numeric(e?.remainingQuantity) > 0 &&
   e?.status !== "CANCELLED" &&
   !["CANCELLED", "COMPLETED"].includes(e?.collection?.status);
-const catalogLoader = async () => {
-  const r = await getWasteCatalog({ status: "ACTIVE" });
-  if (!Array.isArray(r?.items)) throw Error("Catálogo indisponível.");
-  return r.items;
-};
 export function EntriesScreen() {
   return (
     <WasteScope>
@@ -223,6 +217,7 @@ function useFilters(initial = defaults) {
     draft,
     setDraft,
     applied,
+    setApplied,
     apply: (e) => {
       e.preventDefault();
       if (validPeriod(draft)) setApplied({ ...draft, page: 1 });
@@ -256,8 +251,7 @@ function ServerPagination({ data, filters }) {
 function useDestinationEditor(refresh) {
   const [modal, setModal] = useState(null),
     [notice, setNotice] = useState(""),
-    op = useWasteOperation(),
-    catalog = useWasteResource(catalogLoader);
+    op = useWasteOperation();
   async function open(entry, edit) {
     const r = await op.run(async () => {
       if (edit) {
@@ -282,10 +276,6 @@ function useDestinationEditor(refresh) {
         mode={modal.edit ? "edit" : "create"}
         destinationToEdit={modal.edit}
         entry={modal.entry}
-        stockItems={catalog.data || []}
-        loadingStockItems={catalog.loading}
-        stockItemsError={catalog.error}
-        onReloadStockItems={catalog.refresh}
         onClose={() => setModal(null)}
         onSuccess={async (r) => {
           if (!r?.destination?.id)
@@ -300,195 +290,9 @@ function useDestinationEditor(refresh) {
   };
 }
 function EntryList() {
-  const filters = useFilters(),
-    loader = useCallback(async () => {
-      const r = await getCollectionEntries(filters.applied);
-      if (!Array.isArray(r?.entries) || !r.pagination)
-        throw Error("Resposta de entradas inválida.");
-      return r;
-    }, [filters.applied]),
-    resource = useWasteResource(loader),
-    catalog = useWasteResource(catalogLoader),
-    editor = useDestinationEditor(resource.refresh);
-  const r = resource.data,
-    rows = r?.entries || [],
-    totals = r?.totalsByUnit;
-  return (
-    <WastePage
-      title="Resíduos Coletados"
-      description="Entradas de materiais geradas pela finalização em campo. Destinar uma entrada não significa concluir recebimento, triagem ou estoque."
-      actions={
-        <>
-          <ExportButton
-            page
-            disabled={resource.loading || !!resource.error || !rows.length}
-            onClick={() =>
-              downloadCsv(
-                "katua-entradas-pagina.csv",
-                [
-                  "ID entrada",
-                  "ID coleta",
-                  "Material",
-                  "Gerador",
-                  "Coletado",
-                  "Destinado",
-                  "Saldo a destinar",
-                  "Unidade",
-                  "Situação",
-                  "Data da coleta",
-                ],
-                rows.map((e) => [
-                  e.id,
-                  e.collectionId,
-                  entryName(e),
-                  generatorName(e),
-                  e.collectedQuantity,
-                  e.destinedQuantity,
-                  e.remainingQuantity,
-                  e.unit,
-                  getCollectionEntryStatusLabel(e.status),
-                  e.collectedAt,
-                ]),
-              )
-            }
-          />
-          <button
-            className="btn btn-outline-success"
-            onClick={resource.refresh}
-            disabled={resource.loading}
-          >
-            Atualizar entradas
-          </button>
-        </>
-      }
-    >
-      <WasteGuide
-        title="Próximo passo: conferir e destinar"
-        to="/waste-stock"
-        label="Consultar estoque"
-      >
-        Abra a entrada para conferir a coleta e registrar a destinação do saldo.
-        Quantidades de unidades diferentes são acompanhadas separadamente.
-      </WasteGuide>
-      <Summary
-        cards={[
-          ["Entradas encontradas", r?.pagination.total ?? "—"],
-          [
-            "Quantidade coletada",
-            r ? unitSummary(totals, "collectedQuantity") : "—",
-          ],
-          [
-            "Quantidade destinada",
-            r ? unitSummary(totals, "destinedQuantity") : "—",
-          ],
-          [
-            "Saldo a destinar",
-            r ? unitSummary(totals, "remainingQuantity") : "—",
-          ],
-        ]}
-      />
-      <p className="small text-muted">
-        Totais de todas as entradas que correspondem aos filtros, separados por
-        unidade. Saldo a destinar não é saldo de estoque.
-      </p>
-      <Filters {...filters} catalog={catalog.data || []} />
-      {editor.notice && (
-        <p role="status" className="alert alert-success">
-          {editor.notice}
-        </p>
-      )}
-      {editor.error && (
-        <p role="alert" className="alert alert-danger">
-          {editor.error}
-        </p>
-      )}
-      <section className="card p-3">
-        <h2 className="fs-18">Entradas coletadas</h2>
-        <p className="small text-muted">
-          A exportação inclui somente a página consultada, com os filtros
-          aplicados. Os cartões consideram todas as páginas.
-        </p>
-        <ResourceState resource={resource}>
-          {!rows.length ? (
-            <p>
-              Nenhuma entrada encontrada. Materiais aparecem após a coleta ser
-              finalizada em campo.
-            </p>
-          ) : (
-            <div className="table-responsive">
-              <table className="table align-middle">
-                <thead>
-                  <tr>
-                    <th>Material / Origem</th>
-                    <th>Quantidades</th>
-                    <th>Situação / Data</th>
-                    <th>Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((e) => (
-                    <tr key={e.id}>
-                      <td>
-                        <strong>{entryName(e)}</strong>
-                        <div>{generatorName(e)}</div>
-                        <small>
-                          Entrada #{shortId(e.id)} · Coleta #
-                          {shortId(e.collectionId)}
-                        </small>
-                      </td>
-                      <td>
-                        <div>
-                          Coletada: {quantity(e.collectedQuantity, e.unit)}
-                        </div>
-                        <div>
-                          Destinada: {quantity(e.destinedQuantity, e.unit)}
-                        </div>
-                        <strong>
-                          Saldo: {quantity(e.remainingQuantity, e.unit)}
-                        </strong>
-                      </td>
-                      <td>
-                        <span
-                          className={`badge text-bg-${e.status === "CANCELLED" ? "secondary" : numeric(e.remainingQuantity) > 0 ? "warning" : "success"}`}
-                        >
-                          {getCollectionEntryStatusLabel(e.status)}
-                        </span>
-                        <div className="mt-1">{dateLabel(e.collectedAt)}</div>
-                      </td>
-                      <td>
-                        <div className="d-flex gap-2 flex-wrap">
-                          <Link
-                            to={`/collected-waste/${encodeURIComponent(e.id)}`}
-                            className="btn btn-sm btn-outline-secondary"
-                          >
-                            Ver entrada
-                          </Link>
-                          <button
-                            className="btn btn-sm btn-success"
-                            disabled={!allowed(e) || editor.busy}
-                            title={
-                              !allowed(e)
-                                ? "Entrada sem saldo disponível ou vinculada a uma coleta encerrada"
-                                : "Registrar a destinação do saldo desta entrada"
-                            }
-                            onClick={() => editor.open(e)}
-                          >
-                            Destinar
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-          <ServerPagination data={r} filters={filters} />
-        </ResourceState>
-      </section>
-      {editor.view}
-    </WastePage>
-  );
+  const [revision, setRevision] = useState(0);
+  const editor = useDestinationEditor(() => setRevision((n) => n + 1));
+  return <CollectedCollections editor={editor} revision={revision} />;
 }
 function DestinationList({ entryId }) {
   const filters = useFilters({
@@ -496,6 +300,7 @@ function DestinationList({ entryId }) {
       entryId,
       status: "ACTIVE",
       type: "",
+      flow: "all",
     }),
     loader = useCallback(async () => {
       const r = await getWasteDestinations({
@@ -509,6 +314,7 @@ function DestinationList({ entryId }) {
     resource = useWasteResource(loader),
     editor = useDestinationEditor(resource.refresh),
     op = useWasteOperation();
+  const cancelOperation = useRef(null);
   const [cancel, setCancel] = useState(null),
     [reason, setReason] = useState(""),
     [notice, setNotice] = useState("");
@@ -519,7 +325,15 @@ function DestinationList({ entryId }) {
       return;
     }
     const r = await op.run(() =>
-      cancelWasteDestination(cancel.id, { reason: reason.trim() }),
+      cancelWasteDestination(cancel.id, {
+        reason: reason.trim(),
+        expectedVersion: cancel.version,
+        operationId: mutationIdentity(cancelOperation, {
+          id: cancel.id,
+          reason: reason.trim(),
+          version: cancel.version,
+        }),
+      }),
     );
     if (r && !r.destination?.id)
       op.setError(
@@ -535,7 +349,7 @@ function DestinationList({ entryId }) {
   }
   return (
     <WastePage
-      title="Gestão de Destinações"
+      title="Movimentações e Destinações"
       description="Consulte, revise e cancele movimentações mantendo o vínculo com a entrada, o responsável e o lote gerado."
       actions={
         <>
@@ -592,15 +406,18 @@ function DestinationList({ entryId }) {
         </>
       }
     >
-      <WasteGuide
-        title="Histórico de movimentações e documentos"
-        to="/collected-waste"
-        label="Registrar pela entrada"
-      >
-        Registre novas destinações a partir da entrada coletada. Confira o
-        destinatário, os documentos informados e o lote vinculado; cancelamentos
-        mantêm o registro no histórico.
-      </WasteGuide>
+      <details className="mb-3">
+        <summary>Como registrar uma movimentação</summary>
+        <WasteGuide
+          title="Histórico de movimentações e documentos"
+          to="/collected-waste"
+          label="Registrar pela entrada"
+        >
+          Registre novas destinações a partir da entrada coletada. Confira o
+          destinatário, os documentos informados e o lote vinculado;
+          cancelamentos mantêm o registro no histórico.
+        </WasteGuide>
+      </details>
       {entryId && (
         <div className="alert alert-light">
           Histórico da entrada #{shortId(entryId)}.{" "}
@@ -635,6 +452,36 @@ function DestinationList({ entryId }) {
         todas, incluem registros cancelados e não devem ser interpretadas como
         movimentação líquida.
       </p>
+      <div
+        className="waste-tabs"
+        role="group"
+        aria-label="Situação das movimentações"
+      >
+        {[
+          ["all", "Ativas"],
+          ["intermediate", "Intermediárias"],
+          ["final", "Destinos finais"],
+          ["cancelled", "Canceladas"],
+        ].map(([value, label]) => (
+          <button
+            key={value}
+            className={`btn btn-sm ${(filters.applied.status === "CANCELLED" ? value === "cancelled" : filters.applied.flow === value) ? "btn-success" : "btn-outline-secondary"}`}
+            onClick={() => {
+              const next = {
+                ...filters.applied,
+                page: 1,
+                type: "",
+                status: value === "cancelled" ? "CANCELLED" : "ACTIVE",
+                flow: value === "cancelled" ? "all" : value,
+              };
+              filters.setApplied(next);
+              filters.setDraft(next);
+            }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
       <Filters {...filters} history />
       {(notice || editor.notice) && (
         <p role="status" className="alert alert-success">
@@ -726,12 +573,12 @@ function DestinationList({ entryId }) {
 function DestinationTable({ rows, edit, cancel, busy = false }) {
   return (
     <div className="table-responsive">
-      <table className="table align-middle">
+      <table className="table align-middle waste-compact-table">
         <thead>
           <tr>
             <th>Movimentação / Material</th>
             <th>Quantidade / Destino</th>
-            <th>Responsável / Documentos</th>
+            <th>Responsável / Histórico</th>
             <th>Situação / Ações</th>
           </tr>
         </thead>
@@ -770,57 +617,16 @@ function DestinationTable({ rows, edit, cancel, busy = false }) {
               </td>
               <td>
                 {personName(d.createdBy)}
-                <div className="small">
-                  Transporte: {d.transportDocument || "Não informado"}
-                </div>
-                <div className="small">
-                  Ambiental: {d.environmentalDocument || "Não informado"}
-                </div>
-                {d.notes && <p className="small">{d.notes}</p>}
-                <details className="small mt-2">
-                  <summary>Histórico de alterações</summary>
-                  {d.auditEvents?.length ? (
-                    <ol className="mt-2 ps-3">
-                      {d.auditEvents.map((event) => (
-                        <li key={event.id}>
-                          <strong>
-                            {{
-                              CREATED: "Registrada",
-                              UPDATED: "Alterada",
-                              CANCELLED: "Cancelada",
-                            }[event.operation] || event.operation}
-                          </strong>{" "}
-                          · {dateLabel(event.createdAt, true)} ·{" "}
-                          {event.actorName || shortId(event.actorUserId)}
-                          {event.snapshot?.before?.type && (
-                            <div>
-                              {getWasteDestinationTypeLabel(
-                                event.snapshot.before.type,
-                              )}{" "}
-                              →{" "}
-                              {getWasteDestinationTypeLabel(
-                                event.snapshot.after?.type,
-                              )}
-                            </div>
-                          )}
-                          {event.snapshot?.before?.stockLotId &&
-                            event.snapshot.before.stockLotId !==
-                              event.snapshot.after?.stockLotId && (
-                              <div>
-                                Lote anterior preservado: #
-                                {shortId(event.snapshot.before.stockLotId)}
-                              </div>
-                            )}
-                        </li>
-                      ))}
-                    </ol>
-                  ) : (
-                    <p className="mt-2">
-                      Registro anterior à implantação do histórico de
-                      alterações. Consulte os dados da destinação e seus lotes.
-                    </p>
-                  )}
-                </details>
+                {(d.transportDocument || d.environmentalDocument) && (
+                  <small className="d-block">Documentação informada</small>
+                )}
+                {d.notes && (
+                  <details className="small">
+                    <summary>Observações</summary>
+                    <p>{d.notes}</p>
+                  </details>
+                )}
+                <DestinationAudit id={d.id} />
                 <details className="small mt-2">
                   <summary>Identificação e documentos</summary>
                   <p className="text-break">
@@ -930,8 +736,13 @@ function EntryDetail({ id }) {
             <Summary
               cards={[
                 [entryName(e), getCollectionEntryStatusLabel(e.status)],
-                ["Coletado", quantity(e.collectedQuantity, e.unit)],
-                ["Destinado", quantity(e.destinedQuantity, e.unit)],
+                [
+                  e.collection?.quantityReviewVersion
+                    ? "Quantidade conferida"
+                    : "Informado em campo",
+                  quantity(e.collectedQuantity, e.unit),
+                ],
+                ["Alocado em movimentações", quantity(e.destinedQuantity, e.unit)],
                 ["Saldo a destinar", quantity(e.remainingQuantity, e.unit)],
               ]}
             />

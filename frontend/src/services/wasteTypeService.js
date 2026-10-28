@@ -1,3 +1,4 @@
+import { clearWasteCatalogCache } from "./wasteWorkspaceService";
 import { optionalFields } from "../utils/wasteWorkspace";
 import { apiRequest } from "./apiClient";
 
@@ -119,6 +120,7 @@ export const getWasteTypeById = async (id) => {
  * POST /waste-stock/items
  */
 export const createWasteType = async (payload = {}) => {
+  clearWasteCatalogCache();
   const data = normalizeWasteTypePayload(payload);
 
   return apiRequest(WASTE_TYPE_ENDPOINT, {
@@ -151,6 +153,7 @@ export const updateWasteType = async (id, payload = {}) => {
  * PATCH /waste-stock/items/:id
  */
 export const patchWasteType = async (id, payload = {}) => {
+  clearWasteCatalogCache();
   if (!id) {
     throw new Error("ID do tipo de resíduo não informado.");
   }

@@ -11,19 +11,21 @@ export function useWasteResource(loader) {
   const refresh = useCallback(async () => {
     const ref = request.current,
       id = ++ref.id;
-    setState({ data: null, loading: true, error: "", updatedAt: null });
+    const same = ref.loader === loader;
+    ref.loader = loader;
+    setState((old) => ({
+      data: same ? old.data : null,
+      loading: true,
+      error: "",
+      updatedAt: same ? old.updatedAt : null,
+    }));
     try {
       const data = await loader();
       if (id === ref.id)
         setState({ data, loading: false, error: "", updatedAt: new Date() });
     } catch (e) {
       if (id === ref.id)
-        setState({
-          data: null,
-          loading: false,
-          error: errorMessage(e),
-          updatedAt: null,
-        });
+        setState((old) => ({ ...old, loading: false, error: errorMessage(e) }));
     }
   }, [loader]);
   useEffect(() => {

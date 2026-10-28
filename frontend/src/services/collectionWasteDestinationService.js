@@ -39,6 +39,7 @@ const buildWasteDestinationQueryString = (filters = {}) => {
 
   appendTextParam(params, "search", filters.search);
   appendUppercaseParam(params, "type", filters.type);
+  appendTextParam(params, "flow", filters.flow);
   appendUppercaseParam(params, "unit", filters.unit);
   appendUppercaseParam(params, "status", filters.status);
   appendTextParam(
@@ -90,7 +91,13 @@ const normalizeCreatePayload = (payload = {}) => {
   const unit = normalizeUppercase(payload.unit);
   if (!unit) throw new Error("Unidade da destinação não informada.");
 
-  const data = { collectionWasteEntryId, type, quantity, unit };
+  const data = {
+    collectionWasteEntryId,
+    type,
+    quantity,
+    unit,
+    operationId: payload.operationId,
+  };
   addOptionalTextField(data, "stockItemId", payload.stockItemId);
   addOptionalTextField(data, "destinationName", payload.destinationName);
   addOptionalTextField(
@@ -120,7 +127,10 @@ const normalizeCreatePayload = (payload = {}) => {
 // AQUI ESTÁ A CORREÇÃO PRINCIPAL
 // ==========================================
 const normalizeUpdatePayload = (payload = {}) => {
-  const data = {};
+  const data = {
+    operationId: payload.operationId,
+    expectedVersion: payload.expectedVersion,
+  };
 
   // Adicionado stockItemId na lista de campos de texto opcionais
   const optionalTextFields = [
@@ -161,7 +171,11 @@ const normalizeUpdatePayload = (payload = {}) => {
 const normalizeCancelPayload = (payload = {}) => {
   const reason = normalizeText(payload.reason);
   if (!reason) throw new Error("Informe o motivo do cancelamento.");
-  const data = { reason };
+  const data = {
+    reason,
+    operationId: payload.operationId,
+    expectedVersion: payload.expectedVersion,
+  };
   const cancelledAt = normalizeDate(payload.cancelledAt);
   if (cancelledAt) data.cancelledAt = cancelledAt;
   return data;

@@ -116,7 +116,10 @@ export function dateLabel(value, time = false) {
   ).format(new Date(value));
 }
 export const scheduledDate = (item) =>
-  item.schedule?.scheduledDate || item.scheduledDate || null;
+  item.schedule?.scheduledDate ||
+  item.route?.scheduledDate ||
+  item.scheduledDate ||
+  null;
 export function quantity(value, unit) {
   const n =
     value === null || value === undefined || value === "" ? NaN : Number(value);

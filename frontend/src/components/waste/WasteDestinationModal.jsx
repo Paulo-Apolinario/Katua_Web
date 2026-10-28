@@ -1,3 +1,9 @@
+import {
+  getWorkspaceCatalog,
+  clearWasteCatalogCache,
+  classifyWasteEntry,
+  mutationIdentity,
+} from "../../services/wasteWorkspaceService";
 import { useModalFocus } from "../waste-workspace/useModalFocus";
 import { dateKey } from "../../utils/collectionWorkspace";
 import {
@@ -35,13 +41,13 @@ const DESTINATION_TYPE_OPTIONS = [
     value: "STOCK",
     label: "Adicionar ao estoque",
     description:
-      "O material será destinado ao estoque e poderá gerar ou alimentar um lote.",
+      "A quantidade será registrada em um novo lote rastreável no estoque da cooperativa.",
   },
   {
     value: "TRIAGE",
-    label: "Enviar para triagem",
+    label: "Movimentação intermediária — triagem",
     description:
-      "O material será encaminhado para processo de separação, classificação ou preparação.",
+      "Movimentação intermediária: informe o local de triagem. Converta esta movimentação em destino final para encerrar a coleta.",
   },
   {
     value: "REJECT",
@@ -249,15 +255,106 @@ const WasteDestinationModal = ({
   mode = "create",
   destinationToEdit = null,
   entry = null,
-  stockItems = [],
-  loadingStockItems = false,
-  stockItemsError = "",
-  onReloadStockItems,
   onClose,
   onSuccess,
 }) => {
   const dialogRef = useRef(null);
-  const submittingRef = useRef(false);
+  const submittingRef = useRef(false),
+    operation = useRef(null),
+    catalogRequest = useRef(0),
+    classified = useRef(null);
+  const [stockItems, setStockItems] = useState([]),
+    [loadingStockItems, setLoadingStockItems] = useState(false),
+    [stockItemsError, setStockItemsError] = useState("");
+  const [catalogQuery, setCatalogQuery] = useState(""),
+    [catalogPage, setCatalogPage] = useState(1),
+    [catalogMore, setCatalogMore] = useState(false),
+    [catalogRevision, setCatalogRevision] = useState(0);
+  const [newMaterial, setNewMaterial] = useState(null),
+    [catalogSaving, setCatalogSaving] = useState(false),
+    [catalogNotice, setCatalogNotice] = useState("");
+  const onReloadStockItems = () => {
+    clearWasteCatalogCache();
+    setCatalogPage(1);
+    setCatalogRevision((n) => n + 1);
+  };
+  useEffect(() => {
+    if (open) {
+      operation.current = null;
+      classified.current = null;
+      setNewMaterial(null);
+      setCatalogNotice("");
+      setCatalogQuery("");
+      setCatalogPage(1);
+    }
+  }, [open, entry?.id]);
+  useEffect(() => {
+    if (!open || !entry?.unit) return;
+    const request = ++catalogRequest.current;
+    setLoadingStockItems(true);
+    setStockItemsError("");
+    const timer = setTimeout(() => {
+      getWorkspaceCatalog({
+        unit: entry.unit,
+        q: catalogQuery,
+        page: catalogPage,
+        limit: 50,
+      })
+        .then((r) => {
+          if (catalogRequest.current !== request) return;
+          setStockItems((old) =>
+            catalogPage === 1
+              ? r.items
+              : [
+                  ...new Map(
+                    [...old, ...r.items].map((i) => [i.id, i]),
+                  ).values(),
+                ],
+          );
+          setCatalogMore(r.pagination.hasNextPage);
+        })
+        .catch((e) => {
+          if (catalogRequest.current === request)
+            setStockItemsError(e.message || "Catálogo indisponível.");
+        })
+        .finally(() => {
+          if (catalogRequest.current === request) setLoadingStockItems(false);
+        });
+    }, 150);
+    return () => {
+      clearTimeout(timer);
+      catalogRequest.current = request + 1;
+    };
+  }, [open, entry?.unit, catalogQuery, catalogPage, catalogRevision]);
+  async function saveMaterial() {
+    if (catalogSaving || !newMaterial) return;
+    setCatalogSaving(true);
+    setStockItemsError("");
+    try {
+      const result = await classifyWasteEntry(entry.id, {
+        ...newMaterial,
+        unit: entry.unit,
+      });
+      if (!result.item?.id)
+        throw Error("Material não confirmado pelo servidor.");
+      classified.current = result.item.id;
+      setStockItems((old) => [
+        ...old.filter((i) => i.id !== result.item.id),
+        result.item,
+      ]);
+      setForm((old) => ({ ...old, stockItemId: result.item.id }));
+      setNewMaterial(null);
+      setCatalogNotice(
+        "Material classificado no catálogo. Nenhum lote foi criado; confirme a movimentação para enviar ao estoque.",
+      );
+    } catch (e) {
+      setStockItemsError(
+        e.message || "Não foi possível classificar o material.",
+      );
+    } finally {
+      setCatalogSaving(false);
+    }
+  }
   const [form, setForm] = useState(INITIAL_FORM);
   const [errors, setErrors] = useState({});
   const [requestError, setRequestError] = useState("");
@@ -265,9 +362,9 @@ const WasteDestinationModal = ({
 
   const isEditMode = mode === "edit" && destinationToEdit;
 
-  const stockBlocked = !["RECEIVED", "SORTING"].includes(
-    entry?.collection?.status,
-  );
+  const stockBlocked =
+    !["RECEIVED", "SORTING"].includes(entry?.collection?.status) ||
+    !entry?.collection?.quantityReviewVersion;
   const entryId = useMemo(() => getEntryId(entry), [entry]);
   const unit = useMemo(() => getEntryUnit(entry), [entry]);
   const totalQuantity = useMemo(() => getTotalQuantity(entry), [entry]);
@@ -432,15 +529,37 @@ const WasteDestinationModal = ({
     try {
       submittingRef.current = true;
       setSubmitting(true);
+      if (
+        form.type === "STOCK" &&
+        !entry.wasteTypeId &&
+        classified.current !== form.stockItemId
+      ) {
+        await classifyWasteEntry(entry.id, {
+          existingId: form.stockItemId,
+          unit,
+        });
+        classified.current = form.stockItemId;
+      }
       let response;
       if (isEditMode) {
         const destId =
           destinationToEdit.id ||
           destinationToEdit.collectionWasteDestinationId;
-        const payload = buildUpdatePayload();
+        const base = {
+          ...buildUpdatePayload(),
+          expectedVersion: destinationToEdit.version,
+        };
+        const payload = {
+          ...base,
+          operationId: mutationIdentity(operation, base),
+        };
         response = await updateWasteDestination(destId, payload);
       } else {
-        const payload = buildCreatePayload();
+        const base = buildCreatePayload();
+        const payload = {
+          ...base,
+          operationId: mutationIdentity(operation, base),
+        };
         response = await createWasteDestination(payload);
       }
       if (!response?.destination?.id)
@@ -746,8 +865,8 @@ const WasteDestinationModal = ({
                               {option.description}
                               {option.value === "STOCK" && stockBlocked && (
                                 <strong className="d-block mt-1">
-                                  Confirme primeiro o recebimento na Lista de
-                                  Coletas.
+                                  Confirme o recebimento e as quantidades na
+                                  Lista de Coletas.
                                 </strong>
                               )}
                             </span>
@@ -858,6 +977,18 @@ const WasteDestinationModal = ({
                     <label htmlFor="stock-item" className="form-label">
                       Item do catálogo
                     </label>
+                    <input
+                      className="form-control mb-2"
+                      type="search"
+                      aria-label="Buscar material no catálogo"
+                      placeholder="Buscar por nome do material"
+                      value={catalogQuery}
+                      onChange={(e) => {
+                        setCatalogQuery(e.target.value);
+                        setCatalogPage(1);
+                      }}
+                      disabled={submitting || catalogSaving}
+                    />
                     <div className="input-group">
                       <span className="input-group-text">
                         <Boxes size={17} aria-hidden="true" />
@@ -895,6 +1026,110 @@ const WasteDestinationModal = ({
                         })}
                       </select>
                     </div>
+                    <div className="d-flex flex-wrap gap-2 mt-2">
+                      {catalogMore && (
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-secondary"
+                          disabled={loadingStockItems || submitting}
+                          onClick={() => setCatalogPage((n) => n + 1)}
+                        >
+                          Carregar mais materiais
+                        </button>
+                      )}
+                      {!entry?.wasteTypeId && (
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-success"
+                          disabled={submitting || catalogSaving}
+                          onClick={() =>
+                            setNewMaterial({
+                              name: getWasteName(entry),
+                              category: "",
+                            })
+                          }
+                        >
+                          Cadastrar material no catálogo
+                        </button>
+                      )}
+                    </div>
+                    {newMaterial && (
+                      <fieldset
+                        className="border rounded p-3 mt-3"
+                        disabled={submitting || catalogSaving}
+                      >
+                        <legend className="fs-6">
+                          Classificar material coletado
+                        </legend>
+                        <label
+                          className="form-label"
+                          htmlFor="inline-material-name"
+                        >
+                          Nome do material
+                        </label>
+                        <input
+                          id="inline-material-name"
+                          className="form-control mb-2"
+                          maxLength={255}
+                          value={newMaterial.name}
+                          onChange={(e) =>
+                            setNewMaterial((v) => ({
+                              ...v,
+                              name: e.target.value,
+                            }))
+                          }
+                        />
+                        <label
+                          className="form-label"
+                          htmlFor="inline-material-category"
+                        >
+                          Categoria
+                        </label>
+                        <input
+                          id="inline-material-category"
+                          className="form-control mb-2"
+                          maxLength={100}
+                          value={newMaterial.category}
+                          onChange={(e) =>
+                            setNewMaterial((v) => ({
+                              ...v,
+                              category: e.target.value,
+                            }))
+                          }
+                        />
+                        <p className="small text-muted">
+                          Unidade da entrada: {unit}. Este cadastro não gera
+                          estoque.
+                        </p>
+                        <div className="d-flex gap-2">
+                          <button
+                            type="button"
+                            className="btn btn-success"
+                            disabled={
+                              newMaterial.name.trim().length < 2 ||
+                              newMaterial.category.trim().length < 2
+                            }
+                            onClick={saveMaterial}
+                          >
+                            {catalogSaving
+                              ? "Salvando…"
+                              : "Salvar material e selecionar"}
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-outline-secondary"
+                            onClick={() => setNewMaterial(null)}
+                          >
+                            Voltar
+                          </button>
+                        </div>
+                      </fieldset>
+                    )}
+                    {catalogNotice && (
+                      <p role="status" className="alert alert-success mt-2">
+                        {catalogNotice}
+                      </p>
+                    )}
                     {errors.stockItemId && (
                       <div className="text-danger small mt-1">
                         {errors.stockItemId}

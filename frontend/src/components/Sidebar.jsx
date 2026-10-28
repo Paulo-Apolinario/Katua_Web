@@ -692,7 +692,9 @@ const Sidebar = ({ active, setActive }) => {
                     <span className="dot" />
                   </span>
 
-                  <span className="submenu-text">Gestão de Destinações</span>
+                  <span className="submenu-text">
+                    Movimentações e Destinações
+                  </span>
                 </NavLink>
               </li>
 
@@ -705,7 +707,7 @@ const Sidebar = ({ active, setActive }) => {
                     <span className="dot" />
                   </span>
 
-                  <span className="submenu-text">Visão do Estoque</span>
+                  <span className="submenu-text">Estoque e Lotes</span>
                 </NavLink>
               </li>
 
@@ -719,34 +721,6 @@ const Sidebar = ({ active, setActive }) => {
                   </span>
 
                   <span className="submenu-text">Catálogo de Resíduos</span>
-                </NavLink>
-              </li>
-
-              <li>
-                <NavLink
-                  to="/create-type"
-                  className={({ isActive }) => (isActive ? "active" : "")}
-                >
-                  <span className="dot-wrap">
-                    <span className="dot" />
-                  </span>
-
-                  <span className="submenu-text">
-                    Cadastrar Tipo de Resíduo
-                  </span>
-                </NavLink>
-              </li>
-
-              <li>
-                <NavLink
-                  to="/waste-stock/create"
-                  className={({ isActive }) => (isActive ? "active" : "")}
-                >
-                  <span className="dot-wrap">
-                    <span className="dot" />
-                  </span>
-
-                  <span className="submenu-text">Adicionar Lote</span>
                 </NavLink>
               </li>
             </ul>

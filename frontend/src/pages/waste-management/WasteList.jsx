@@ -1,15 +1,16 @@
+import {
+  getFieldCollections,
+  getFieldOptions,
+} from "../../services/wasteWorkspaceService";
 import CollectionTeam from "../../components/collections/CollectionTeam";
 import CollectionQuantityReview from "../../components/collections/CollectionQuantityReview";
 import { downloadCollectionPdf } from "../../utils/collectionPdf";
 import CollectionIncidents from "../../components/collections/CollectionIncidents";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import HeadTags from "../../components/HeadTags";
 import { useAdminAuth } from "../../context/AdminAuthContext";
-import {
-  getAllCollections,
-  getCollectionById,
-} from "../../services/collectionService";
+import { getCollectionById } from "../../services/collectionService";
 import CollectionStageActions from "../../components/collections/CollectionStageActions";
 import CollectionDialog from "../../components/collections/CollectionDialog";
 import {
@@ -24,12 +25,10 @@ import {
   generatorName,
   location,
   scheduledDate,
+  quantity,
   dateLabel,
   materials,
-  searchText,
   shortId,
-  inPeriod,
-  unitTotals,
 } from "../../utils/collectionWorkspace";
 
 const defaults = {
@@ -61,7 +60,10 @@ function CollectionList({ cooperativeName }) {
   const [items, setItems] = useState([]),
     [loading, setLoading] = useState(true),
     [error, setError] = useState("");
-  const [filters, setFilters] = useState(defaults),
+  const [filters, setFilters] = useState(() => ({
+      ...defaults,
+      status: params.get("status") || "",
+    })),
     [page, setPage] = useState(1),
     [size, setSize] = useState(10);
   const [selected, setSelected] = useState(null),
@@ -69,25 +71,53 @@ function CollectionList({ cooperativeName }) {
     [detailError, setDetailError] = useState(""),
     [dialog, setDialog] = useState(false);
   const guard = useRef({ list: 0, detail: 0 });
-  const load = useCallback(async (quiet = false) => {
-    const request = ++guard.current.list;
-    if (!quiet) {
-      setLoading(true);
-      setItems([]);
-      setPage(1);
-    }
-    setError("");
-    try {
-      const res = await getAllCollections();
-      if (!Array.isArray(res?.collections))
-        throw Error("Resposta de coletas inválida.");
-      if (request === guard.current.list) setItems(res.collections);
-    } catch (e) {
-      if (request === guard.current.list) setError(errorText(e));
-    } finally {
-      if (request === guard.current.list) setLoading(false);
-    }
+  const [meta, setMeta] = useState(null),
+    [filterOptions, setFilterOptions] = useState({}),
+    [filterError, setFilterError] = useState("");
+  useEffect(() => {
+    let active = true;
+    getFieldOptions()
+      .then((r) => {
+        if (active) setFilterOptions(r);
+      })
+      .catch(() => {
+        if (active)
+          setFilterError(
+            "Os filtros de equipe não puderam ser carregados. Recarregue a página para tentar novamente.",
+          );
+      });
+    return () => {
+      active = false;
+    };
   }, []);
+  const load = useCallback(
+    async (quiet = false) => {
+      const request = ++guard.current.list;
+      if (!quiet) {
+        setLoading(true);
+        setItems([]);
+      }
+      setError("");
+      try {
+        const res = await getFieldCollections({
+          ...filters,
+          page,
+          limit: size,
+        });
+        if (!Array.isArray(res?.collections))
+          throw Error("Resposta de coletas inválida.");
+        if (request === guard.current.list) {
+          setItems(res.collections);
+          setMeta(res);
+        }
+      } catch (e) {
+        if (request === guard.current.list) setError(errorText(e));
+      } finally {
+        if (request === guard.current.list) setLoading(false);
+      }
+    },
+    [filters, page, size],
+  );
   const openDetail = useCallback(async (id) => {
     const request = ++guard.current.detail;
     setDialog(true);
@@ -106,8 +136,11 @@ function CollectionList({ cooperativeName }) {
   }, []);
   useEffect(() => {
     const g = guard.current;
-    void load();
+    const timer = setTimeout(() => {
+      void load();
+    }, 200);
     return () => {
+      clearTimeout(timer);
       g.list++;
       g.detail++;
     };
@@ -123,62 +156,10 @@ function CollectionList({ cooperativeName }) {
     if (queryId) void openDetail(queryId);
   }, [queryId, openDetail]);
   const invalid = filters.start && filters.end && filters.start > filters.end;
-  const filtered = useMemo(
-    () =>
-      items
-        .filter((c) => {
-          if (invalid) return false;
-          const term = searchText(filters.q);
-          if (
-            term &&
-            !searchText(
-              [
-                c.id,
-                generatorName(c),
-                location(c),
-                c.route?.name,
-                personName(c.collector),
-                personName(c.driver),
-                c.vehicle?.plate,
-                COLLECTION_STAGES[c.status],
-                ...(c.incidents || []).map((incident) => incident.description),
-                ...materials(c).map((m) => m.name),
-              ].join(" "),
-            ).includes(term)
-          )
-            return false;
-          if (filters.status && c.status !== filters.status) return false;
-          if (
-            (filters.generator && c.generatorId !== filters.generator) ||
-            (filters.route && c.routeId !== filters.route) ||
-            (filters.driver && c.driverId !== filters.driver) ||
-            (filters.vehicle && c.vehicleId !== filters.vehicle) ||
-            (filters.collector && c.collectorId !== filters.collector)
-          )
-            return false;
-          return inPeriod(
-            filters.dateField === "scheduled"
-              ? scheduledDate(c)
-              : filters.dateField === "collected"
-                ? c.collectedAt
-                : c.createdAt,
-            filters.start,
-            filters.end,
-          );
-        })
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
-    [items, filters, invalid],
-  );
-  const currentPage = Math.min(
-    page,
-    Math.max(1, Math.ceil(filtered.length / size)),
-  );
-  const visible = filtered.slice((currentPage - 1) * size, currentPage * size);
-  const options = (field) => [
-    ...new Map(
-      items.filter((c) => c[field]?.id).map((c) => [c[field].id, c[field]]),
-    ).values(),
-  ];
+  const filtered = items;
+  const currentPage = page;
+  const visible = items;
+  const options = (field) => filterOptions[field] || [];
   function change(e) {
     setFilters((f) => ({ ...f, [e.target.name]: e.target.value }));
     setPage(1);
@@ -218,14 +199,8 @@ function CollectionList({ cooperativeName }) {
             suas destinações permanecem vinculados à operação.
           </p>
           <p className="small text-muted">
-            Ocorrências abertas:{" "}
-            {items.reduce(
-              (total, c) =>
-                total +
-                (c.incidents || []).filter((i) => i.status === "OPEN").length,
-              0,
-            )}
-            . Consulte o tratamento em Ver detalhes.
+            Ocorrências abertas: {meta?.stats.incidents ?? "—"}. Consulte o
+            tratamento em Ver detalhes.
           </p>
           <Link to="/extra-collection-orders">Ordens de coleta extras</Link>
           <Link to="/collection-requests">Coletas solicitadas</Link>
@@ -250,24 +225,23 @@ function CollectionList({ cooperativeName }) {
                 ["Quantidades registradas", "—"],
               ]
             : [
-                ["Coletas encontradas", filtered.length],
-                [
-                  "Pendentes / em andamento",
-                  filtered.filter((c) =>
-                    ["PENDING", "IN_PROGRESS"].includes(c.status),
-                  ).length,
-                ],
-                [
-                  "Aguardando recebimento",
-                  filtered.filter((c) => c.status === "COLLECTED").length,
-                ],
+                ["Coletas encontradas", meta?.pagination.total ?? 0],
+                ["Pendentes / em andamento", meta?.stats.active ?? 0],
+                ["Aguardando recebimento", meta?.stats.awaitingReceipt ?? 0],
                 [
                   "Quantidades registradas",
-                  unitTotals(filtered).join(" · ") || "Não informadas",
+                  meta?.stats.units
+                    .map((u) => quantity(u.quantity, u.unit))
+                    .join(" · ") || "Não informadas",
                 ],
               ]
         }
       />
+      {filterError && (
+        <p role="alert" className="alert alert-warning">
+          {filterError}
+        </p>
+      )}
       <section className="card p-3 mb-4" aria-label="Filtros de coletas">
         <div className="row g-3">
           <div className="col-md-6">
@@ -459,7 +433,7 @@ function CollectionList({ cooperativeName }) {
             <WorkspacePagination
               page={currentPage}
               size={size}
-              total={filtered.length}
+              total={meta?.pagination.total ?? 0}
               onPage={setPage}
               onSize={(n) => {
                 setSize(n);
@@ -486,11 +460,11 @@ function CollectionList({ cooperativeName }) {
           ) : (
             selected && (
               <>
-                <div className="d-flex align-items-center gap-3">
+                <div className="d-flex align-items-center flex-wrap gap-2 collection-detail-toolbar">
                   <CollectionBadge status={selected.status} />
                   <button
                     type="button"
-                    className="primary-btn btn-sm"
+                    className="btn btn-sm btn-outline-success"
                     disabled={operationBusy}
                     onClick={() =>
                       downloadCollectionPdf(selected, { cooperativeName })
@@ -520,7 +494,7 @@ function CollectionList({ cooperativeName }) {
                     );
                   }}
                 />
-                <CollectionTeam collection={selected} onBusy={setOperationBusy} onChange={(updated) => { setSelected(updated); setItems(current => current.map(item => item.id === updated.id ? updated : item)); }} />
+
                 <CollectionStageActions
                   key={`${selected.id}:${selected.status}`}
                   collection={selected}
@@ -534,87 +508,123 @@ function CollectionList({ cooperativeName }) {
                     );
                   }}
                 />
-                <CollectionIncidents
-                  collection={selected}
-                  onBusy={setOperationBusy}
-                  onChange={(updated) => {
-                    setSelected(updated);
-                    setItems((current) =>
-                      current.map((item) =>
-                        item.id === updated.id ? updated : item,
-                      ),
-                    );
-                  }}
-                />
-                <h3 className="fs-18 mt-3">{generatorName(selected)}</h3>
-                <p>{location(selected)}</p>
-                <p className="small text-muted text-break">
-                  Identificador completo: {selected.id}
-                </p>
-                <dl className="row">
-                  <dt className="col-sm-4">Data programada</dt>
-                  <dd className="col-sm-8">
-                    {dateLabel(scheduledDate(selected))}
-                  </dd>
-                  <dt className="col-sm-4">Rota</dt>
-                  <dd className="col-sm-8">
-                    {selected.route?.name || "Sem rota"}
-                  </dd>
-                  <dt className="col-sm-4">Catador</dt>
-                  <dd className="col-sm-8">{personName(selected.collector)}</dd>
-                  <dt className="col-sm-4">Motorista</dt>
-                  <dd className="col-sm-8">{personName(selected.driver)}</dd>
-                  <dt className="col-sm-4">Veículo</dt>
-                  <dd className="col-sm-8">
-                    {selected.vehicle?.plate || "Não informado"}
-                  </dd>
-                </dl>
-                <h3 className="fs-18">Materiais registrados em campo</h3>
-                <MaterialTable items={materials(selected)} />
-                <p className="small">
-                  Os vínculos exibidos são os da coleta; a equipe atual da rota
-                  não substitui o histórico.
-                </p>
-                <h3 className="fs-18">Previsão da solicitação</h3>
-                <MaterialTable
-                  estimated
-                  items={materials(selected.schedule || {}, true)}
-                />
-                <h3 className="fs-18">Histórico registrado</h3>
-                <ol>
-                  {timeline.map(([label, date, actor]) => (
-                    <li key={label}>
-                      <strong>{label}</strong> — {dateLabel(date, true)}
-                      {actor ? ` · ${personName(actor)}` : ""}
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-outline-secondary ms-2"
-                        onClick={() =>
-                          downloadCollectionPdf(selected, {
-                            cooperativeName,
-                            event: [label, date, actor],
-                          })
-                        }
-                      >
-                        Baixar ação em PDF
-                      </button>
-                    </li>
-                  ))}
-                </ol>
-                {selected.cancellationReason && (
-                  <p>Motivo do cancelamento: {selected.cancellationReason}</p>
-                )}
-                <p>
-                  Observações da coleta: {selected.notes || "Não informadas"}
-                </p>
-                <div className="alert alert-light">
-                  Finalização em campo, recebimento e destinação são etapas
-                  diferentes. As quantidades exibidas não representam saldo de
-                  estoque.
-                </div>
-                <Link to="/collected-waste">
-                  Consultar materiais e destinações
-                </Link>
+                <details
+                  className="workflow-details"
+                  open={Boolean(
+                    selected.participants?.length &&
+                      ["RECEIVED", "SORTING"].includes(selected.status) &&
+                      (!selected.allocationVersion ||
+                        selected.allocationQuantityVersion !==
+                          selected.quantityReviewVersion),
+                  )}
+                >
+                  <summary>Equipe e divisão dos materiais</summary>
+                  <CollectionTeam
+                    collection={selected}
+                    onBusy={setOperationBusy}
+                    onChange={(updated) => {
+                      setSelected(updated);
+                      setItems((current) =>
+                        current.map((item) =>
+                          item.id === updated.id ? updated : item,
+                        ),
+                      );
+                    }}
+                  />{" "}
+                </details>
+                <details className="workflow-details">
+                  <summary>Ocorrências e acompanhamento</summary>
+                  <CollectionIncidents
+                    collection={selected}
+                    onBusy={setOperationBusy}
+                    onChange={(updated) => {
+                      setSelected(updated);
+                      setItems((current) =>
+                        current.map((item) =>
+                          item.id === updated.id ? updated : item,
+                        ),
+                      );
+                    }}
+                  />
+                </details>
+                <details className="workflow-details">
+                  <summary>Origem, materiais e histórico da coleta</summary>
+                  <h3 className="fs-18 mt-3">{generatorName(selected)}</h3>
+                  <p>{location(selected)}</p>
+                  <p className="small text-muted text-break">
+                    Identificador completo: {selected.id}
+                  </p>
+                  <dl className="row">
+                    <dt className="col-sm-4">Data programada</dt>
+                    <dd className="col-sm-8">
+                      {dateLabel(scheduledDate(selected))}
+                    </dd>
+                    <dt className="col-sm-4">Rota</dt>
+                    <dd className="col-sm-8">
+                      {selected.route?.name || "Sem rota"}
+                    </dd>
+                    <dt className="col-sm-4">Catador</dt>
+                    <dd className="col-sm-8">
+                      {personName(selected.collector)}
+                    </dd>
+                    <dt className="col-sm-4">Motorista</dt>
+                    <dd className="col-sm-8">{personName(selected.driver)}</dd>
+                    <dt className="col-sm-4">Veículo</dt>
+                    <dd className="col-sm-8">
+                      {selected.vehicle?.plate || "Não informado"}
+                    </dd>
+                  </dl>
+                  <h3 className="fs-18">Materiais registrados em campo</h3>
+                  <MaterialTable items={materials(selected)} />
+                  <p className="small">
+                    Os vínculos exibidos são os da coleta; a equipe atual da
+                    rota não substitui o histórico.
+                  </p>
+                  {materials(selected.schedule || {}, true).length > 0 && (
+                    <>
+                      <h3 className="fs-18">Previsão da solicitação</h3>
+                      <MaterialTable
+                        estimated
+                        items={materials(selected.schedule || {}, true)}
+                      />
+                    </>
+                  )}
+                  <h3 className="fs-18">Histórico registrado</h3>
+                  <ol>
+                    {timeline.map(([label, date, actor]) => (
+                      <li key={label}>
+                        <strong>{label}</strong> — {dateLabel(date, true)}
+                        {actor ? ` · ${personName(actor)}` : ""}
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-secondary ms-2"
+                          onClick={() =>
+                            downloadCollectionPdf(selected, {
+                              cooperativeName,
+                              event: [label, date, actor],
+                            })
+                          }
+                        >
+                          Baixar ação em PDF
+                        </button>
+                      </li>
+                    ))}
+                  </ol>
+                  {selected.cancellationReason && (
+                    <p>Motivo do cancelamento: {selected.cancellationReason}</p>
+                  )}
+                  <p>
+                    Observações da coleta: {selected.notes || "Não informadas"}
+                  </p>
+                  <div className="alert alert-light">
+                    Finalização em campo, recebimento e destinação são etapas
+                    diferentes. As quantidades exibidas não representam saldo de
+                    estoque.
+                  </div>
+                  <Link to="/collected-waste">
+                    Consultar materiais e destinações
+                  </Link>
+                </details>
               </>
             )
           )}

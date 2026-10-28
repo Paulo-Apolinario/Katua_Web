@@ -13,6 +13,7 @@ export default function CollectionQuantityReview({
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   const guard = useRef(false);
+  const [editing, setEditing] = useState(false);
   useEffect(() => {
     setValues(
       Object.fromEntries(
@@ -29,7 +30,9 @@ export default function CollectionQuantityReview({
     collection.quantityReviewVersion,
     collection.collectionMaterials,
   ]);
-  const editable = ["RECEIVED", "SORTING"].includes(collection.status);
+  const canEdit = ["RECEIVED", "SORTING"].includes(collection.status);
+  const reviewed = (collection.quantityReviewVersion || 0) > 0;
+  const editable = canEdit && (!reviewed || editing);
   const changed = rows.some((m) => Number(values[m.id]) !== Number(m.quantity));
   async function save(event) {
     event.preventDefault();
@@ -63,6 +66,7 @@ export default function CollectionQuantityReview({
           "Atualize a coleta para conferir se a alteração foi registrada.",
         );
       onChange(result.collection);
+      setEditing(false);
       setReason("");
     } catch (err) {
       setError(
@@ -76,21 +80,50 @@ export default function CollectionQuantityReview({
       onBusy?.(false);
     }
   }
+  if (!canEdit && !collection.quantityReviews?.length) return null;
   return (
     <section
       className="border rounded p-3 my-3"
       aria-label="Conferência das quantidades recebidas"
     >
-      <h3 className="fs-18">Conferência das quantidades recebidas</h3>
-      <p className="text-muted small">
-        Etapa de conferência e triagem após o recebimento físico. O valor
-        informado pelo catador será preservado. Ao salvar, os envolvidos
-        receberão um aviso no aplicativo.
-      </p>
+      <h3 className="fs-18">
+        {reviewed ? "Quantidades conferidas" : "Conferir materiais recebidos"}
+      </h3>
+      {reviewed && !editing && (
+        <div className="d-flex justify-content-between align-items-start flex-wrap gap-2">
+          <p className="small text-muted mb-0">
+            Conferência {collection.quantityReviewVersion} ·{" "}
+            {collection.quantityReviews?.[0]?.actorName || "Cooperativa"}
+            {collection.quantitiesReviewedAt
+              ? " · " +
+                new Date(collection.quantitiesReviewedAt).toLocaleString(
+                  "pt-BR",
+                  { timeZone: "America/Fortaleza" },
+                )
+              : ""}
+          </p>
+          {canEdit && (
+            <button
+              type="button"
+              className="btn btn-sm btn-outline-secondary"
+              onClick={() => setEditing(true)}
+            >
+              Corrigir conferência
+            </button>
+          )}
+        </div>
+      )}
+      {editable && (
+        <p className="text-muted small">
+          Etapa de conferência e triagem após o recebimento físico. O valor
+          informado pelo catador será preservado. Ao salvar, os envolvidos
+          receberão um aviso no aplicativo.
+        </p>
+      )}
       {editable && rows.length > 0 && (
         <form onSubmit={save}>
           <div className="table-responsive">
-            <table className="table">
+            <table className="table quantity-review-table">
               <thead>
                 <tr>
                   <th>Material</th>
@@ -102,15 +135,15 @@ export default function CollectionQuantityReview({
               <tbody>
                 {rows.map((m) => (
                   <tr key={m.id}>
-                    <td>
+                    <td data-label="Material">
                       {m.nameSnapshot}
                       <br />
                       <small>{m.unit}</small>
                     </td>
-                    <td>
+                    <td data-label="Informado em campo">
                       {amount(m.reportedQuantity ?? m.quantity)} {m.unit}
                     </td>
-                    <td>
+                    <td data-label="Quantidade recebida">
                       <input
                         aria-label={`Quantidade recebida de ${m.nameSnapshot}`}
                         className="form-control"
@@ -136,7 +169,7 @@ export default function CollectionQuantityReview({
                         </small>
                       )}
                     </td>
-                    <td>
+                    <td data-label="Diferença com o informado">
                       {values[m.id] === ""
                         ? "—"
                         : amount(
@@ -173,6 +206,16 @@ export default function CollectionQuantityReview({
           <button className="btn btn-success" disabled={busy}>
             {busy ? "Registrando…" : "Salvar conferência de quantidade"}
           </button>
+          {editing && (
+            <button
+              type="button"
+              className="btn btn-outline-secondary ms-2"
+              disabled={busy}
+              onClick={() => setEditing(false)}
+            >
+              Cancelar correção
+            </button>
+          )}
           <p className="small text-muted mt-2">
             Reduções abaixo da quantidade já destinada exigem cancelar ou
             regularizar as destinações afetadas primeiro. Litros e unidades
@@ -186,8 +229,10 @@ export default function CollectionQuantityReview({
         </p>
       )}
       {!!collection.quantityReviews?.length && (
-        <div className="mt-3">
-          <h4 className="fs-16">Histórico de conferências</h4>
+        <details className="mt-3">
+          <summary>
+            Histórico de conferências ({collection.quantityReviews.length})
+          </summary>
           {collection.quantityReviews.map((review) => (
             <div className="border-top pt-3 mt-3" key={review.id}>
               <strong>
@@ -208,7 +253,7 @@ export default function CollectionQuantityReview({
               ))}
             </div>
           ))}
-        </div>
+        </details>
       )}
     </section>
   );
