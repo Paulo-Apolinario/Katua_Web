@@ -277,6 +277,7 @@ function CollectionList({ cooperativeName }) {
       </nav>
       {kind === "fixed" && (
         <p className="small text-muted">
+          Execuções em ordem crescente de data programada, com as sem data ao final.
           Uma linha por execução e data. Os filtros selecionam execuções; ao
           expandir, todos os pontos da execução ficam disponíveis com seus
           próprios status.
