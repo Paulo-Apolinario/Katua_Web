@@ -1,3 +1,5 @@
+import { routeOutcomeLabel } from "../../utils/routeLifecycle";
+import RoutePendingResolution from "./RoutePendingResolution";
 import TeamPicker from "./TeamPicker";
 import RoutePointsEditor from "./RoutePointsEditor";
 import RouteOptimization, { RouteEndpoints } from "./RouteOptimization";
@@ -378,10 +380,11 @@ export default function RoutePlanner({ id }) {
           )}
           {locked && (
             <p className="alert alert-info">
-              Rota {status(data.route.status).toLowerCase()}. Planejamento e
+              Rota {routeOutcomeLabel(data.route).toLowerCase()}. Planejamento e
               histórico disponíveis para consulta.
             </p>
           )}
+          {id && data.route && <RoutePendingResolution key={data.route.id} route={data.route} dirty={dirty} onReload={load} onBusy={setSaving} />}
           <form onSubmit={save}>
             <fieldset disabled={saving}>
               <div className="route-planning-layout">
@@ -1167,19 +1170,19 @@ export default function RoutePlanner({ id }) {
                         <button
                           type="button"
                           className="btn btn-outline-success"
-                          disabled={dirty}
+                          disabled={dirty || (data.route.collections || []).some(c => ["PENDING", "IN_PROGRESS"].includes(c.status))}
                           onClick={() => changeStatus("COMPLETED")}
                         >
                           Concluir rota salva
                         </button>
-                        <button
+                        {!(data.route.collections || []).some(c => c.status !== "CANCELLED") && <button
                           type="button"
                           className="btn btn-outline-danger"
                           disabled={dirty}
                           onClick={() => changeStatus("CANCELLED")}
                         >
                           Cancelar rota salva
-                        </button>
+                        </button>}
                       </div>
                     </section>
                   )}

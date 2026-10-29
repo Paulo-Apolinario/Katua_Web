@@ -1,3 +1,4 @@
+import { routeOverdue, routeOutcomeLabel } from "../../utils/routeLifecycle";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { getFieldRoutePoints } from "../../services/wasteWorkspaceService";
@@ -98,8 +99,9 @@ function RouteOperation({
           <span
             className={`badge text-bg-${route.status === "IN_PROGRESS" ? "primary" : route.status === "COMPLETED" ? "success" : "secondary"}`}
           >
-            {labels[route.status] || "Situação não informada"}
+            {route.closureOutcome === "PARTIAL" ? routeOutcomeLabel(route) : labels[route.status] || "Situação não informada"}
           </span>
+          {routeOverdue(route) && <span className="badge text-bg-warning ms-2">Programação vencida</span>}
           {route.startedAt && (
             <small className="d-block text-muted mt-1">
               Saída confirmada: {dateLabel(route.startedAt, true)}

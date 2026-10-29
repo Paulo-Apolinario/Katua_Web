@@ -1,3 +1,4 @@
+import { routeOverdue, routeOutcomeLabel } from "../../utils/routeLifecycle";
 import "../../components/routes/routePlanner.css";
 import { ManagementHeader } from "../../components/management/ManagementWorkspace";
 import { useState, useEffect } from "react";
@@ -126,8 +127,8 @@ const RouteList = () => {
     {
       key: "status",
       label: "Status",
-      render: (value) => (
-        <span className={getStatusClass(value)}>{getStatusLabel(value)}</span>
+      render: (value, row) => (
+        <span className={getStatusClass(value)}>{routeOutcomeLabel(row)}{routeOverdue(row) ? " · Programação vencida" : ""}</span>
       ),
     },
   ];
