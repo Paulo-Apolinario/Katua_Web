@@ -323,7 +323,7 @@ function List() {
                   {rows
                     .filter((b) => !hasPosition(b))
                     .map((b) => (
-                      <Link
+                      <Link className="btn btn-sm btn-outline-success align-self-center"
                         key={b.id}
                         to={`/edit-bin/${encodeURIComponent(b.id)}`}
                       >

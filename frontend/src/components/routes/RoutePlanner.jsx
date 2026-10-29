@@ -678,7 +678,7 @@ export default function RoutePlanner({ id }) {
                             {!hasCoordinates(origin(c)) && (
                               <span className="small text-warning d-block">
                                 Sem coordenadas.{" "}
-                                <Link
+                                <Link className="btn btn-sm btn-outline-success align-self-center"
                                   to={
                                     c.bin
                                       ? "/edit-bin/" + c.bin.id
@@ -1001,7 +1001,7 @@ export default function RoutePlanner({ id }) {
                       <p className="small">
                         Novos pontos geram atendimentos ao salvar esta execução.
                         Para programação recorrente, use{" "}
-                        <Link to="/route-plans">Rotas fixas</Link>.
+                        <Link className="btn btn-sm btn-outline-success align-self-center" to="/route-plans">Rotas fixas</Link>.
                       </p>
                       <RoutePointsEditor
                         onReloadSources={async () => {

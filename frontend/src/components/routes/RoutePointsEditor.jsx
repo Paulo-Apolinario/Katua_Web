@@ -300,10 +300,10 @@ export default function RoutePointsEditor({
             <MapPin size={16} /> Adicionar ponto por endereço
           </button>
           <div className="d-flex gap-3 mt-2">
-            <a href="/create-bin" target="_blank" rel="noreferrer">
+            <a className="btn btn-sm btn-outline-success align-self-center" href="/create-bin" target="_blank" rel="noreferrer">
               Cadastrar novo PEV
             </a>
-            <a href="/create-generator" target="_blank" rel="noreferrer">
+            <a className="btn btn-sm btn-outline-success align-self-center" href="/create-generator" target="_blank" rel="noreferrer">
               Cadastrar novo gerador
             </a>
           </div>

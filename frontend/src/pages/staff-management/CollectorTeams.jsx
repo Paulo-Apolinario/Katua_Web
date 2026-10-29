@@ -97,7 +97,7 @@ export default function CollectorTeams() {
           avulsa ainda pendente. Após receber, confira a pesagem e divida os
           materiais. Alterar a equipe aqui não modifica coletas já registradas.
         </p>
-        <Link to="/collector-list">Ver catadores</Link>
+        <Link className="btn btn-sm btn-outline-success align-self-center" to="/collector-list">Ver catadores</Link>
       </div>
       <div className="card p-4">
         <label htmlFor="team-search">Buscar equipe</label>

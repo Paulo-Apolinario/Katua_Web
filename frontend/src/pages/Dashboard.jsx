@@ -102,7 +102,7 @@ export default function Dashboard() {
               <td>{dateLabel(c.date)}</td>
               <td>{unitsLabel(c.units)}</td>
               <td>
-                <Link to={"/waste-list?coleta=" + encodeURIComponent(c.id)}>Conferir coleta</Link>
+                <Link className="btn btn-sm btn-outline-success align-self-center" to={"/waste-list?coleta=" + encodeURIComponent(c.id)}>Conferir coleta</Link>
               </td>
             </tr>
           ))}
@@ -193,7 +193,7 @@ export default function Dashboard() {
                       Não usa criação como agendamento.
                     </p>
                   </div>
-                  <Link to="/operational-calendar">Abrir calendário</Link>
+                  <Link className="btn btn-sm btn-outline-success align-self-center" to="/operational-calendar">Abrir calendário</Link>
                 </div>
                 {table(
                   data.todayRows,
@@ -280,7 +280,7 @@ export default function Dashboard() {
                   equivalente considera apenas kg e toneladas; litros e unidades
                   ficam separados. Não significa comprovação de reciclagem.
                 </p>
-                <Link to={"/analytics-dashboard?" + reportQuery}>
+                <Link className="btn btn-sm btn-outline-success align-self-center" to={"/analytics-dashboard?" + reportQuery}>
                   Abrir análise completa e exportações →
                 </Link>
               </section>

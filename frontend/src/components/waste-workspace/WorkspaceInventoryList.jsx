@@ -50,7 +50,7 @@ function Lots({ item, view, status }) {
                   <strong>{l.lotCode || l.code || shortId(l.id)}</strong>
                   <div className="small">
                     {l.originCollectionWasteEntryId ? (
-                      <Link
+                      <Link className="btn btn-sm btn-outline-success align-self-center"
                         to={`/collected-waste/${l.originCollectionWasteEntryId}`}
                       >
                         Ver entrada de origem
@@ -213,7 +213,7 @@ export default function WorkspaceInventoryList({ catalog = false }) {
       {itemId && (
         <p className="alert alert-light">
           Material selecionado.{" "}
-          <Link
+          <Link className="btn btn-sm btn-outline-success align-self-center"
             to={
               view === "history" ? "/waste-stock?view=history" : "/waste-stock"
             }

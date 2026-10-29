@@ -381,7 +381,7 @@ function LotForm({ lotId }) {
                   {lot.originCollectionWasteEntryId && (
                     <>
                       {" "}
-                      <Link
+                      <Link className="btn btn-sm btn-outline-success align-self-center"
                         to={`/collected-waste/${encodeURIComponent(lot.originCollectionWasteEntryId)}`}
                       >
                         Consultar entrada e destinação de origem

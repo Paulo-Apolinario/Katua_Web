@@ -287,7 +287,7 @@ function RequestWorkspace() {
             Analise o pedido do gerador, confira os materiais previstos e
             atribua a equipe responsável.
           </p>
-          <Link to="/waste-list">Acompanhar coletas operacionais</Link>
+          <Link className="btn btn-sm btn-outline-success align-self-center" to="/waste-list">Acompanhar coletas operacionais</Link>
         </div>
         <button
           type="button"
@@ -303,7 +303,7 @@ function RequestWorkspace() {
       {created && (
         <div role="status" className="alert alert-success">
           Coleta #{shortId(created.id)} criada e confirmada pelo servidor.{" "}
-          <Link to={`/waste-list?coleta=${encodeURIComponent(created.id)}`}>
+          <Link className="btn btn-sm btn-outline-success align-self-center" to={`/waste-list?coleta=${encodeURIComponent(created.id)}`}>
             Ver coleta criada
           </Link>
         </div>
@@ -570,7 +570,7 @@ function RequestWorkspace() {
                 </p>
                 {selected.collections?.map((c) => (
                   <p key={c.id}>
-                    <Link to={`/waste-list?coleta=${encodeURIComponent(c.id)}`}>
+                    <Link className="btn btn-sm btn-outline-success align-self-center" to={`/waste-list?coleta=${encodeURIComponent(c.id)}`}>
                       Ver coleta vinculada #{shortId(c.id)}
                     </Link>
                   </p>

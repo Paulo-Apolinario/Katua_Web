@@ -90,7 +90,7 @@ export function MaterialTable({ items, estimated = false }) {
               {!estimated && (
                 <td>
                   {m.entryId ? (
-                    <Link
+                    <Link className="btn btn-sm btn-outline-success align-self-center"
                       to={`/collected-waste/${encodeURIComponent(m.entryId)}`}
                     >
                       Ver entrada e destinações

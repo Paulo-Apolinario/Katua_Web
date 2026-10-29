@@ -114,7 +114,7 @@ function RouteOperation({
           </div>
           <div>Motorista: {personName(route.driver)}</div>
           <div>Veículo: {route.vehicle?.plate || "Não informado"}</div>
-          <Link to={`/edit-route/${route.id}`}>Consultar execução da rota</Link>
+          <Link className="btn btn-sm btn-outline-success align-self-center" to={`/edit-route/${route.id}`}>Consultar execução da rota</Link>
         </div>
         <button
           className="btn btn-sm btn-outline-success"

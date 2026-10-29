@@ -10,7 +10,7 @@ export default function HeadquartersStatus({ base, onLocate, loading = false, er
       <span><House size={18} className="me-2" aria-hidden="true" /><strong>Sede: {base.name}</strong><small className="d-block">{base.address || "Localização cadastrada da cooperativa"}</small></span>
       <button type="button" className="btn btn-sm katua-hq-button" onClick={onLocate}><MapPin size={15} className="me-1" aria-hidden="true" />Localizar sede</button>
     </> : <>
-      <strong>Sede sem coordenadas cadastradas.</strong> O endereço escrito não define o ponto exato no mapa. <Link to="/settings#sede">Definir localização da sede</Link>
+      <strong>Sede sem coordenadas cadastradas.</strong> O endereço escrito não define o ponto exato no mapa. <Link className="btn btn-sm btn-outline-success align-self-center" to="/settings#sede">Definir localização da sede</Link>
     </>}
   </div>;
 }

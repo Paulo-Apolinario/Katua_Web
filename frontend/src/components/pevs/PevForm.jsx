@@ -482,7 +482,7 @@ function Form({ id }) {
             {savedId && !id && (
               <div role="status" className="alert alert-info">
                 Cadastro já salvo.{" "}
-                <Link to={`/bin-list/${encodeURIComponent(savedId)}`}>
+                <Link className="btn btn-sm btn-outline-success align-self-center" to={`/bin-list/${encodeURIComponent(savedId)}`}>
                   Consultar PEV
                 </Link>
                 . Ao salvar novamente, esse mesmo registro será atualizado.

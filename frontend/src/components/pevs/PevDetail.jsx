@@ -258,6 +258,7 @@ function Detail({ id }) {
                       <p className="small mt-3 mb-0">
                         Latitude: {b.latitude} · Longitude: {b.longitude} ·{" "}
                         <a
+                          className="btn btn-sm btn-outline-success align-self-center"
                           href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${b.latitude},${b.longitude}`)}`}
                           target="_blank"
                           rel="noreferrer"
@@ -410,7 +411,7 @@ function Detail({ id }) {
                                     {m.nameSnapshot} ·{" "}
                                     {quantity(m.quantity, m.unit)}{" "}
                                     {m.wasteEntry?.id && (
-                                      <Link
+                                      <Link className="btn btn-sm btn-outline-success align-self-center"
                                         to={`/collected-waste/${encodeURIComponent(m.wasteEntry.id)}`}
                                       >
                                         Ver entrada e destinação
@@ -423,7 +424,7 @@ function Detail({ id }) {
                           <td>
                             {dateLabel(c.collectedAt, true)}
                             <div>
-                              <Link
+                              <Link className="btn btn-sm btn-outline-success align-self-center"
                                 to={`/waste-list?coleta=${encodeURIComponent(c.id)}`}
                               >
                                 Abrir coleta

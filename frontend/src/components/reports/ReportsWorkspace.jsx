@@ -724,14 +724,18 @@ export default function ReportsWorkspace({ kind }) {
               ].map(([label, value, action]) => (
                 <div className="card p-4" key={label}>
                   <span className="text-muted">{label}</span>
-                  {action ? (
-                    <button className="report-kpi-link" onClick={action}>
-                      {typeof value === "number" ? num(value) : value}
+                  <strong>
+                    {typeof value === "number" ? num(value) : value}
+                  </strong>
+                  {action && (
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-success align-self-start mt-2"
+                      onClick={action}
+                      aria-label={`Ver detalhes de ${label.toLocaleLowerCase("pt-BR")}`}
+                    >
+                      Ver detalhes
                     </button>
-                  ) : (
-                    <strong>
-                      {typeof value === "number" ? num(value) : value}
-                    </strong>
                   )}
                 </div>
               ))}

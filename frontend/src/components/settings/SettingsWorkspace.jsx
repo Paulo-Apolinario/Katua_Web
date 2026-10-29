@@ -955,7 +955,7 @@ export default function SettingsWorkspace({ kind }) {
                     checked={showSnoozed}
                     onChange={setShowSnoozed}
                   />
-                  <Link to="/operational-preferences">
+                  <Link className="btn btn-sm btn-outline-success align-self-center" to="/operational-preferences">
                     Ajustar critérios e destinatários dos avisos
                   </Link>
                 </section>

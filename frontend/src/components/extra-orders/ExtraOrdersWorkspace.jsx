@@ -216,7 +216,7 @@ export default function ExtraOrdersWorkspace() {
         {selected ? (
           <>
             <button
-              className="btn btn-link px-0 mb-3"
+              className="btn btn-sm btn-outline-success mb-3"
               disabled={busy}
               onClick={() => setSelected(null)}
             >
@@ -358,7 +358,7 @@ export default function ExtraOrdersWorkspace() {
                         </span>{" "}
                         · {selected.collection.status}
                         <br />
-                        <Link
+                        <Link className="btn btn-sm btn-outline-success align-self-center"
                           to={`/waste-list?coleta=${encodeURIComponent(selected.collection.id)}`}
                         >
                           Abrir coleta para recebimento, triagem e encerramento

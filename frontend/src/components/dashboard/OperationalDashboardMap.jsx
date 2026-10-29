@@ -330,7 +330,7 @@ export default function OperationalDashboardMap({ points, base, truncated }) {
                   )}
                 </td>
                 <td>
-                  <Link to={edit(p)}>
+                  <Link className="btn btn-sm btn-outline-success align-self-center" to={edit(p)}>
                     {located(p) ? "Abrir cadastro" : "Completar localização"}
                   </Link>
                 </td>

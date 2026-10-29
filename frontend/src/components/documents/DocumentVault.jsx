@@ -219,12 +219,12 @@ export default function DocumentVault({ kind }) {
           ))}
         </select>
         {kind === "vehicle" && (
-          <div className="d-flex gap-3 mt-3">
-            <Link to="/create-document">Cadastrar documento do veículo</Link>
-            <Link to="/vehicle-document-registers">
+          <div className="d-flex flex-wrap gap-2 mt-3">
+            <Link className="btn btn-sm btn-outline-success align-self-center" to="/create-document">Cadastrar documento do veículo</Link>
+            <Link className="btn btn-sm btn-outline-success align-self-center" to="/vehicle-document-registers">
               Registros documentais anteriores
             </Link>
-            <Link to="/maintenance-list">Manutenções</Link>
+            <Link className="btn btn-sm btn-outline-success align-self-center" to="/maintenance-list">Manutenções</Link>
           </div>
         )}
         <p className="small text-muted mt-2 mb-0">

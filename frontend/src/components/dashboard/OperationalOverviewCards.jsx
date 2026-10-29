@@ -94,10 +94,10 @@ export default function OperationalOverviewCards({ refresh }) {
             <strong className="dashboard-kpi-value">{c.value}</strong>
             <p>{c.description}</p>
             {c.href ? (
-              <Link to={c.href}>Abrir gestão →</Link>
+              <Link className="btn btn-sm btn-outline-success align-self-center" to={c.href}>Abrir gestão →</Link>
             ) : (
               <button
-                className="btn btn-link p-0 text-start"
+                className="btn btn-sm btn-outline-success align-self-start"
                 onClick={c.action}
               >
                 {c.labelAction} →
@@ -122,7 +122,7 @@ export default function OperationalOverviewCards({ refresh }) {
           <strong>
             {data.reviewPending} coleta(s) aguardando conferência.
           </strong>{" "}
-          <Link to="/collected-waste?stage=review">Abrir conferência</Link>
+          <Link className="btn btn-sm btn-outline-success align-self-center" to="/collected-waste?stage=review">Abrir conferência</Link>
         </p>
       )}
       <section className="card p-3 mb-4">
@@ -199,7 +199,7 @@ export default function OperationalOverviewCards({ refresh }) {
                       : c.route?.name || "Sem rota"}
                   </small>
                 </div>
-                <Link
+                <Link className="btn btn-sm btn-outline-success align-self-center"
                   to={
                     c.href || `/waste-list?coleta=${encodeURIComponent(c.id)}`
                   }
@@ -212,24 +212,26 @@ export default function OperationalOverviewCards({ refresh }) {
         ) : (
           <p className="text-muted mb-0">
             Nenhuma operação em campo.{" "}
-            <Link to="/waste-list?status=PENDING">
+            <Link className="btn btn-sm btn-outline-success align-self-center" to="/waste-list?status=PENDING">
               Ver {data.scheduled} pontos aguardando saída
             </Link>
           </p>
         )}
         {section === "field" && (
-          <p className="small text-muted mt-3 mb-0">
-            Cada rota iniciada conta uma operação até seu encerramento; seus
-            pontos não são contados novamente.{" "}
-            <Link to="/waste-list?tipo=normal&emCampo=true">
-              Coletas normais em campo
-            </Link>{" "}
-            ·{" "}
-            <Link to="/waste-list?tipo=fixed&emCampo=true">
-              Rotas fixas em campo
-            </Link>
-            .
-          </p>
+          <div className="small text-muted mt-3">
+            <p className="mb-2">
+              Cada rota iniciada conta uma operação até seu encerramento; seus
+              pontos não são contados novamente.
+            </p>
+            <div className="d-flex flex-wrap gap-2">
+              <Link className="btn btn-sm btn-outline-success" to="/waste-list?tipo=normal&emCampo=true">
+                Coletas normais em campo
+              </Link>
+              <Link className="btn btn-sm btn-outline-success" to="/waste-list?tipo=fixed&emCampo=true">
+                Rotas fixas em campo
+              </Link>
+            </div>
+          </div>
         )}
       </section>
     </>

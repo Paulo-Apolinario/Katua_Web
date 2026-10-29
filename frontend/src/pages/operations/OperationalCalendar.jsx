@@ -190,8 +190,8 @@ export default function OperationalCalendar() {
       {undated > 0 && (
         <div className="alert alert-info">
           {undated} {undated === 1 ? "registro sem data" : "registros sem data"} de coleta ou programação.{" "}
-          <Link to="/waste-list">Consultar coletas</Link> ·{" "}
-          <Link to="/collection-requests">Consultar solicitações</Link>. A data
+          <Link className="btn btn-sm btn-outline-success align-self-center" to="/waste-list">Consultar coletas</Link> ·{" "}
+          <Link className="btn btn-sm btn-outline-success align-self-center" to="/collection-requests">Consultar solicitações</Link>. A data
           de criação não é usada como agendamento.
         </div>
       )}

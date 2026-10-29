@@ -221,17 +221,22 @@ function CollectionList({ cooperativeName }) {
             Ocorrências abertas: {meta?.stats.incidents ?? "—"}. Consulte o
             tratamento em Ver detalhes.
           </p>
-          <Link to="/extra-collection-orders">Ordens de coleta extras</Link>
-          <span className="mx-2">·</span>
-          <Link to="/collection-requests">Coletas solicitadas</Link>
-          <span className="mx-2">·</span>
-          <Link to="/collected-waste">Gestão dos materiais coletados</Link>
-          {kind === "fixed" && (
-            <>
-              <span className="mx-2">·</span>
-              <Link to="/route-plans">Gerenciar rotas fixas</Link>
-            </>
-          )}
+          <div className="d-flex flex-wrap gap-2">
+            <Link className="btn btn-sm btn-outline-success" to="/extra-collection-orders">
+              Ordens de coleta extras
+            </Link>
+            <Link className="btn btn-sm btn-outline-success" to="/collection-requests">
+              Coletas solicitadas
+            </Link>
+            <Link className="btn btn-sm btn-outline-success" to="/collected-waste">
+              Gestão dos materiais coletados
+            </Link>
+            {kind === "fixed" && (
+              <Link className="btn btn-sm btn-outline-success" to="/route-plans">
+                Gerenciar rotas fixas
+              </Link>
+            )}
+          </div>
         </div>
         <button
           className="btn btn-outline-success"
@@ -739,7 +744,7 @@ function CollectionList({ cooperativeName }) {
                     diferentes. As quantidades exibidas não representam saldo de
                     estoque.
                   </div>
-                  <Link to="/collected-waste">
+                  <Link className="btn btn-sm btn-outline-success align-self-center" to="/collected-waste">
                     Consultar materiais e destinações
                   </Link>
                 </details>

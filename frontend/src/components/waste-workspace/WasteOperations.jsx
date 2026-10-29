@@ -421,10 +421,10 @@ function DestinationList({ entryId }) {
       {entryId && (
         <div className="alert alert-light">
           Histórico da entrada #{shortId(entryId)}.{" "}
-          <Link to={`/collected-waste/${encodeURIComponent(entryId)}`}>
+          <Link className="btn btn-sm btn-outline-success align-self-center" to={`/collected-waste/${encodeURIComponent(entryId)}`}>
             Ver entrada
           </Link>{" "}
-          · <Link to="/waste-destinations">Ver todas as destinações</Link>
+          · <Link className="btn btn-sm btn-outline-success align-self-center" to="/waste-destinations">Ver todas as destinações</Link>
         </div>
       )}
       <Summary
@@ -590,7 +590,7 @@ function DestinationTable({ rows, edit, cancel, busy = false }) {
                 <div>{entryName(getEntry(d))}</div>
                 <small>{dateLabel(d.destinationDate, true)}</small>
                 <div>
-                  <Link
+                  <Link className="btn btn-sm btn-outline-success align-self-center"
                     to={`/collected-waste/${encodeURIComponent(d.collectionWasteEntryId)}`}
                   >
                     Entrada #{shortId(d.collectionWasteEntryId)}
@@ -605,7 +605,7 @@ function DestinationTable({ rows, edit, cancel, busy = false }) {
                     "Destino não informado"}
                 </div>
                 {d.stockLotId && (
-                  <Link
+                  <Link className="btn btn-sm btn-outline-success align-self-center"
                     to={`/waste-stock/lots/${encodeURIComponent(d.stockLotId)}/edit`}
                   >
                     Lote{" "}
