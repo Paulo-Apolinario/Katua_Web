@@ -94,10 +94,10 @@ export default function OperationalOverviewCards({ refresh }) {
             <strong className="dashboard-kpi-value">{c.value}</strong>
             <p>{c.description}</p>
             {c.href ? (
-              <Link className="btn btn-sm btn-outline-success align-self-center" to={c.href}>Abrir gestão →</Link>
+              <Link className="btn btn-sm btn-outline-success align-self-start mt-auto" to={c.href}>Abrir gestão →</Link>
             ) : (
               <button
-                className="btn btn-sm btn-outline-success align-self-start"
+                className="btn btn-sm btn-outline-success align-self-start mt-auto"
                 onClick={c.action}
               >
                 {c.labelAction} →
