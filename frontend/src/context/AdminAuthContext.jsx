@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import {
+  SESSION_EXPIRED_EVENT,
   clearAuthData,
   getStoredToken,
   getStoredUser,
@@ -19,6 +20,19 @@ export const AdminAuthProvider = ({ children }) => {
   const [token, setToken] = useState(() => getStoredToken());
 
   useEffect(() => {
+    const expire = () => { setToken(null); setAdmin(null); setLoading(false); };
+    const changed = (event) => {
+      if (event.key !== "auth_token") return;
+      if (!event.newValue) expire();
+      else { setAdmin(null); setLoading(true); setToken(event.newValue); }
+    };
+    window.addEventListener(SESSION_EXPIRED_EVENT, expire);
+    window.addEventListener("storage", changed);
+    return () => { window.removeEventListener(SESSION_EXPIRED_EVENT, expire); window.removeEventListener("storage", changed); };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
     const bootstrapAuth = async () => {
       if (!token) {
         clearAuthData();
@@ -30,6 +44,7 @@ export const AdminAuthProvider = ({ children }) => {
       try {
         const response = await getMe();
 
+        if (!active || token !== getStoredToken()) return;
         const user = response?.user || response;
 
         if (!isPanelUser(user)) {
@@ -46,16 +61,18 @@ export const AdminAuthProvider = ({ children }) => {
 
         setAdmin(user);
       } catch (error) {
+        if (!active || (getStoredToken() && token !== getStoredToken())) return;
         console.error("Auth error:", error);
         clearAuthData();
         setToken(null);
         setAdmin(null);
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     };
 
     bootstrapAuth();
+    return () => { active = false; };
   }, [token]);
 
   const login = ({ token: newToken, user }) => {

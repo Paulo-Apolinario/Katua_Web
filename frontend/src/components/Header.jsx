@@ -1,3 +1,4 @@
+import InboxBell from "./InboxBell";
 import useProfileImage from "../hooks/useProfileImage";
 import { PanelRight, LogOut, Settings, UserRoundPen } from "lucide-react";
 import { Link, useNavigate } from "react-router";
@@ -42,7 +43,8 @@ const Header = ({ active, setActive }) => {
           </button>
         </li>
 
-        <li className="nav-item dropdown ms-auto">
+        {admin?.role === "COOPERATIVE" && <li className="nav-item ms-auto me-3"><InboxBell key={admin.id} /></li>}
+        <li className={`nav-item dropdown ${admin?.role === "COOPERATIVE" ? "" : "ms-auto"}`}>
           <a className="nav-link text-dark" data-bs-toggle="dropdown" href="#">
             <span>
               {userImage ? (

@@ -119,7 +119,7 @@ function TypeForm({ id }) {
     >
       <ResourceState resource={resource}>
         {loaded && (
-          <form className="card p-4" onSubmit={submit}>
+          <form data-refresh-paused="true" className="card p-4" onSubmit={submit}>
             <div className="waste-form-heading mb-4">
               <h2 className="fs-18">Identificação do material</h2>
               <p className="small text-muted mb-0">
@@ -362,7 +362,7 @@ function LotForm({ lotId }) {
           </p>
         ) : (
           loaded && (
-            <form onSubmit={submit} className="card p-4">
+            <form data-refresh-paused="true" onSubmit={submit} className="card p-4">
               <div className="waste-form-heading mb-4">
                 <h2 className="fs-18">
                   {lot?.status === "CANCELLED"

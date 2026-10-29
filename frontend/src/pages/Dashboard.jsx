@@ -1,6 +1,7 @@
+import { useLiveRefresh } from "../hooks/useLiveRefresh";
 import { COLLECTION_STAGES } from "../utils/collectionWorkspace";
 import OperationalOverviewCards from "../components/dashboard/OperationalOverviewCards";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import {
   BarChart,
@@ -38,11 +39,15 @@ export default function Dashboard() {
     [error, setError] = useState(""),
     [refresh, setRefresh] = useState(0),
     [unit, setUnit] = useState("KG");
+  const previousQuery = useRef(null);
+  useLiveRefresh(() => setRefresh(n => n + 1), { paused: loading });
   useEffect(() => {
     const abort = new AbortController();
     let active = true;
     setLoading(true);
-    setData(null);
+    const signature = JSON.stringify(query);
+    if (previousQuery.current !== signature) setData(null);
+    previousQuery.current = signature;
     setError("");
     apiRequest("/dashboard/overview?" + new URLSearchParams(query), {
       signal: abort.signal,

@@ -1,3 +1,5 @@
+import { useLiveRefresh } from "../../hooks/useLiveRefresh";
+import RefreshNotice from "../../components/RefreshNotice";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { RefreshCw } from "lucide-react";
@@ -58,6 +60,7 @@ export default function CollectionRequests() {
   return admin?.id ? <RequestWorkspace key={admin.id} /> : null;
 }
 function RequestWorkspace() {
+  const [updatedAt, setUpdatedAt] = useState(null);
   const [params,setParams] = useSearchParams();
   const requestId = params.get("solicitacao");
   const [schedules, setSchedules] = useState([]),
@@ -84,23 +87,23 @@ function RequestWorkspace() {
     submitting: false,
     alive: true,
   });
-  const load = useCallback(async () => {
+  const load = useCallback(async (quiet = false) => {
     const g = guard.current,
       n = ++g.list;
-    setLoading(true);
+    if (quiet !== true) setLoading(true);
     setError("");
-    setSchedules([]);
     try {
       const r = await getAllSchedules();
       if (!Array.isArray(r?.schedules))
         throw Error("Resposta de solicitações inválida.");
-      if (n === g.list) setSchedules(r.schedules);
+      if (n === g.list) { setSchedules(r.schedules); setUpdatedAt(new Date()); }
     } catch (e) {
       if (n === g.list) setError(errorText(e));
     } finally {
       if (n === g.list) setLoading(false);
     }
   }, []);
+  const live = useLiveRefresh(() => load(true), { paused: dialog || busy || loading });
   const loadOptions = useCallback(async () => {
     const g = guard.current,
       n = ++g.options;
@@ -300,6 +303,7 @@ function RequestWorkspace() {
           {loading ? "Atualizando…" : "Atualizar solicitações"}
         </button>
       </div>
+      <RefreshNotice at={updatedAt} deferred={live.deferred} />
       {created && (
         <div role="status" className="alert alert-success">
           Coleta #{shortId(created.id)} criada e confirmada pelo servidor.{" "}

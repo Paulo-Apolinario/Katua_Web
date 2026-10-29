@@ -86,10 +86,11 @@ export function ResourceState({ resource, children }) {
         <p className="waste-freshness small text-muted">
           Dados consultados em{" "}
           {new Intl.DateTimeFormat("pt-BR", {
+            timeZone: "America/Fortaleza",
             dateStyle: "short",
             timeStyle: "medium",
           }).format(resource.updatedAt)}
-          .
+          . {resource.deferred ? "Atualização automática pausada durante a consulta ou edição." : "Atualização automática com esta tela visível."}
         </p>
       )}
       {children}

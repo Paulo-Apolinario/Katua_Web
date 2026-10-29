@@ -1,3 +1,4 @@
+import { useLiveRefresh } from "../../hooks/useLiveRefresh";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { errorMessage } from "../../utils/wasteWorkspace";
 export function useWasteResource(loader) {
@@ -8,14 +9,14 @@ export function useWasteResource(loader) {
     updatedAt: null,
   });
   const request = useRef({ id: 0 });
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (quiet = false) => {
     const ref = request.current,
       id = ++ref.id;
     const same = ref.loader === loader;
     ref.loader = loader;
     setState((old) => ({
       data: same ? old.data : null,
-      loading: true,
+      loading: quiet === true ? old.loading : true,
       error: "",
       updatedAt: same ? old.updatedAt : null,
     }));
@@ -35,7 +36,8 @@ export function useWasteResource(loader) {
       ref.id++;
     };
   }, [refresh]);
-  return { ...state, refresh };
+  const live = useLiveRefresh(() => refresh(true), { paused: state.loading });
+  return { ...state, refresh, deferred: live.deferred };
 }
 
 export function useWasteOperation() {

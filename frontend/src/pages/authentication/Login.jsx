@@ -22,6 +22,8 @@ const Login = () => {
   const { login, admin, loading } = useAdminAuth();
 
   const [linkToken] = useState(() => new URLSearchParams(window.location.hash.slice(1)).get("token") || "");
+  const [sessionExpired] = useState(() => sessionStorage.getItem("katua:session-expired") === "1");
+  useEffect(() => { sessionStorage.removeItem("katua:session-expired"); }, []);
   const [quickAccess, setQuickAccess] = useState(false);
   useEffect(() => {
     if (linkToken) window.history.replaceState(null, "", window.location.pathname);
@@ -139,6 +141,7 @@ const Login = () => {
               <button type="button" className={`btn btn-sm ${quickAccess ? "btn-success" : "btn-outline-success"}`} disabled={submitting} onClick={() => setQuickAccess(true)}>Acesso rápido</button>
             </div>}
             {(quickAccess || linkToken) && <p className="small text-muted">{linkToken ? "Confirme abaixo para entrar com o link recebido. O link só pode ser usado uma vez." : "Você receberá um link de acesso no e-mail informado. Válido por 15 minutos."}</p>}
+            {sessionExpired && <p className="alert alert-warning" role="status">Sua sessão expirou. Entre novamente para continuar.</p>}
             <form onSubmit={handleSubmit}>
               {!linkToken && <div className="mb-3">
                 <label

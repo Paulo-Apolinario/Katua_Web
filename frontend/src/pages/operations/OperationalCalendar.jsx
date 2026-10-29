@@ -1,3 +1,5 @@
+import { useLiveRefresh } from "../../hooks/useLiveRefresh";
+import RefreshNotice from "../../components/RefreshNotice";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import {
@@ -61,6 +63,8 @@ export default function OperationalCalendar() {
     [status, setStatus] = useState(""),
     [type, setType] = useState("");
   const details = useRef(null);
+  const [updatedAt, setUpdatedAt] = useState(null);
+  const live = useLiveRefresh(() => setRevision(n => n + 1), { paused: loading });
   useEffect(() => {
     let active = true;
     const controller = new AbortController();
@@ -74,6 +78,7 @@ export default function OperationalCalendar() {
         if (!active) return;
         if (c.status === "fulfilled") setCollections(array(c.value));
         if (s.status === "fulfilled") setSchedules(array(s.value));
+        if (c.status === "fulfilled" && s.status === "fulfilled") setUpdatedAt(new Date());
         if (c.status === "rejected" || s.status === "rejected")
           setError(
             "Não foi possível atualizar todos os eventos. Os dados exibidos podem estar incompletos ou desatualizados. Tente atualizar novamente.",
@@ -168,6 +173,7 @@ export default function OperationalCalendar() {
     <>
       <HeadTags title="Calendário Operacional" />
       <TopProgressBar loading={loading} />
+      <RefreshNotice at={updatedAt} deferred={live.deferred} />
       <ManagementHeader
         title="Calendário Operacional"
         description="Programação e execução das coletas. Abra um evento para consultar seus detalhes."

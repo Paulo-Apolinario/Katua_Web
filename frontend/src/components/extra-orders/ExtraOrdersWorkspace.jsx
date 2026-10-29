@@ -1,3 +1,5 @@
+import { useLiveRefresh } from "../../hooks/useLiveRefresh";
+import { useSearchParams } from "react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { apiRequest } from "../../services/apiClient";
@@ -59,6 +61,9 @@ export default function ExtraOrdersWorkspace() {
     [scheduledDate, setScheduledDate] = useState(""),
     [driverId, setDriverId] = useState(""),
     [vehicleId, setVehicleId] = useState("");
+  const [query] = useSearchParams();
+  const linkedOrder = query.get("ordem");
+  const openedOrder = useRef(null);
   const guard = useRef(false),
     operationIds = useRef(new Map());
   const load = useCallback(async () => {
@@ -77,6 +82,7 @@ export default function ExtraOrdersWorkspace() {
       setLoading(false);
     }
   }, [page, status, search]);
+  useLiveRefresh(load, { paused: loading || busy || !!selected });
   useEffect(() => {
     const timer = setTimeout(() => void load(), 250);
     return () => clearTimeout(timer);
@@ -91,6 +97,14 @@ export default function ExtraOrdersWorkspace() {
         ),
       );
   }, []);
+  useEffect(() => {
+    if (!busy && linkedOrder && openedOrder.current !== linkedOrder) {
+      openedOrder.current = linkedOrder;
+      void open(linkedOrder);
+    }
+  // open is an action; polling must not reopen or reset this form.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [linkedOrder, busy]);
   async function open(id) {
     if (busy) return;
     setBusy(true);

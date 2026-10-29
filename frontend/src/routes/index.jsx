@@ -1,3 +1,4 @@
+import Notifications from "../pages/Notifications";
 import EnvironmentalImpact from "../pages/reports/EnvironmentalImpact";
 import CollectorTeams from "../pages/staff-management/CollectorTeams";
 import RoutePlans from "../pages/route-management/RoutePlans";
@@ -119,6 +120,7 @@ const Router = () => {
           >
             {/* Dashboard */}
             <Route index element={<Dashboard />} />
+            <Route path="notifications" element={<Notifications />} />
 
             {/* Waste Collection Management */}
             <Route path="waste-list" element={<WasteList />} />
