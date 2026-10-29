@@ -158,7 +158,13 @@ export default function OperationalOverviewCards({ refresh }) {
                       {t.kind} · {dateLabel(t.date)}
                     </small>
                   </div>
-                  <Link to={t.href}>Analisar</Link>
+                  <Link
+                    to={t.href}
+                    className="btn btn-sm btn-outline-success align-self-center flex-shrink-0"
+                    aria-label={`Analisar ${t.kind.toLocaleLowerCase("pt-BR")} de ${t.name}`}
+                  >
+                    Analisar
+                  </Link>
                 </li>
               ))}
             </ul>
