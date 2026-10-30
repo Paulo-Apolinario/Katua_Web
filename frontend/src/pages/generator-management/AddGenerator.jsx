@@ -1,3 +1,5 @@
+import GeneratorDocumentField from "../../components/generators/GeneratorDocumentField";
+import { validDocument, documentType } from "../../utils/generatorDocument";
 import { ManagementHeader } from "../../components/management/ManagementWorkspace";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
@@ -15,6 +17,7 @@ const initialForm = {
   type: "SMALL",
   name: "",
   companyName: "",
+  documentNumber: "",
   email: "",
   phone: "",
   zipCode: "",
@@ -310,6 +313,7 @@ const AddGenerator = () => {
 
   const buildPayload = () => ({
     type: form.type,
+    documentNumber: form.documentNumber.trim() || undefined,
     name: form.name.trim(),
     companyName: form.companyName.trim() || undefined,
     email: form.email.trim().toLowerCase(),
@@ -326,6 +330,16 @@ const AddGenerator = () => {
   });
 
   const validate = () => {
+    if (form.documentNumber && !validDocument(form.documentNumber)) {
+      toast.error("Informe um CPF ou CNPJ válido, incluindo os dígitos verificadores."); return false;
+    }
+    if (form.type === "LARGE" && documentType(form.documentNumber) === "CPF") {
+      toast.error("Para grande gerador, informe um CNPJ."); return false;
+    }
+    if (form.type === "SMALL" && !form.documentNumber.trim()) {
+      toast.error("Informe o CPF ou CNPJ para classificar o pequeno gerador."); return false;
+    }
+
     if (!form.name.trim()) {
       toast.error("Informe o nome do responsável ou do gerador.");
       return false;
@@ -376,7 +390,7 @@ const AddGenerator = () => {
 
       <ManagementHeader
         title="Novo Gerador"
-        description="Cadastre um pequeno ou grande gerador vinculado à cooperativa."
+        description="Cadastre um residencial com CPF, pequeno gerador com CNPJ ou grande gerador vinculado à cooperativa."
         actions={
           <>
             <Link to="/generator-list" className="secondary-btn btn-sm">
@@ -426,6 +440,9 @@ const AddGenerator = () => {
                 placeholder="Nome da empresa"
               />
             </div>
+
+            <GeneratorDocumentField value={form.documentNumber} type={form.type} disabled={loading}
+               onChange={documentNumber => setForm(previous => ({ ...previous, documentNumber }))} />
 
             <div className="col-md-6">
               <label className="form-label">E-mail *</label>

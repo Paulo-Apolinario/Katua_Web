@@ -1,9 +1,13 @@
+import { normalizeDocument, documentType, generatorCategory } from "../utils/generatorDocument";
 import { apiRequest } from "./apiClient";
 
 function normalizeGenerator(generator = {}) {
   return {
     id: generator.id,
     type: generator.type,
+    documentNumber: generator.documentNumber || "",
+    documentType: documentType(generator.documentNumber),
+    registrationCategory: generatorCategory(generator),
     name: generator.name,
     companyName: generator.companyName || "",
     email: generator.email,
@@ -73,6 +77,7 @@ export const generatorService = {
       companyName: payload.companyName?.trim(),
       email: payload.email?.trim().toLowerCase(),
       phone: payload.phone?.trim(),
+      documentNumber: payload.documentNumber?.trim() ? normalizeDocument(payload.documentNumber) : undefined,
 
       zipCode: payload.zipCode?.trim(),
       street: payload.street?.trim(),
@@ -110,6 +115,7 @@ export const generatorService = {
       name: payload.name?.trim(),
       companyName: payload.companyName?.trim(),
       phone: payload.phone?.trim(),
+      documentNumber: payload.documentNumber?.trim() ? normalizeDocument(payload.documentNumber) : undefined,
 
       zipCode: payload.zipCode?.trim(),
       street: payload.street?.trim(),

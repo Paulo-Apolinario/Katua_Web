@@ -1,3 +1,5 @@
+import GeneratorDocumentField from "../../components/generators/GeneratorDocumentField";
+import { formatDocument, validDocument, documentType } from "../../utils/generatorDocument";
 import { ManagementHeader } from "../../components/management/ManagementWorkspace";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router";
@@ -23,6 +25,7 @@ const initialForm = {
   type: "SMALL",
   name: "",
   companyName: "",
+  documentNumber: "",
   email: "",
   phone: "",
   zipCode: "",
@@ -68,6 +71,7 @@ const EditGenerator = () => {
         type: data.type || "SMALL",
         name: data.name || "",
         companyName: data.companyName || "",
+        documentNumber: formatDocument(data.documentNumber || ""),
         email: data.email || "",
         phone: data.phone || "",
         zipCode: data.zipCode || "",
@@ -114,6 +118,7 @@ const EditGenerator = () => {
 
   const buildPayload = () => ({
     type: form.type,
+    documentNumber: form.documentNumber.trim() || undefined,
     name: form.name.trim(),
     companyName: form.companyName.trim() || undefined,
     phone: form.phone.trim() || undefined,
@@ -128,6 +133,16 @@ const EditGenerator = () => {
   });
 
   const validate = () => {
+    if (form.documentNumber && !validDocument(form.documentNumber)) {
+      toast.error("Informe um CPF ou CNPJ válido, incluindo os dígitos verificadores."); return false;
+    }
+    if (form.type === "LARGE" && documentType(form.documentNumber) === "CPF") {
+      toast.error("Para grande gerador, informe um CNPJ."); return false;
+    }
+    if (generator?.documentNumber && !form.documentNumber.trim()) {
+      toast.error("Informe um CPF/CNPJ válido para substituir o documento existente."); return false;
+    }
+
     if (!form.name.trim()) {
       toast.error("Informe o nome do gerador ou responsável.");
       return false;
@@ -295,6 +310,9 @@ const EditGenerator = () => {
                 disabled={loading}
               />
             </div>
+
+            <GeneratorDocumentField value={form.documentNumber} type={form.type} disabled={loading || saving}
+              legacy={!generator?.documentNumber} onChange={documentNumber => setForm(previous => ({ ...previous, documentNumber }))} />
 
             <div className="col-md-6">
               <label className="form-label">E-mail</label>

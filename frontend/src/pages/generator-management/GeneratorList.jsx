@@ -1,3 +1,4 @@
+import { formatDocument, normalizeDocument, generatorCategory, categoryLabels, generatorTypeLabel } from "../../utils/generatorDocument";
 import { ManagementHeader } from "../../components/management/ManagementWorkspace";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
@@ -18,11 +19,6 @@ import toast from "react-hot-toast";
 import HeadTags from "../../components/HeadTags";
 import TopProgressBar from "../../components/TopProgressBar";
 import generatorService from "../../services/generatorService";
-
-const getTypeLabel = (type) => {
-  if (type === "LARGE") return "Grande Gerador";
-  return "Pequeno Gerador";
-};
 
 const getAccessStatusLabel = (status) => {
   switch (status) {
@@ -56,6 +52,7 @@ const GeneratorList = () => {
   const [generators, setGenerators] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState("");
+  const [category, setCategory] = useState("");
 
   const loadGenerators = async () => {
     try {
@@ -77,9 +74,9 @@ const GeneratorList = () => {
   const filteredGenerators = useMemo(() => {
     const term = searchText.trim().toLowerCase();
 
-    if (!term) return generators;
-
     return generators.filter((generator) => {
+      if (category && generatorCategory(generator) !== category) return false;
+      if (!term) return true;
       const values = [
         generator.name,
         generator.companyName,
@@ -88,16 +85,21 @@ const GeneratorList = () => {
         generator.city,
         generator.state,
         generator.type,
+        generator.documentNumber,
+        generator.documentType,
+        formatDocument(generator.documentNumber),
+        generatorTypeLabel(generator),
         generator.accessStatus,
       ];
 
+      if (normalizeDocument(term) && generator.documentNumber?.includes(normalizeDocument(term))) return true;
       return values.some((value) =>
         String(value || "")
           .toLowerCase()
           .includes(term),
       );
     });
-  }, [generators, searchText]);
+  }, [generators, searchText, category]);
 
   const stats = useMemo(() => {
     const total = generators.length;
@@ -124,7 +126,7 @@ const GeneratorList = () => {
 
       <ManagementHeader
         title="Gestão de Geradores"
-        description="Gerencie pequenos e grandes geradores vinculados à cooperativa."
+        description="Gerencie residenciais cadastrados, pequenos e grandes geradores vinculados à cooperativa."
         actions={
           <>
             <Link to="/create-generator" className="primary-btn btn-sm">
@@ -177,6 +179,12 @@ const GeneratorList = () => {
         <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
           <h4 className="mb-0 fw-600">Lista de Geradores</h4>
 
+          <div className="d-flex flex-wrap gap-2 align-items-center">
+            <label className="small" htmlFor="generator-category">Classificação</label>
+            <select className="form-select w-auto" id="generator-category" value={category} onChange={e => setCategory(e.target.value)}>
+              <option value="">Todas</option>
+              {Object.entries(categoryLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+            </select>
           <div className="management-search">
             <Search size={18} />
             <input
@@ -186,6 +194,7 @@ const GeneratorList = () => {
 
               aria-label="Buscar gerador..."
             />
+          </div>
           </div>
         </div>
 
@@ -233,7 +242,7 @@ const GeneratorList = () => {
                       </div>
                     </td>
 
-                    <td>{getTypeLabel(generator.type)}</td>
+                    <td><div>{generatorTypeLabel(generator)}</div><small className="text-muted">{formatDocument(generator.documentNumber) || "CPF/CNPJ não informado"}</small></td>
 
                     <td>
                       <div>{generator.email || "N/A"}</div>
