@@ -73,15 +73,17 @@ function Lots({ item, view, status }) {
                   </small>
                 </td>
                 <td>
-                  {dateLabel(l.receivedAt)}
+                  <div className="d-flex flex-column align-items-start gap-2">
+                  <time>{dateLabel(l.receivedAt)}</time>
                   <Link
-                    className="btn btn-sm btn-outline-success d-inline-flex mt-2"
+                    className="btn btn-sm btn-outline-success d-inline-flex"
                     to={`/waste-stock/lots/${l.id}/edit`}
                   >
                     {view === "history"
                       ? "Consultar registro"
                       : ["AVAILABLE", "RESERVED"].includes(l.status) && Number(l.availableQuantity)>0 ? "Movimentar lote" : "Consultar destino e histórico"}
                   </Link>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -465,7 +467,7 @@ function InventoryItem({
               >
                 {i.status === "ACTIVE" ? "Ativo" : "Inativo"}
               </span>
-              <small className="d-block">{i.unit}</small>
+              <small className="d-block">{WASTE_UNIT_OPTIONS.find(option=>option.value===i.unit)?.label || i.unit}</small>
             </>
           ) : view === "history" || view === "closed" ? (
             view === "closed" ? "Sem saldo · saídas registradas" : "Consulta histórica"

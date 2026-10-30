@@ -140,6 +140,8 @@ function TypeForm({ id }) {
                   <Field
                     key={name}
                     {...{ name, label, required, maxLength, form, setForm }}
+                    readOnly={name === "internalCode"}
+                    help={name === "internalCode" ? "Gerado automaticamente ao salvar. Códigos existentes são preservados." : undefined}
                   />
                 ))}
                 <Field
@@ -307,12 +309,12 @@ function LotForm({ lotId }) {
       return;
     }
     if (
-      !form.lotCode.trim() ||
+      (lotId && !form.lotCode.trim()) ||
       !Number.isFinite(Number(form.quantity)) ||
       !(Number(form.quantity) > 0) ||
       !form.unit
     ) {
-      op.setError("Informe código, quantidade positiva e unidade do lote.");
+      op.setError("Informe quantidade positiva e unidade do lote.");
       return;
     }
     if (!lotId && !form.origin.trim()) {
@@ -460,8 +462,9 @@ function LotForm({ lotId }) {
                     name="lotCode"
                     label="Código do lote"
                     maxLength={100}
-                    required
-                    readOnly={linked}
+                    required={!!lotId}
+                    readOnly={!lotId || linked}
+                    help={!lotId ? "Gerado automaticamente ao salvar o lote." : undefined}
                     form={form}
                     setForm={setForm}
                   />

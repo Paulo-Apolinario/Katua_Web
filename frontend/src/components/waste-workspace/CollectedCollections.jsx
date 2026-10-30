@@ -283,6 +283,9 @@ export default function CollectedCollections({ editor, revision }) {
     </WastePage>
   );
 }
+const entryLots = entry => [...new Map((entry.destinations || [])
+  .filter(destination => destination.status !== "CANCELLED" && destination.type === "STOCK" && (destination.stockLotId || destination.stockLot?.id))
+  .map(destination => {const id=destination.stockLotId || destination.stockLot.id;return [id,{id,code:destination.stockLot?.code || destination.stockLot?.lotCode}];})).values()];
 function CollectionRow({ c, expanded, toggle, destine, busy }) {
   const entries = c.collectionWasteEntries,
     editable =
@@ -366,8 +369,8 @@ function CollectionRow({ c, expanded, toggle, destine, busy }) {
                       Material em acompanhamento: {quantity(entryDisposition(e).followUp, e.unit)}. Continue nas destinações ou no lote de estoque.
                     </p>
                   )}
-                  <MaterialDestinations entry={e} />
-                  <div className="d-flex gap-2 flex-wrap">
+                  <MaterialDestinations entry={e} showActions={false} />
+                  <div className="d-flex align-items-center gap-2 flex-wrap mt-3">
                     <button
                       className="btn btn-sm btn-success"
                       disabled={
@@ -382,6 +385,8 @@ function CollectionRow({ c, expanded, toggle, destine, busy }) {
                     >
                       Destinar
                     </button>
+                    {entryLots(e).map(lot => <Link className="btn btn-sm btn-outline-success" key={lot.id} to={`/waste-stock/lots/${lot.id}/edit`}>{entryLots(e).length>1 ? `Ver lote ${lot.code || shortId(lot.id)}` : "Ver lote e todas as saídas"}</Link>)}
+                    <Link className="btn btn-sm btn-outline-secondary" to={`/waste-destinations?entryId=${encodeURIComponent(e.id)}`}>Ver destinações e documentos</Link>
                     <Link
                       className="btn btn-sm btn-outline-secondary"
                       to={`/collected-waste/${e.id}`}
