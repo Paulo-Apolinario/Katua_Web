@@ -1,4 +1,5 @@
-import { canEditDestination, followUpQuantity } from "../../utils/materialDisposition";
+import MaterialDestinations from "../waste/MaterialDestinations";
+import { canEditDestination, followUpQuantity, entryDisposition } from "../../utils/materialDisposition";
 import DestinationAudit from "../waste/DestinationAudit";
 import CollectedCollections from "./CollectedCollections";
 import { mutationIdentity } from "../../services/wasteWorkspaceService";
@@ -734,7 +735,7 @@ function EntryDetail({ id }) {
           <>
             <Summary
               cards={[
-                [entryName(e), getCollectionEntryStatusLabel(e.status)],
+                [entryName(e), e.status === "CANCELLED" ? getCollectionEntryStatusLabel(e.status) : entryDisposition(e).label],
                 [
                   e.collection?.quantityReviewVersion
                     ? "Quantidade conferida"
@@ -742,9 +743,13 @@ function EntryDetail({ id }) {
                   quantity(e.collectedQuantity, e.unit),
                 ],
                 ["Alocado em movimentações", quantity(e.destinedQuantity, e.unit)],
-                ["Saldo a destinar", quantity(e.remainingQuantity, e.unit)],
+                ["Saldo sem encaminhamento", quantity(e.remainingQuantity, e.unit)],
               ]}
             />
+            <section className="card p-4 mb-4">
+              <h2 className="fs-18">Destinos do material</h2>
+              <MaterialDestinations entry={e} />
+            </section>
             <section className="card p-4 mb-4">
               <h2 className="fs-18">Origem e rastreabilidade</h2>
               <p>

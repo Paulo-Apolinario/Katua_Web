@@ -9,7 +9,7 @@ export function followUpQuantity(destination) {
   if (destination.status === "CANCELLED" || !FOLLOW_UP_TYPES.includes(destination.type)) return 0;
   if (destination.type !== "STOCK") return number(destination.quantity);
   if (!destination.stockLot) return number(destination.quantity);
-  if (["SOLD", "DISCARDED", "CANCELLED"].includes(destination.stockLot.status)) return 0;
+  if (["SOLD", "DESTINED", "DISCARDED", "CANCELLED"].includes(destination.stockLot.status)) return 0;
   return Math.min(number(destination.quantity), number(destination.stockLot.availableQuantity));
 }
 export function entryDisposition(entry) {

@@ -486,7 +486,7 @@ const WasteDestinationModal = ({
 
   const buildUpdatePayload = () => ({
     type: form.type,
-    destinationDate: form.destinationDate,
+    destinationDate: dateKey(destinationToEdit?.destinationDate) === form.destinationDate ? destinationToEdit.destinationDate : form.destinationDate,
     stockItemId: form.type === "STOCK" ? form.stockItemId : null,
     ...Object.fromEntries(
       [

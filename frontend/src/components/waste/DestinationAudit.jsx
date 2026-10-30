@@ -1,3 +1,4 @@
+import { destinationChanges } from "../../utils/destinationAudit";
 import { useEffect, useState } from "react";
 import {
   getWasteDestinationById,
@@ -8,7 +9,8 @@ export default function DestinationAudit({ id }) {
   const [open, setOpen] = useState(false),
     [events, setEvents] = useState(null),
     [error, setError] = useState(""),
-    [revision, setRevision] = useState(0);
+    [revision, setRevision] = useState(0),
+    [all, setAll] = useState(false);
   useEffect(() => {
     if (!open) return;
     let active = true;
@@ -44,7 +46,7 @@ export default function DestinationAudit({ id }) {
         <p role="status">Carregando histórico…</p>
       ) : events.length ? (
         <ol className="mt-2 ps-3">
-          {events.map((event) => (
+          {(all ? events : events.slice(0, 3)).map((event) => (
             <li key={event.id} className="mb-2">
               <strong>
                 {{
@@ -55,14 +57,11 @@ export default function DestinationAudit({ id }) {
               </strong>{" "}
               · {dateLabel(event.createdAt, true)} ·{" "}
               {event.actorName || shortId(event.actorUserId)}
-              {event.snapshot?.before?.type && (
-                <div>
-                  {getWasteDestinationTypeLabel(event.snapshot.before.type)} →{" "}
-                  {getWasteDestinationTypeLabel(event.snapshot.after?.type)}
-                </div>
-              )}
+              {event.operation === "UPDATED" && destinationChanges(event).length === 0 && <div className="text-muted">Salvo sem alteração nos dados do encaminhamento.</div>}
+              {destinationChanges(event).map(change => <div key={change.key} className="text-break"><strong>{change.label}:</strong> {change.key === "type" ? `${getWasteDestinationTypeLabel(change.before)} → ${getWasteDestinationTypeLabel(change.after)}` : change.key === "destinationDate" ? `${dateLabel(change.before)} → ${dateLabel(change.after)}` : ["stockItemId", "stockLotId", "metadata"].includes(change.key) ? "Vínculo atualizado; consulte os dados da movimentação." : `${change.before ?? "Não informado"} → ${change.after ?? "Não informado"}`}</div>)}
             </li>
           ))}
+        {events.length > 3 && <li className="list-unstyled"><button type="button" className="btn btn-sm btn-outline-secondary" onClick={() => setAll(value => !value)}>{all ? "Mostrar recentes" : `Ver ${events.length - 3} alterações anteriores`}</button></li>}
         </ol>
       ) : (
         <p>Registro anterior à implantação da auditoria detalhada.</p>

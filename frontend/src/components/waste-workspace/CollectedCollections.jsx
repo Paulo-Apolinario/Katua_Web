@@ -1,3 +1,4 @@
+import MaterialDestinations from "../waste/MaterialDestinations";
 import { entryDisposition } from "../../utils/materialDisposition";
 import { useCallback, useState } from "react";
 import { Link, useSearchParams } from "react-router";
@@ -22,8 +23,11 @@ const stages = [
   ["completed", "Coletas concluídas"],
   ["cancelled", "Canceladas"],
 ];
-const units = (rows = [], field) =>
-  rows.map((r) => quantity(r[field], r.unit)).join(" · ") || "0";
+const units = (rows = [], field) => {
+  const totals = new Map();
+  for (const row of rows) totals.set(row.unit,(totals.get(row.unit)||0)+Number(row[field]||0));
+  return [...totals].map(([unit,value])=>quantity(value,unit)).join(" · ") || "0";
+};
 export default function CollectedCollections({ editor, revision }) {
   const [params] = useSearchParams();
   const initial = {
@@ -292,6 +296,8 @@ function CollectionRow({ c, expanded, toggle, destine, busy }) {
               c.bin?.binId ||
               c.generator?.companyName ||
               c.generator?.name ||
+              c.routePoint?.name ||
+              c.schedule?.requestedBy?.displayName ||
               (c.extraOrder ? "Coleta extra" : "Coleta avulsa")}
           </strong>
           <small className="d-block text-muted">
@@ -315,7 +321,9 @@ function CollectionRow({ c, expanded, toggle, destine, busy }) {
               : "Conferência pendente"}
           </small>
         </td>
-        <td>{units(entries, "remainingQuantity")}</td>
+        <td><strong>{units(entries, "remainingQuantity")}</strong>
+          {entries.every(entry=>Number(entry.remainingQuantity)<=0)&&entries.map(entry=><MaterialDestinations key={entry.id} entry={entry} compact />)}
+        </td>
         <td>
           <div className="d-flex gap-2 flex-wrap">
             <button
@@ -358,6 +366,7 @@ function CollectionRow({ c, expanded, toggle, destine, busy }) {
                       Material em acompanhamento: {quantity(entryDisposition(e).followUp, e.unit)}. Continue nas destinações ou no lote de estoque.
                     </p>
                   )}
+                  <MaterialDestinations entry={e} />
                   <div className="d-flex gap-2 flex-wrap">
                     <button
                       className="btn btn-sm btn-success"

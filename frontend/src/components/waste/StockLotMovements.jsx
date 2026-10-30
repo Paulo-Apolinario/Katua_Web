@@ -1,0 +1,46 @@
+import { useCallback, useRef, useState } from "react";
+import { apiRequest } from "../../services/apiClient";
+import { mutationIdentity } from "../../services/wasteWorkspaceService";
+import { useWasteResource } from "../waste-workspace/useWasteResource";
+import CollectionDialog from "../collections/CollectionDialog";
+import { dateLabel, quantity, dateKey, UNIT_LABELS } from "../../utils/collectionWorkspace";
+import { calendarIso } from "../../utils/wasteWorkspace";
+const labels={SALE:"Venda / entrega ao comprador",DONATION:"Doação",DIRECT_DESTINATION:"Envio direto ao destinatário",DISPOSAL:"Descarte",RESERVE:"Reservar lote",RELEASE:"Liberar reserva",PROCESSING:"Atualizar processamento"};
+const outgoing=kind=>["SALE","DONATION","DIRECT_DESTINATION","DISPOSAL"].includes(kind);
+export default function StockLotMovements({lot,onChange}) {
+  const [page,setPage]=useState(1),[kind,setKind]=useState(null),[form,setForm]=useState({}),[busy,setBusy]=useState(false),[error,setError]=useState("");
+  const operation=useRef(null),locked=useRef(false);
+  const history=useWasteResource(useCallback(()=>{void lot.version; return apiRequest(`/waste-stock/lots/${lot.id}/movements?page=${page}&limit=20`);},[lot.id,page,lot.version]));
+  const movable=["AVAILABLE","RESERVED"].includes(lot.status)&&Number(lot.availableQuantity)>0;
+  function open(value){operation.current=null;setError("");setKind(value);setForm({quantity:String(lot.availableQuantity),movementDate:dateKey(new Date()),destinationName:"",destinationDocument:"",destinationAddress:"",transportDocument:"",environmentalDocument:"",notes:"",processingStage:lot.processingStage==='DESTINADO'?'ARMAZENADO':lot.processingStage});}
+  async function submit(e){e.preventDefault();if(locked.current)return;locked.current=true;setBusy(true);setError("");
+    try {
+      const base={kind,expectedVersion:lot.version,movementDate:calendarIso(form.movementDate),notes:form.notes.trim()||undefined,
+        ...(outgoing(kind)?{quantity:Number(form.quantity),destinationName:form.destinationName.trim(),destinationDocument:form.destinationDocument.trim()||undefined,destinationAddress:form.destinationAddress.trim()||undefined,transportDocument:form.transportDocument.trim()||undefined,environmentalDocument:form.environmentalDocument.trim()||undefined}:{}),
+        ...(kind==='PROCESSING'?{processingStage:form.processingStage}:{})};
+      const result=await apiRequest(`/waste-stock/lots/${lot.id}/movements`,{method:'POST',body:{...base,operationId:mutationIdentity(operation,base)}});
+      if(!result.movement?.id)throw Error('Movimentação não confirmada. Atualize o lote antes de tentar novamente.');
+      setKind(null);await onChange();await history.refresh();
+    }catch(err){setError(err.message||'Não foi possível movimentar. Atualize o lote e confira o saldo.');}finally{locked.current=false;setBusy(false);}}
+  const field=(name,label,props={})=><div className="col-md-6"><label htmlFor={`movement-${name}`} className="form-label">{label}</label><input id={`movement-${name}`} className="form-control" value={form[name]||""} onChange={e=>setForm(old=>({...old,[name]:e.target.value}))} disabled={busy} {...props}/></div>;
+  return <section className="card p-4 mb-4" aria-label="Movimentações do lote">
+    <h2 className="fs-18">Movimentar lote</h2>
+    <p>Saldo atual: <strong>{quantity(lot.availableQuantity,lot.unit)}</strong>. Quantidade de origem: {quantity(lot.quantity,lot.unit)}.</p>
+    <p className="small text-muted">Registre saídas totais ou parciais com destinatário. Reserva e processamento preservam o saldo; para sair, libere uma eventual reserva. Venda registra a entrega do material, sem controle financeiro ou emissão fiscal.</p>
+    {movable?<div className="d-flex flex-wrap gap-2 mb-3">{(lot.status==='RESERVED'?['RELEASE','PROCESSING']:['SALE','DONATION','DIRECT_DESTINATION','DISPOSAL','RESERVE','PROCESSING']).map(value=><button key={value} type="button" className="btn btn-sm btn-outline-success" disabled={busy} onClick={()=>open(value)}>{labels[value]}</button>)}</div>:<p className="alert alert-light">Sem saldo movimentável. As saídas e seus destinatários permanecem no histórico abaixo.</p>}
+    <h3 className="fs-18 mt-3">Histórico de movimentações</h3>
+    {history.error&&<p role="alert" className="text-danger">{history.error}<button type="button" className="btn btn-sm btn-outline-secondary ms-2" onClick={history.refresh}>Tentar novamente</button></p>}
+    {history.loading&&!history.data&&<p role="status">Carregando movimentações...</p>}
+    {history.data?.movements.length===0&&<p className="small text-muted">Nenhuma movimentação detalhada registrada. O saldo atual e a entrada de origem foram preservados; registros anteriores podem não ter destinatário informado.</p>}
+    {history.data?.movements.map(m=><article className="border-top py-3" key={m.id}><strong>{labels[m.kind]||m.kind}</strong><div>{outgoing(m.kind)?quantity(m.quantity,m.unit):'Saldo preservado'}{m.destinationName?' → '+m.destinationName:''}</div><small>{dateLabel(m.movementDate)} · {m.actorName||'Cooperativa'} · Saldo: {quantity(m.before.availableQuantity,m.unit)} → {quantity(m.after.availableQuantity,m.unit)}</small><small className="d-block text-muted">Registrado em {dateLabel(m.createdAt,true)}</small>{m.notes&&<p className="small mb-0">{m.notes}</p>}{(m.destinationDocument||m.destinationAddress||m.transportDocument||m.environmentalDocument)&&<details className="small"><summary>Documentos e endereço do destino</summary>{[m.destinationDocument,m.destinationAddress,m.transportDocument,m.environmentalDocument].filter(Boolean).map((t,i)=><p className="mb-1 text-break" key={i}>{t}</p>)}</details>}</article>)}
+    {history.data?.pagination.total>20&&<div className="d-flex gap-2"><button className="btn btn-sm btn-outline-secondary" disabled={page<=1||history.loading} onClick={()=>setPage(p=>p-1)}>Anterior</button><span>Página {page} de {history.data.pagination.totalPages}</span><button className="btn btn-sm btn-outline-secondary" disabled={page>=history.data.pagination.totalPages||history.loading} onClick={()=>setPage(p=>p+1)}>Próxima</button></div>}
+    {kind&&<CollectionDialog title={labels[kind]} busy={busy} onClose={()=>setKind(null)}><form onSubmit={submit}>
+      <p>Lote {lot.lotCode||lot.code} · Saldo {quantity(lot.availableQuantity,lot.unit)}</p><div className="row g-3">
+      {outgoing(kind)&&<>{field('quantity',`Quantidade de saída (${UNIT_LABELS[lot.unit]||lot.unit})`,{type:'number',required:true,min:0.001,max:Number(lot.availableQuantity),step:0.001})}{field('destinationName','Destinatário *',{required:true,minLength:2,maxLength:255})}{field('destinationDocument','CPF/CNPJ ou documento do destinatário',{maxLength:100})}{field('destinationAddress','Endereço do destinatário',{maxLength:500})}{field('transportDocument','Documento de transporte',{maxLength:255})}{field('environmentalDocument','Documento ambiental',{maxLength:255})}</>}
+      {field('movementDate','Data da movimentação *',{type:'date',required:true})}
+      {kind==='PROCESSING'&&<div className="col-md-6"><label htmlFor="movement-processing" className="form-label">Processamento</label><select id="movement-processing" className="form-select" value={form.processingStage} onChange={e=>setForm(f=>({...f,processingStage:e.target.value}))} disabled={busy}>{['ARMAZENADO','TRIADO','TRITURADO','PRENSADO','ENFARDADO'].map(stage=><option key={stage} value={stage}>{({ARMAZENADO:'Armazenado',TRIADO:'Triado',TRITURADO:'Triturado',PRENSADO:'Prensado',ENFARDADO:'Enfardado'})[stage]}</option>)}</select></div>}
+      <div className="col-12"><label htmlFor="movement-notes" className="form-label">{kind==='DISPOSAL'?'Justificativa do descarte *':'Observações'}</label><textarea id="movement-notes" className="form-control" maxLength={1500} required={kind==='DISPOSAL'} minLength={kind==='DISPOSAL'?3:undefined} value={form.notes} disabled={busy} onChange={e=>setForm(f=>({...f,notes:e.target.value}))}/></div></div>
+      {error&&<p role="alert" className="text-danger mt-3">{error}</p>}<div className="d-flex flex-wrap justify-content-end gap-2 mt-4"><button type="button" className="btn btn-outline-secondary" disabled={busy} onClick={()=>setKind(null)}>Voltar</button><button className="btn btn-success" disabled={busy}>{busy?'Registrando...':'Confirmar movimentação'}</button></div>
+    </form></CollectionDialog>}
+  </section>;
+}

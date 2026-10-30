@@ -1,3 +1,4 @@
+import StockLotMovements from "../waste/StockLotMovements";
 import WorkspaceInventoryList from "./WorkspaceInventoryList";
 import {
   getWorkspaceCatalog,
@@ -256,7 +257,8 @@ function LotForm({ lotId }) {
   const lot = (resource.data || [])
       .flatMap((i) => (i.lots || []).map((l) => ({ ...l, item: i })))
       .find((l) => l.id === lotId),
-    linked = traceableLot(lot);
+    originLinked = traceableLot(lot),
+    linked = originLinked || (lot?._count?.movements || 0) > 0;
   useEffect(() => {
     if (resource.loading || resource.error || loaded) return;
     if (lotId && lot) {
@@ -277,6 +279,10 @@ function LotForm({ lotId }) {
     }
     setLoaded(true);
   }, [resource, lotId, lot, loaded, params]);
+  const currentStatus = lot?.status, currentStage = lot?.processingStage;
+  useEffect(() => {
+    if (currentStatus) setForm(previous => ({ ...previous, status: currentStatus, processingStage: currentStage }));
+  }, [currentStatus, currentStage]);
   const selected = resource.data?.find((i) => i.id === form.itemId);
   useEffect(() => {
     if (selected) chosen.current = selected;
@@ -316,6 +322,7 @@ function LotForm({ lotId }) {
       return;
     }
     const { itemId, ...payload } = form;
+    if (lotId) { delete payload.status; delete payload.processingStage; }
     if (linked) {
       delete payload.quantity;
       delete payload.unit;
@@ -355,6 +362,7 @@ function LotForm({ lotId }) {
             : "Entrada manual de estoque. Para materiais de uma coleta, registre a destinação da entrada para gerar o lote vinculado."
       }
     >
+      {lotId && lot && <StockLotMovements lot={lot} onChange={resource.refresh} />}
       <ResourceState resource={resource}>
         {loaded && lotId && !lot ? (
           <p role="alert" className="alert alert-danger">
@@ -362,7 +370,9 @@ function LotForm({ lotId }) {
           </p>
         ) : (
           loaded && (
-            <form data-refresh-paused="true" onSubmit={submit} className="card p-4">
+            <details className="card p-4" open={!lotId}>
+              <summary className="fw-semibold">Dados de origem e armazenamento</summary>
+            <form data-refresh-paused="true" onSubmit={submit} className="pt-3">
               <div className="waste-form-heading mb-4">
                 <h2 className="fs-18">
                   {lot?.status === "CANCELLED"
@@ -376,8 +386,7 @@ function LotForm({ lotId }) {
               </div>
               {linked && (
                 <div className="alert alert-info">
-                  Lote originado de coleta. Quantidade, unidade, código e origem
-                  são preservados nesta edição.
+                  {originLinked ? "Lote originado de coleta. Quantidade, unidade, código e origem são preservados nesta edição." : "Lote com histórico de movimentações. Quantidade, unidade, código e origem são preservados nesta edição."}
                   {lot.originCollectionWasteEntryId && (
                     <>
                       {" "}
@@ -441,7 +450,7 @@ function LotForm({ lotId }) {
                         )
                         .map((i) => ({
                           value: i.id,
-                          label: `${i.name} (${i.unit})`,
+                          label: `${i.name} · ${WASTE_UNIT_OPTIONS.find(option=>option.value===i.unit)?.label || i.unit}`,
                         })),
                     ]}
                     form={form}
@@ -482,21 +491,23 @@ function LotForm({ lotId }) {
                   />
                   <Field
                     name="processingStage"
-                    label="Etapa de processamento"
-                    options={WASTE_PROCESSING_STAGE_OPTIONS}
+                    label="Etapa de processamento (use Movimentar lote para alterar)"
+                    readOnly={!!lotId}
+                    options={lotId ? WASTE_PROCESSING_STAGE_OPTIONS : WASTE_PROCESSING_STAGE_OPTIONS.filter(option=>option.value!=="DESTINADO")}
                     form={form}
                     setForm={setForm}
                   />
                   <Field
                     name="status"
-                    label="Situação do lote"
+                    label="Situação do lote (use Movimentar lote para alterar)"
+                    readOnly={!!lotId}
                     options={
                       lot?.status === "CANCELLED"
                         ? [
                             ...WASTE_LOT_STATUS_OPTIONS,
                             { value: "CANCELLED", label: "Cancelado" },
                           ]
-                        : WASTE_LOT_STATUS_OPTIONS
+                        : lotId ? WASTE_LOT_STATUS_OPTIONS : WASTE_LOT_STATUS_OPTIONS.filter(option=>["AVAILABLE","RESERVED"].includes(option.value))
                     }
                     form={form}
                     setForm={setForm}
@@ -580,6 +591,7 @@ function LotForm({ lotId }) {
                 )}
               </div>
             </form>
+            </details>
           )
         )}
       </ResourceState>

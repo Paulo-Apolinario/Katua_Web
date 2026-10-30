@@ -267,6 +267,7 @@ export const WASTE_PROCESSING_STAGE_OPTIONS = [
 ];
 
 export const WASTE_LOT_STATUS_OPTIONS = [
+  { value: "DESTINED", label: "Destinado" },
   {
     value: "AVAILABLE",
     label: "Disponível",
@@ -296,6 +297,7 @@ export const getProcessingStageLabel = (value) => {
 
 export const getWasteLotStatusLabel = (value) => {
   if (value === "CANCELLED") return "Cancelado";
+  if (value === "DESTINED") return "Destinado";
   return (
     WASTE_LOT_STATUS_OPTIONS.find((item) => item.value === value)?.label ||
     value ||

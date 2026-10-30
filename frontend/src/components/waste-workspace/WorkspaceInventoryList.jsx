@@ -75,12 +75,12 @@ function Lots({ item, view, status }) {
                 <td>
                   {dateLabel(l.receivedAt)}
                   <Link
-                    className="d-block"
+                    className="btn btn-sm btn-outline-success d-inline-flex mt-2"
                     to={`/waste-stock/lots/${l.id}/edit`}
                   >
                     {view === "history"
                       ? "Consultar registro"
-                      : "Detalhes do lote"}
+                      : ["AVAILABLE", "RESERVED"].includes(l.status) && Number(l.availableQuantity)>0 ? "Movimentar lote" : "Consultar destino e histórico"}
                   </Link>
                 </td>
               </tr>
@@ -105,8 +105,8 @@ export default function WorkspaceInventoryList({ catalog = false }) {
     [params, setParams] = useSearchParams(),
     view = catalog
       ? "catalog"
-      : params.get("view") === "history"
-        ? "history"
+      : ["history", "closed"].includes(params.get("view"))
+        ? params.get("view")
         : "current";
   const initial = { q: "", unit: "", status: "", category: "" },
     [draft, setDraft] = useState(initial),
@@ -132,7 +132,7 @@ export default function WorkspaceInventoryList({ catalog = false }) {
   const rows = r.data?.items || [];
   function changeView(history) {
     const next = new URLSearchParams(params);
-    if (history) next.set("view", "history");
+    if (history) next.set("view", history === "closed" ? "closed" : "history");
     else next.delete("view");
     setParams(next);
   }
@@ -202,6 +202,7 @@ export default function WorkspaceInventoryList({ catalog = false }) {
           >
             Estoque atual
           </button>
+          <button className={`btn ${view === "closed" ? "btn-success" : "btn-outline-secondary"}`} onClick={()=>changeView("closed")}>Saídas concluídas</button>
           <button
             className={`btn ${view === "history" ? "btn-success" : "btn-outline-secondary"}`}
             onClick={() => changeView(true)}
@@ -313,6 +314,7 @@ export default function WorkspaceInventoryList({ catalog = false }) {
                       ["AVAILABLE", "Disponível"],
                       ["RESERVED", "Reservado"],
                       ["SOLD", "Vendido"],
+                      ["DESTINED", "Destinado"],
                       ["DISCARDED", "Descartado"],
                     ]
               ).map(([value, label]) => (
@@ -465,8 +467,8 @@ function InventoryItem({
               </span>
               <small className="d-block">{i.unit}</small>
             </>
-          ) : view === "history" ? (
-            "Consulta histórica"
+          ) : view === "history" || view === "closed" ? (
+            view === "closed" ? "Sem saldo · saídas registradas" : "Consulta histórica"
           ) : (
             <>
               <div>Disponível: {available(i.balances)}</div>
