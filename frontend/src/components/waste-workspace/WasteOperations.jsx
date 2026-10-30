@@ -1,3 +1,4 @@
+import { canEditDestination, followUpQuantity } from "../../utils/materialDisposition";
 import DestinationAudit from "../waste/DestinationAudit";
 import CollectedCollections from "./CollectedCollections";
 import { mutationIdentity } from "../../services/wasteWorkspaceService";
@@ -128,7 +129,7 @@ function Filters({
       <div className="row g-3">
         <div className="col-md-4">
           <label htmlFor="waste-search" className="form-label">
-            Buscar material, gerador ou referência
+            Buscar material, origem, coleta ou solicitação
           </label>
           <input
             id="waste-search"
@@ -459,7 +460,7 @@ function DestinationList({ entryId }) {
       >
         {[
           ["all", "Ativas"],
-          ["intermediate", "Intermediárias"],
+          ["intermediate", "Em acompanhamento"],
           ["final", "Destinos finais"],
           ["cancelled", "Canceladas"],
         ].map(([value, label]) => (
@@ -587,6 +588,7 @@ function DestinationTable({ rows, edit, cancel, busy = false }) {
             <tr key={d.id}>
               <td>
                 <strong>{getWasteDestinationTypeLabel(d.type)}</strong>
+                {d.status !== "CANCELLED" && <small className={`d-block ${followUpQuantity(d) > 0 ? "text-primary" : "text-success"}`}>{followUpQuantity(d) > 0 ? "Material em acompanhamento" : "Etapa do material finalizada"}</small>}
                 <div>{entryName(getEntry(d))}</div>
                 <small>{dateLabel(d.destinationDate, true)}</small>
                 <div>
@@ -647,7 +649,7 @@ function DestinationTable({ rows, edit, cancel, busy = false }) {
                 <span
                   className={`badge text-bg-${d.status === "CANCELLED" ? "secondary" : "success"}`}
                 >
-                  {d.status === "CANCELLED" ? "Cancelada" : "Ativa"}
+                  {d.status === "CANCELLED" ? "Registro cancelado" : "Registro ativo"}
                 </span>
                 {d.status === "CANCELLED" ? (
                   <div className="small">
@@ -662,14 +664,11 @@ function DestinationTable({ rows, edit, cancel, busy = false }) {
                       <button
                         className="btn btn-sm btn-outline-secondary"
                         disabled={
-                          busy ||
-                          ["CANCELLED", "COMPLETED"].includes(
-                            getEntry(d)?.collection?.status,
-                          )
+                          busy || !canEditDestination(d)
                         }
                         onClick={() => edit(d)}
                       >
-                        Editar destinação
+                        {getEntry(d)?.collection?.status === "COMPLETED" ? "Definir destino do material" : "Editar destinação"}
                       </button>
                     )}
                     {cancel && (

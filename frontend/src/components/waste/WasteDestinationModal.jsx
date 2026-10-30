@@ -1,3 +1,4 @@
+import { FOLLOW_UP_TYPES, isIntermediate } from "../../utils/materialDisposition";
 import {
   getWorkspaceCatalog,
   clearWasteCatalogCache,
@@ -41,37 +42,37 @@ const DESTINATION_TYPE_OPTIONS = [
     value: "STOCK",
     label: "Adicionar ao estoque",
     description:
-      "A quantidade será registrada em um novo lote rastreável no estoque da cooperativa.",
+      "Encaminha para um lote de estoque. A coleta pode ser concluída; o material continua em acompanhamento no estoque.",
   },
   {
     value: "TRIAGE",
     label: "Movimentação intermediária — triagem",
     description:
-      "Movimentação intermediária: informe o local de triagem. Converta esta movimentação em destino final para encerrar a coleta.",
+      "Informe o local de triagem. A coleta pode ser concluída; depois, edite este encaminhamento para registrar o destino do material.",
   },
   {
     value: "REJECT",
     label: "Registrar como rejeito",
     description:
-      "O material será classificado como rejeito sem possibilidade de aproveitamento.",
+      "Encerra esta quantidade como rejeito. Registre a justificativa e os comprovantes aplicáveis.",
   },
   {
     value: "DISPOSAL",
     label: "Enviar para descarte",
     description:
-      "O material será destinado para descarte ambientalmente adequado.",
+      "Encerra esta quantidade como enviada para descarte. Informe o destino, a justificativa e os documentos aplicáveis.",
   },
   {
     value: "DIRECT_DESTINATION",
     label: "Destinação direta",
     description:
-      "O material será encaminhado diretamente a uma empresa, unidade ou receptor.",
+      "Encerra a etapa desta quantidade com envio direto ao receptor informado. Não gera lote de estoque.",
   },
   {
     value: "RESERVATION",
     label: "Reservar material",
     description:
-      "O material ficará reservado para uma operação ou destinação futura.",
+      "A coleta pode ser concluída; o material permanece reservado. Depois, edite o encaminhamento para registrar seu destino.",
   },
 ];
 
@@ -363,7 +364,8 @@ const WasteDestinationModal = ({
   const isEditMode = mode === "edit" && destinationToEdit;
 
   const stockBlocked =
-    !["RECEIVED", "SORTING"].includes(entry?.collection?.status) ||
+    !( ["RECEIVED", "SORTING"].includes(entry?.collection?.status) ||
+      (isEditMode && entry?.collection?.status === "COMPLETED" && isIntermediate(destinationToEdit.type)) ) ||
     !entry?.collection?.quantityReviewVersion;
   const entryId = useMemo(() => getEntryId(entry), [entry]);
   const unit = useMemo(() => getEntryUnit(entry), [entry]);
@@ -733,6 +735,7 @@ const WasteDestinationModal = ({
                 WebkitOverflowScrolling: "touch",
               }}
             >
+              <p className="small text-muted">Registrar o encaminhamento atualiza o material. Para encerrar a coleta, confira todos os materiais e utilize <strong>Concluir coleta</strong> nos detalhes da coleta.</p>
               {requestError && (
                 <div
                   className="alert alert-danger d-flex align-items-start gap-2"
@@ -863,6 +866,7 @@ const WasteDestinationModal = ({
                             <span className="fw-semibold">{option.label}</span>
                             <span className="text-muted small d-block mt-2">
                               {option.description}
+                          <span className={`badge d-block mt-2 text-bg-${FOLLOW_UP_TYPES.includes(option.value) ? "info" : "success"}`}>{FOLLOW_UP_TYPES.includes(option.value) ? "Material continua em acompanhamento" : "Etapa final do material"}</span>
                               {option.value === "STOCK" && stockBlocked && (
                                 <strong className="d-block mt-1">
                                   Confirme o recebimento e as quantidades na

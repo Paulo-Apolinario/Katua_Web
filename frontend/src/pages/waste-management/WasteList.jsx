@@ -1,3 +1,4 @@
+import CollectionMaterialProgress from "../../components/collections/CollectionMaterialProgress";
 import FixedRouteOperations from "../../components/collections/FixedRouteOperations";
 import FieldOperationBadge from "../../components/collections/FieldOperationBadge";
 import {
@@ -619,6 +620,7 @@ function CollectionList({ cooperativeName }) {
                   }}
                 />
 
+                <CollectionMaterialProgress collection={selected} />
                 <CollectionStageActions
                   key={`${selected.id}:${selected.status}`}
                   collection={selected}

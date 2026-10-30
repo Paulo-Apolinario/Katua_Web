@@ -1,3 +1,4 @@
+import { completionBlockers, collectionEntries } from "../../utils/materialDisposition";
 import { useRef, useState } from "react";
 import {
   receiveCollection,
@@ -19,10 +20,10 @@ const stages = {
     confirmation: "Confirmo o início da triagem dos materiais recebidos.",
   },
   SORTING: {
-    title: "Concluir operação",
+    title: "Concluir coleta",
     action: completeCollection,
-    help: "Finalize após conferir todas as destinações. Saldos pendentes e reservas temporárias impedem o encerramento. Após concluir, as destinações ficam bloqueadas para edição e cancelamento.",
-    confirmation: "Conferi as destinações e confirmo o encerramento da coleta.",
+    help: "Conclua após conferir as quantidades e encaminhar todo o material. Destinação direta, rejeito e descarte encerram a etapa do material. Estoque, triagem e reserva seguem em acompanhamento; a conclusão da coleta não encerra esses materiais.",
+    confirmation: "Confirmo a conclusão da coleta e conferi os encaminhamentos dos materiais.",
   },
 };
 export default function CollectionStageActions({
@@ -35,7 +36,10 @@ export default function CollectionStageActions({
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   const guard = useRef(false);
-  const stage = stages[collection.status];
+  const entries = collectionEntries(collection);
+  const closing = collection.status === "SORTING" || (collection.status === "RECEIVED" && collection.quantityReviewVersion > 0 && entries.length > 0 && entries.every(entry => Number(entry.remainingQuantity) <= 0));
+  const stage = closing ? stages.SORTING : stages[collection.status];
+  const blockers = closing ? completionBlockers(collection) : [];
   if (
     !stage ||
     (collection.status === "RECEIVED" && !collection.quantityReviewVersion)
@@ -43,7 +47,7 @@ export default function CollectionStageActions({
     return null;
   async function submit(e) {
     e.preventDefault();
-    if (!confirmed || guard.current) return;
+    if (!confirmed || guard.current || blockers.length) return;
     guard.current = true;
     setBusy(true);
     onBusy(true);
@@ -86,6 +90,7 @@ export default function CollectionStageActions({
     >
       <h3 className="fs-18">{stage.title}</h3>
       <p className="text-muted small">{stage.help}</p>
+      {blockers.length > 0 && <div role="status" className="alert alert-warning"><strong>Antes de concluir:</strong><ul className="mb-0">{blockers.map(reason => <li key={reason}>{reason}</li>)}</ul></div>}
       <label className="form-label" htmlFor="collection-stage-notes">
         Observações da operação
       </label>
@@ -115,7 +120,7 @@ export default function CollectionStageActions({
       <button
         type="submit"
         className="btn btn-success"
-        disabled={!confirmed || busy}
+        disabled={!confirmed || busy || blockers.length > 0}
       >
         {busy ? "Registrando…" : stage.title}
       </button>

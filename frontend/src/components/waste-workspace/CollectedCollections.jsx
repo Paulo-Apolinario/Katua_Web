@@ -1,3 +1,4 @@
+import { entryDisposition } from "../../utils/materialDisposition";
 import { useCallback, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { getWasteCollections } from "../../services/wasteWorkspaceService";
@@ -15,8 +16,10 @@ const stages = [
   ["all", "Todas"],
   ["receipt", "A receber"],
   ["review", "A conferir"],
-  ["destination", "A destinar"],
-  ["completed", "Concluídas"],
+  ["destination", "Destinação pendente"],
+  ["ready", "A concluir"],
+  ["follow-up", "Materiais em acompanhamento"],
+  ["completed", "Coletas concluídas"],
   ["cancelled", "Canceladas"],
 ];
 const units = (rows = [], field) =>
@@ -119,7 +122,7 @@ export default function CollectedCollections({ editor, revision }) {
             r.data ? units(r.data.units, "collectedQuantity") : "—",
           ],
           [
-            "Saldo a destinar",
+            "Saldo sem encaminhamento",
             r.data ? units(r.data.units, "remainingQuantity") : "—",
           ],
         ]}
@@ -138,12 +141,13 @@ export default function CollectedCollections({ editor, revision }) {
         <div className="row g-3">
           <div className="col-md-5">
             <label htmlFor="collected-search" className="form-label">
-              Buscar origem, material ou coleta
+              Buscar origem, material, coleta ou solicitação
             </label>
             <input
               id="collected-search"
               className="form-control"
               type="search"
+              placeholder="Nome, #código da coleta ou da solicitação"
               value={draft.q}
               onChange={(e) => setDraft((v) => ({ ...v, q: e.target.value }))}
             />
@@ -293,6 +297,7 @@ function CollectionRow({ c, expanded, toggle, destine, busy }) {
           <small className="d-block text-muted">
             Coleta #{shortId(c.id)} · {dateLabel(c.collectedAt, true)}
           </small>
+          {c.scheduleId && <small className="d-block text-muted">Solicitação #{shortId(c.scheduleId)}</small>}
           <small>
             {c.collector?.name || "Responsável não informado"}
             {c.route?.name ? " · " + c.route.name : ""}
@@ -302,6 +307,7 @@ function CollectionRow({ c, expanded, toggle, destine, busy }) {
           <span className="badge text-bg-light">
             {COLLECTION_STAGES[c.status]}
           </span>
+          <small className="d-block text-primary">{entries.some(e => entryDisposition(e).followUp > 0) ? "Materiais em acompanhamento" : entries.every(e => Number(e.remainingQuantity) <= 0) ? "Etapa dos materiais finalizada" : "Há material sem encaminhamento"}</small>
           <small className="d-block">
             {entries.length} material(is) ·{" "}
             {c.quantityReviewVersion
@@ -347,9 +353,9 @@ function CollectionRow({ c, expanded, toggle, destine, busy }) {
                     Saldo:{" "}
                     <strong>{quantity(e.remainingQuantity, e.unit)}</strong>
                   </p>
-                  {e.destinations.length > 0 && (
+                  {entryDisposition(e).followUp > 0 && (
                     <p className="small text-warning">
-                      Há movimentação intermediária a finalizar.
+                      Material em acompanhamento: {quantity(entryDisposition(e).followUp, e.unit)}. Continue nas destinações ou no lote de estoque.
                     </p>
                   )}
                   <div className="d-flex gap-2 flex-wrap">

@@ -32,6 +32,7 @@ import {
   dateLabel,
   materials,
   searchText,
+  referenceMatches,
   shortId,
   inPeriod,
   assignmentProblem,
@@ -187,6 +188,7 @@ function RequestWorkspace() {
         (s) =>
           !invalid &&
           (!filters.q ||
+            referenceMatches([s.id, ...(s.collections || []).map(c => c.id)], filters.q) ||
             searchText(
               [
                 s.id,

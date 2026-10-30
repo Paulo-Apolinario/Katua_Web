@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import {entryDisposition, completionBlockers, canEditDestination} from '../../src/utils/materialDisposition.js';
+import {referenceMatches} from '../../src/utils/collectionWorkspace.js';
+const entry={destinedQuantity:'10',remainingQuantity:'0',destinations:[{type:'DIRECT_DESTINATION',quantity:'4',status:'ACTIVE'},{type:'TRIAGE',quantity:'6',status:'ACTIVE'}]};
+assert.deepEqual(entryDisposition(entry),{remaining:0,followUp:6,final:4,label:'Material em acompanhamento'});
+assert.equal(entryDisposition({...entry,destinations:[{type:'STOCK',quantity:10,status:'ACTIVE',stockLot:{status:'AVAILABLE',availableQuantity:3}}]}).final,7);
+assert.equal(entryDisposition({...entry,destinations:[{type:'STOCK',quantity:10,status:'ACTIVE',stockLot:{status:'SOLD',availableQuantity:0}}]}).followUp,0);
+assert.equal(entryDisposition({...entry,destinations:[{type:'RESERVATION',quantity:10,status:'CANCELLED'}]}).followUp,0);
+assert.equal(completionBlockers({quantityReviewVersion:1,collectionWasteEntries:[entry]}).length,0);
+assert.equal(completionBlockers({quantityReviewVersion:1,collectionWasteEntries:[{...entry,remainingQuantity:2}]}).length,1);
+assert.equal(canEditDestination({type:'TRIAGE',status:'ACTIVE',collectionWasteEntry:{collection:{status:'COMPLETED'}}}),true);
+assert.equal(canEditDestination({type:'DIRECT_DESTINATION',status:'ACTIVE',collectionWasteEntry:{collection:{status:'COMPLETED'}}}),false);
+assert.equal(referenceMatches(['cm-12345678'],' #12345678 '),true);
+assert.equal(referenceMatches(['cm-12345678'],'#'),false);
+console.log('PASS 10 assertions: mixed quantities, stock balances, cancellation, readiness, edit policy and reference search');

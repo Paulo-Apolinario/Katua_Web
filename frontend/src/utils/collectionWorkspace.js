@@ -30,6 +30,10 @@ export const searchText = (value) =>
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLocaleLowerCase("pt-BR");
+export const referenceMatches = (references, query) => {
+  const key = text(query).replace(/^#+\s*/, "").toLocaleLowerCase("pt-BR");
+  return key.length > 0 && references.some(id => text(id).toLocaleLowerCase("pt-BR").includes(key));
+};
 export const shortId = (id) => text(id).slice(-8).toUpperCase();
 export const personName = (person) =>
   person?.companyName ||
