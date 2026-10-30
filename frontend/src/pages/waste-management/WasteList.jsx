@@ -587,6 +587,7 @@ function CollectionList({ cooperativeName }) {
               <>
                 <div className="d-flex align-items-center flex-wrap gap-2 collection-detail-toolbar">
                   <FieldOperationBadge collection={selected} />
+                  <Link className="btn btn-sm btn-outline-success" to={"/service-orders?collectionId="+encodeURIComponent(selected.id)}>O.S. e documentos</Link>
                   <button
                     type="button"
                     className="btn btn-sm btn-outline-success"

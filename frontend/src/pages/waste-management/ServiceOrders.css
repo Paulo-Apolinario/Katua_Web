@@ -1,0 +1,16 @@
+.service-order-table {
+  min-width: 740px;
+  table-layout: fixed;
+  width: 100%;
+}
+.service-order-table th,
+.service-order-table td {
+  white-space: normal;
+  text-wrap: wrap;
+  overflow-wrap: anywhere;
+}
+.service-order-table th:first-child { width: 25%; }
+.service-order-table th:nth-child(2) { width: 19%; }
+.service-order-table th:nth-child(3) { width: 18%; }
+.service-order-table th:nth-child(4) { width: 12%; }
+.service-order-table th:last-child { width: 26%; }

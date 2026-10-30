@@ -14,6 +14,7 @@ const MENU_LINKS = [
   { name: "Rotas", path: "/route-list" },
   { name: "Criar rota", path: "/create-route" },
   { name: "Coletas", path: "/waste-list" },
+  { name: "Ordens de Serviço e documentos", path: "/service-orders" },
   { name: "Nova coleta", path: "/create-waste" },
   { name: "Configurações", path: "/settings" },
 ];

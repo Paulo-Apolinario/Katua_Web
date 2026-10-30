@@ -1,3 +1,4 @@
+import ServiceOrders from "../pages/waste-management/ServiceOrders";
 import Notifications from "../pages/Notifications";
 import EnvironmentalImpact from "../pages/reports/EnvironmentalImpact";
 import CollectorTeams from "../pages/staff-management/CollectorTeams";
@@ -124,6 +125,7 @@ const Router = () => {
 
             {/* Waste Collection Management */}
             <Route path="waste-list" element={<WasteList />} />
+            <Route path="service-orders" element={<ServiceOrders />} />
 
             <Route path="create-waste" element={<AddWaste />} />
 

@@ -47,6 +47,7 @@ const Sidebar = ({ active, setActive }) => {
   }, [admin?.id, admin?.role]);
 
   const isWasteSectionActive =
+    location.pathname.startsWith("/service-orders") ||
     location.pathname.startsWith("/extra-collection-orders") ||
     location.pathname.startsWith("/waste-list") ||
     location.pathname.startsWith("/create-waste") ||
@@ -232,6 +233,7 @@ const Sidebar = ({ active, setActive }) => {
               }`}
               id="waste"
             >
+              <li><NavLink to="/service-orders" className={({ isActive }) => isActive ? "active" : ""}><span className="dot-wrap"><span className="dot" /></span><span className="submenu-text">Ordens de Serviço</span></NavLink></li>
               <li>
                 <NavLink
                   to="/waste-list"
