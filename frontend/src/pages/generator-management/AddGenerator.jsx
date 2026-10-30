@@ -1,3 +1,4 @@
+import useAddressLocation, { ADDRESS_FIELDS } from "../../components/generators/useAddressLocation";
 import GeneratorDocumentField from "../../components/generators/GeneratorDocumentField";
 import { validDocument, documentType } from "../../utils/generatorDocument";
 import { ManagementHeader } from "../../components/management/ManagementWorkspace";
@@ -11,7 +12,7 @@ import TopProgressBar from "../../components/TopProgressBar";
 import generatorService from "../../services/generatorService";
 import { hasCoordinates } from "../../components/maps/mapPin";
 
-import { geocodeAddressWithGoogle, loadGoogleMapsScript } from "../../components/generators/geocodeAddress";
+import { loadGoogleMapsScript } from "../../components/generators/geocodeAddress";
 
 const initialForm = {
   type: "SMALL",
@@ -144,7 +145,8 @@ function GoogleLocationPicker({
   useEffect(() => {
     const location = pendingLocation || selectedLocation;
 
-    if (!location || !mapRef.current || !markerRef.current) return;
+    if (!mapRef.current || !markerRef.current) return;
+    if (!location) { markerRef.current.setVisible(false); return; }
 
     const position = {
       lat: location.latitude,
@@ -234,10 +236,24 @@ const AddGenerator = () => {
   const [loading, setLoading] = useState(false);
   const [loadingCep, setLoadingCep] = useState(false);
 
+  const cepRevision = useRef(0);
+  const mounted = useRef(true);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
+  const invalidateLocation = useCallback(() => { setSelectedLocation(null); setPendingLocation(null); }, []);
+  const addressLookup = useAddressLocation(form, {
+    onInvalidate: invalidateLocation,
+    onSuggestion: setPendingLocation,
+  });
+
+  const cancelLookup = addressLookup.cancel;
+
   const handlePickLocation = useCallback((location) => {
+    cepRevision.current += 1;
+    cancelLookup();
+    setSelectedLocation(null);
     setPendingLocation(location);
     toast.success("Ponto selecionado. Confirme a localização para salvar.");
-  }, []);
+  }, [cancelLookup]);
 
   const handleConfirmLocation = useCallback(() => {
     if (!pendingLocation) {
@@ -245,12 +261,17 @@ const AddGenerator = () => {
       return;
     }
 
+    cepRevision.current += 1;
+    cancelLookup();
     setSelectedLocation(pendingLocation);
+    setPendingLocation(null);
     toast.success("Localização confirmada.");
-  }, [pendingLocation]);
+  }, [pendingLocation, cancelLookup]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
+    if (ADDRESS_FIELDS.includes(name)) { addressLookup.cancel(); invalidateLocation(); }
+    if (["zipCode", "street", "neighborhood", "city", "state", "address"].includes(name)) cepRevision.current += 1;
 
     setForm((prev) => ({
       ...prev,
@@ -266,49 +287,21 @@ const AddGenerator = () => {
       return;
     }
 
+    const request = ++cepRevision.current;
     try {
       setLoadingCep(true);
-
-      const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`, { signal: AbortSignal.timeout(12000) });
+      if (!response.ok) throw new Error("Busca de CEP indisponível.");
       const data = await response.json();
-
-      if (data?.erro) {
-        toast.error("CEP não encontrado.");
-        return;
-      }
-
-      const updatedForm = {
-        ...form,
-        zipCode: formatCep(cep),
-        street: data.logradouro || "",
-        neighborhood: data.bairro || "",
-        city: data.localidade || "",
-        state: data.uf || "",
-        address: [data.logradouro, data.bairro, data.localidade, data.uf]
-          .filter(Boolean)
-          .join(", "),
-      };
-
-      setForm(updatedForm);
-
-      const location = await geocodeAddressWithGoogle(updatedForm);
-
-      if (location) {
-        setPendingLocation(location);
-        toast.success(
-          "Endereço localizado. Confira o ponto no mapa e confirme."
-        );
-      } else {
-        toast.success(
-          "Endereço preenchido. Clique no mapa para marcar a localização."
-        );
-      }
+      if (!mounted.current || request !== cepRevision.current) return;
+      if (data?.erro) throw new Error("CEP não encontrado.");
+      addressLookup.cancel();
+      invalidateLocation();
+      setForm(previous => ({ ...previous, zipCode: formatCep(cep), street: data.logradouro || "", neighborhood: data.bairro || "", city: data.localidade || "", state: data.uf || "", address: "" }));
+      toast.success("Endereço preenchido. Confira o número e confirme a localização no mapa.");
     } catch (error) {
-      console.error("Erro ao buscar CEP:", error);
-      toast.error("Não foi possível buscar o CEP/localização.");
-    } finally {
-      setLoadingCep(false);
-    }
+      if (mounted.current && request === cepRevision.current) toast.error(error?.message || "Não foi possível buscar o CEP.");
+    } finally { if (mounted.current) setLoadingCep(false); }
   };
 
   const buildPayload = () => ({
@@ -492,7 +485,7 @@ const AddGenerator = () => {
                   disabled={loadingCep}
                 >
                   <Search size={16} />
-                  {loadingCep ? "Buscando..." : "Buscar"}
+                  {loadingCep ? "Buscando..." : "Buscar CEP"}
                 </button>
               </div>
             </div>
@@ -571,6 +564,7 @@ const AddGenerator = () => {
                 Marcar localização no Google Maps *
               </label>
 
+              <p role="status" className="small text-muted">{addressLookup.message}</p>
               <GoogleLocationPicker
                 pendingLocation={pendingLocation}
                 selectedLocation={selectedLocation}

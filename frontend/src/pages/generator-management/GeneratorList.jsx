@@ -1,3 +1,4 @@
+import RegistrationPdfExport from "../../components/registrations/RegistrationPdfExport";
 import { formatDocument, normalizeDocument, generatorCategory, categoryLabels, generatorTypeLabel } from "../../utils/generatorDocument";
 import { ManagementHeader } from "../../components/management/ManagementWorkspace";
 import { useEffect, useMemo, useState } from "react";
@@ -129,6 +130,7 @@ const GeneratorList = () => {
         description="Gerencie residenciais cadastrados, pequenos e grandes geradores vinculados à cooperativa."
         actions={
           <>
+            <RegistrationPdfExport kind="generators" />
             <Link to="/create-generator" className="primary-btn btn-sm">
               <CirclePlus />
               Novo gerador
@@ -179,9 +181,9 @@ const GeneratorList = () => {
         <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
           <h4 className="mb-0 fw-600">Lista de Geradores</h4>
 
-          <div className="d-flex flex-wrap gap-2 align-items-center">
+          <div className="d-flex flex-wrap gap-2 align-items-center" style={{ minWidth: 0, maxWidth: "100%" }}>
             <label className="small" htmlFor="generator-category">Classificação</label>
-            <select className="form-select w-auto" id="generator-category" value={category} onChange={e => setCategory(e.target.value)}>
+            <select className="form-select w-auto" style={{ maxWidth: "100%" }} id="generator-category" value={category} onChange={e => setCategory(e.target.value)}>
               <option value="">Todas</option>
               {Object.entries(categoryLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
             </select>

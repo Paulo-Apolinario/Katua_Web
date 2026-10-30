@@ -1,3 +1,4 @@
+import RegistrationPdfExport from "../../components/registrations/RegistrationPdfExport";
 import { ManagementHeader } from "../../components/management/ManagementWorkspace";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
@@ -201,6 +202,7 @@ const CollectorList = () => {
         description="Gerencie os catadores vinculados à cooperativa."
         actions={
           <>
+            <RegistrationPdfExport kind="collectors" />
             <Link to="/collector-teams" className="secondary-btn btn-sm">
               Equipes de catadores
             </Link>

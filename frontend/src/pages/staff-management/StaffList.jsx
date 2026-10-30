@@ -1,3 +1,4 @@
+import RegistrationPdfExport from "../../components/registrations/RegistrationPdfExport";
 import { ManagementHeader } from "../../components/management/ManagementWorkspace";
 import { useState, useEffect } from "react";
 import { Link } from "react-router";
@@ -135,6 +136,7 @@ const StaffList = () => {
         title="Lista de Motoristas"
         actions={
           <>
+            <RegistrationPdfExport kind="drivers" />
             <Link to="/create-staff" className="primary-btn btn-sm">
               <CirclePlus /> Criar Motorista
             </Link>

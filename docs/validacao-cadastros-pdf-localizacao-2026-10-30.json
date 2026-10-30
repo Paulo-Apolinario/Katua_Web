@@ -1,0 +1,89 @@
+{
+  "date": "2026-10-30",
+  "scope": "Painel — cadastros PDF e localização de geradores",
+  "api": {
+    "passed": 22,
+    "checks": [
+      "Migração preserva execução histórica e seu ponto sem inventar data de saída",
+      "Antes da saída não existe operação em campo",
+      "Saída registra início da execução e preserva pontos aguardando atendimento",
+      "Painel conta uma rota fixa em campo sem contar suas três paradas novamente",
+      "Agenda e registros do painel identificam saída em campo sem confundir com atendimento do ponto",
+      "Repetir confirmação não modifica a primeira saída",
+      "Execuções são paginadas inteiras por data crescente, sem transferir todos os detalhes",
+      "Datas de execução permanecem em tópicos separados e em ordem entre páginas",
+      "Pontos seguem a sequência da rota com paginação própria e contexto em campo",
+      "Coletas normais excluem pontos de rotas fixas, inclusive plano histórico removido",
+      "Busca por um ponto encontra sua execução completa",
+      "Endereço avulso sem cadastro de gerador conserva identificação e pode ser pesquisado",
+      "Filtro de programação distingue os dias de execução no fuso do Ceará",
+      "Iniciar ponto dentro da rota não duplica a operação em campo",
+      "Coleta delegada individual iniciada entra no mesmo indicador",
+      "Rotas avulsas e fixas e coleta individual são contadas sem sobreposição",
+      "Pontos com saída confirmada não ficam na fila de pendentes sem saída",
+      "Recebimento de um ponto preserva os demais e sua entrada de material individual",
+      "Filtro por colaborador reconhece sua participação em equipe",
+      "Detalhes e consultas respeitam cooperativa proprietária e perfil autorizado",
+      "Paginação, etapa e período inválidos são rejeitados",
+      "Ordenação global cruza meses e páginas, ignora prioridade por status, desempata por ID e coloca sem data ao final"
+    ]
+  },
+  "browser": {
+    "passed": 10,
+    "checks": [
+      "PDF individual e completo de collectors usa a API real e baixa arquivos válidos",
+      "PDF individual e completo de drivers usa a API real e baixa arquivos válidos",
+      "PDF individual e completo de generators usa a API real e baixa arquivos válidos",
+      "Falha de consulta e troca de sessão bloqueiam exportação sem gerar PDF parcial",
+      "CEP preserva número e nome alterados durante a consulta; busca automática inclui número",
+      "Alteração de endereço invalida confirmação e marcador; resposta antiga não substitui a nova",
+      "Escolha manual prevalece sobre consulta atrasada e alteração de nome não dispara geocodificação",
+      "Edição preserva ponto existente; endereço modificado só é salvo após confirmar o novo ponto",
+      "Lista vazia impede exportação e diálogo permanece utilizável em 390px",
+      "Sem erros JavaScript nos fluxos verificados"
+    ],
+    "errors": [],
+    "transport": "Real local API + disposable PGlite; controlled Google Maps and CEP responses"
+  },
+  "pdf": {
+    "passed": 6,
+    "checks": [
+      {
+        "file": "collectors-one.pdf",
+        "pages": 2,
+        "records": 1
+      },
+      {
+        "file": "collectors-all.pdf",
+        "pages": 6,
+        "records": 3
+      },
+      {
+        "file": "generators-one.pdf",
+        "pages": 1,
+        "records": 1
+      },
+      {
+        "file": "generators-all.pdf",
+        "pages": 3,
+        "records": 3
+      },
+      {
+        "file": "drivers-one.pdf",
+        "pages": 1,
+        "records": 1
+      },
+      {
+        "file": "drivers-all.pdf",
+        "pages": 13,
+        "records": 13
+      }
+    ]
+  },
+  "lint": "passed, 0 errors/warnings on changed production files",
+  "productionBuild": "passed; existing chunk-size warning",
+  "apiChanges": false,
+  "databaseMigration": false,
+  "appChanges": false,
+  "externalServices": "CEP and Google Maps responses controlled; API/database real and disposable"
+}
