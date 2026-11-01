@@ -49,7 +49,7 @@ const Sidebar = ({ active, setActive }) => {
   const isWasteSectionActive =
     location.pathname.startsWith("/service-orders") ||
     location.pathname.startsWith("/extra-collection-orders") ||
-    location.pathname.startsWith("/waste-list") ||
+    location.pathname.startsWith("/material-intakes") || location.pathname.startsWith("/waste-list") ||
     location.pathname.startsWith("/create-waste") ||
     location.pathname.startsWith("/edit-waste") ||
     location.pathname.startsWith("/collection-requests");
@@ -93,6 +93,7 @@ const Sidebar = ({ active, setActive }) => {
     "/edit-staff",
     "/driver-documents",
     "/driver-history",
+    "/driver-tracking",
     "/attendance-list",
     "/create-attendance",
     "/edit-attendance",
@@ -233,6 +234,7 @@ const Sidebar = ({ active, setActive }) => {
               }`}
               id="waste"
             >
+              <li><NavLink to="/material-intakes" className={({isActive})=>isActive?"active":""}><span className="dot-wrap"><span className="dot" /></span><span className="submenu-text">Entradas e coletas avulsas</span></NavLink></li>
               <li><NavLink to="/service-orders" className={({ isActive }) => isActive ? "active" : ""}><span className="dot-wrap"><span className="dot" /></span><span className="submenu-text">Ordens de Serviço</span></NavLink></li>
               <li>
                 <NavLink
@@ -592,6 +594,7 @@ const Sidebar = ({ active, setActive }) => {
               active: isDriverSectionActive,
               links: [
                 ["/staff-list", "Listar motoristas"],
+                ["/driver-tracking", "Acompanhar coletas"],
                 ["/create-staff", "Adicionar motorista"],
                 ["/driver-documents", "Documentos dos motoristas"],
                 ["/driver-history", "Histórico dos motoristas"],

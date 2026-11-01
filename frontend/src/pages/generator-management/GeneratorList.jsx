@@ -1,3 +1,4 @@
+import PrivacyAcceptanceStatus from "../../components/registrations/PrivacyAcceptanceStatus";
 import RegistrationPdfExport from "../../components/registrations/RegistrationPdfExport";
 import { formatDocument, normalizeDocument, generatorCategory, categoryLabels, generatorTypeLabel } from "../../utils/generatorDocument";
 import { ManagementHeader } from "../../components/management/ManagementWorkspace";
@@ -280,7 +281,8 @@ const GeneratorList = () => {
                     </td>
 
                     <td>
-                      <div className="d-flex justify-content-end gap-2">
+                      <div className="d-flex justify-content-end gap-2 flex-wrap">
+                        <PrivacyAcceptanceStatus kind="generators" id={generator.id}/>
                         <Link
                           to={`/edit-generator/${generator.id}`}
                           className="btn btn-sm btn-outline-primary"

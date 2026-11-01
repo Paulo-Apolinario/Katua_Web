@@ -31,7 +31,7 @@ const units = (rows = [], field) => {
 export default function CollectedCollections({ editor, revision }) {
   const [params] = useSearchParams();
   const initial = {
-      q: "",
+      q: params.get("q") || "",
       stage: stages.some(([v]) => v === params.get("stage"))
         ? params.get("stage")
         : "all",

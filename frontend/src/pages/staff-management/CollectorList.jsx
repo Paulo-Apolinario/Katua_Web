@@ -1,3 +1,4 @@
+import PrivacyAcceptanceStatus from "../../components/registrations/PrivacyAcceptanceStatus";
 import RegistrationPdfExport from "../../components/registrations/RegistrationPdfExport";
 import { ManagementHeader } from "../../components/management/ManagementWorkspace";
 import { useEffect, useMemo, useState } from "react";
@@ -309,7 +310,7 @@ const CollectorList = () => {
 
                       <td>
                         <div className="collector-row-actions">
-                        <Link to={`/edit-collector/${collector.id}`} className="secondary-btn btn-sm"><Pencil size={16} />Editar cadastro</Link>
+                        <PrivacyAcceptanceStatus kind="collectors" id={collector.id}/><Link to={`/edit-collector/${collector.id}`} className="secondary-btn btn-sm"><Pencil size={16} />Editar cadastro</Link>
                         <Link
                           to={`/collector-documents?collectorId=${collector.id}`}
                           className="secondary-btn btn-sm"

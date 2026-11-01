@@ -44,6 +44,8 @@ const makeDraft = (base) => ({
   teamId: null,
   collectorIds: [],
   points: [],
+  coverageMode: "POINTS",
+  coverageArea: "",
   startPoint: base,
   endPoint: base,
   exceptions: [],
@@ -149,7 +151,7 @@ export default function RoutePlans() {
     <main className="route-planner">
       <ManagementHeader
         title="Rotas fixas"
-        description="Cadastre os pontos uma vez e mantenha a programação recorrente da cooperativa."
+        description="Programe rotas por pontos cadastrados ou por bairros e ruas, com inclusão de pontos durante a execução."
         actions={
           <button
             className="btn btn-success"
@@ -424,6 +426,9 @@ export default function RoutePlans() {
                 </section>
                 <section className="card p-4">
                   <h2>3. Saída, destino e pontos</h2>
+                  <label className="d-block mb-3">Forma de atendimento<select className="form-select" value={draft.coverageMode||'POINTS'} onChange={e=>patch('coverageMode',e.target.value)}><option value="POINTS">Pontos definidos no planejamento</option><option value="AREA">Coleta por bairro / área, com pontos opcionais</option></select></label>
+                  {draft.coverageMode==='AREA'&&<><label className="d-block mb-3">Bairros, ruas e limites atendidos *<textarea className="form-control" required minLength={3} maxLength={1000} value={draft.coverageArea||''} onChange={e=>patch('coverageArea',e.target.value)}/></label><p>A execução pode iniciar sem pontos cadastrados, após definição da equipe, motorista, veículo e data. Registre os pontos que precisar durante o trabalho. Para concluir, registre ao menos um atendimento realizado.</p></>}
+
                   <RouteEndpoints
                     startPoint={draft.startPoint}
                     endPoint={draft.endPoint}
@@ -546,7 +551,7 @@ export default function RoutePlans() {
                 {p.weekdays.map((d) => days[d]).join(", ")} · {p.departureTime}
               </p>
               <p>
-                {p.points.length} pontos · {p.collectorIds.length} catadores
+                {p.coverageMode==='AREA'?'Coleta por área: '+p.coverageArea:p.points.length+' pontos'} · {p.collectorIds.length} catadores
               </p>
               {p.lastGenerationError && (
                 <p

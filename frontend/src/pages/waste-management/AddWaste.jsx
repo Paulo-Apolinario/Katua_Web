@@ -1,4 +1,4 @@
 import { Navigate } from "react-router";
 export default function AddWaste() {
-  return <Navigate to="/collection-requests" replace />;
+  return <Navigate to="/material-intakes" replace />;
 }

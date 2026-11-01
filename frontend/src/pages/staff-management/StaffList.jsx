@@ -1,3 +1,4 @@
+import PrivacyAcceptanceStatus from "../../components/registrations/PrivacyAcceptanceStatus";
 import RegistrationPdfExport from "../../components/registrations/RegistrationPdfExport";
 import { ManagementHeader } from "../../components/management/ManagementWorkspace";
 import { useState, useEffect } from "react";
@@ -137,6 +138,7 @@ const StaffList = () => {
         actions={
           <>
             <RegistrationPdfExport kind="drivers" />
+            <Link to="/driver-tracking" className="btn btn-outline-success btn-sm">Acompanhar coletas</Link>
             <Link to="/create-staff" className="primary-btn btn-sm">
               <CirclePlus /> Criar Motorista
             </Link>
@@ -176,6 +178,8 @@ const StaffList = () => {
               }}
               renderActions={(row) => (
                 <div className="actions d-flex align-items-center gap-10">
+                  <PrivacyAcceptanceStatus kind="drivers" id={row.id} />
+                  <Link className="btn btn-sm btn-outline-success" to={"/driver-tracking?motorista="+row.id}>Acompanhar</Link>
                   <Link
                     to={`/driver-documents?driverId=${row.id}`}
                     className="action-button"

@@ -95,6 +95,7 @@ function RouteOperation({
             ROTA FIXA · EXECUÇÃO #{shortId(route.id)}
           </div>
           <h2 className="h5 mt-1 mb-2">{route.name}</h2>
+          {route.coverageMode==='AREA'&&<p className="small mb-2">Coleta por área: {route.coverageArea}. Pontos podem ser incluídos durante a execução.</p>}
           <p className="mb-1">{dateLabel(route.scheduledDate, true)}</p>
           <span
             className={`badge text-bg-${route.status === "IN_PROGRESS" ? "primary" : route.status === "COMPLETED" ? "success" : "secondary"}`}

@@ -1,3 +1,5 @@
+import DriverTracking from "../pages/staff-management/DriverTracking";
+import MaterialIntakes from "../pages/waste-management/MaterialIntakes";
 import ServiceOrders from "../pages/waste-management/ServiceOrders";
 import Notifications from "../pages/Notifications";
 import EnvironmentalImpact from "../pages/reports/EnvironmentalImpact";
@@ -247,6 +249,8 @@ const Router = () => {
             />
 
             {/* Staff Management */}
+            <Route path="driver-tracking" element={<DriverTracking />} />
+            <Route path="material-intakes" element={<MaterialIntakes />} />
             <Route path="staff-list" element={<StaffList />} />
 
             <Route path="create-staff" element={<AddStaff />} />

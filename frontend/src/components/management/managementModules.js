@@ -27,6 +27,7 @@ const routeRoutes = [
   "operational-calendar",
 ];
 const driverRoutes = [
+  "driver-tracking",
   "staff-list",
   "create-staff",
   "edit-staff",
@@ -55,6 +56,7 @@ const teamRoutes = [
 ];
 const link = (to, label, paths) => ({ to, label, paths });
 const driverLinks = [
+  link("/driver-tracking", "Acompanhar coletas", ["driver-tracking"]),
   link("/staff-list", "Motoristas", [
     "staff-list",
     "create-staff",

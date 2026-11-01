@@ -11,6 +11,7 @@ export async function markAllRead() {
 }
 export function noticeTarget(notice) {
   const data = notice.data || {};
+  if (data.driverId && /^(route-started:|collection-started:|driver-sharing:)/.test(notice.eventKey||"")) return `/driver-tracking?motorista=${encodeURIComponent(data.driverId)}`;
   if (data.routeId) return `/edit-route/${encodeURIComponent(data.routeId)}`;
   if (data.extraOrderId) return `/extra-collection-orders?ordem=${encodeURIComponent(data.extraOrderId)}`;
   if (data.scheduleId) return `/collection-requests?solicitacao=${encodeURIComponent(data.scheduleId)}`;

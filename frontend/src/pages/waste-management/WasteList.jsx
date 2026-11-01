@@ -223,6 +223,7 @@ function CollectionList({ cooperativeName }) {
             tratamento em Ver detalhes.
           </p>
           <div className="d-flex flex-wrap gap-2">
+            <Link className="btn btn-sm btn-outline-success" to="/material-intakes">Entradas e coletas avulsas</Link>
             <Link className="btn btn-sm btn-outline-success" to="/extra-collection-orders">
               Ordens de coleta extras
             </Link>
