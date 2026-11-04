@@ -57,5 +57,7 @@ export const updateDriverStatus = async (id, status) => {
 };
 
 export const updateDriver = async (id, payload) => {
-  return updateDriverStatus(id, payload.status);
+  const data = { ...payload };
+  delete data.email;
+  return apiRequest(`/drivers/${id}`, { method: "PATCH", body: data });
 };

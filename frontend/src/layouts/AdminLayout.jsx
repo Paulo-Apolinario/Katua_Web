@@ -1,3 +1,4 @@
+import PanelReadNotice from "../components/PanelReadNotice";
 import { useState } from "react";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
@@ -15,6 +16,7 @@ const AdminLayout = () => {
       <main className="page-content mt-5">
         <div className="custom-container">
           <ManagementWorkspace>
+            <PanelReadNotice />
             <Outlet />
           </ManagementWorkspace>
         </div>

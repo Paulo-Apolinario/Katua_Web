@@ -283,7 +283,7 @@ function RequestWorkspace() {
     }
   }
   return (
-    <main className="container-fluid py-4 collection-workspace">
+    <section className="container-fluid py-4 collection-workspace">
       <HeadTags title="Coletas Solicitadas | KATUÁ" />
       <div className="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
         <div>
@@ -748,6 +748,6 @@ function RequestWorkspace() {
           )}
         </CollectionDialog>
       )}
-    </main>
+    </section>
   );
 }

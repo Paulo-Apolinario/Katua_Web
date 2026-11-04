@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import SimpleBar from 'simplebar-react';
 import 'simplebar-react/dist/simplebar.min.css';
 
@@ -11,10 +12,13 @@ const DataTable = ({
     rowsPerPageOptions = [5, 10, 15, 20],
     renderActions,
 }) => {
-    const indexOfLastRow = currentPage * rowsPerPage;
+    const totalPages = Math.max(1, Math.ceil(data.length / rowsPerPage));
+    const safePage = Math.max(1, Math.min(currentPage || 1, totalPages));
+    useEffect(() => { if (currentPage !== safePage) onPageChange(safePage); }, [currentPage, safePage, onPageChange]);
+    const indexOfLastRow = safePage * rowsPerPage;
     const indexOfFirstRow = indexOfLastRow - rowsPerPage;
     const currentRows = data.slice(indexOfFirstRow, indexOfLastRow);
-    const totalPages = Math.ceil(data.length / rowsPerPage);
+
 
     return (
         <>
@@ -23,7 +27,7 @@ const DataTable = ({
                     <thead>
                         <tr>
                             {columns.map(col => (
-                                <th key={col.key}>{col.label}</th>
+                                <th key={col.key} scope="col">{col.label}</th>
                             ))}
                             {renderActions && <th>Ações</th>}
                         </tr>
@@ -31,7 +35,7 @@ const DataTable = ({
                     <tbody>
                         {currentRows.length > 0 ? (
                             currentRows.map((row, i) => (
-                                <tr key={i}>
+                                <tr key={row.id || i}>
                                     {columns.map(col => (
                                         <td key={col.key}>
                                             {col.render
@@ -63,9 +67,11 @@ const DataTable = ({
                         <select
                             className="form-select show-perpage"
                             style={{ width: '80px' }}
+                            aria-label="Registros por página"
                             value={rowsPerPage}
                             onChange={(e) => {
                                 onRowsPerPageChange(Number(e.target.value));
+                                onPageChange(1);
                             }}
                         >
                             {rowsPerPageOptions.map(n => (
@@ -77,19 +83,19 @@ const DataTable = ({
                 <div className="col-lg-6">
                     <nav className="d-flex justify-content-end">
                         <ul className="pagination mb-0">
-                            <li className={`page-item ${currentPage === 1 && 'disabled'}`}>
-                                <button className="page-link" onClick={() => onPageChange(currentPage - 1)}>Anterior</button>
+                            <li className={`page-item ${safePage <= 1 && 'disabled'}`}>
+                                <button className="page-link" disabled={safePage <= 1} onClick={() => onPageChange(Math.max(1, safePage - 1))}>Anterior</button>
                             </li>
                             {Array.from({ length: totalPages }, (_, i) => (
                                 <li
                                     key={i}
-                                    className={`page-item ${currentPage === i + 1 ? 'active' : ''}`}
+                                    className={`page-item ${safePage === i + 1 ? 'active' : ''}`}
                                 >
                                     <button className="page-link" onClick={() => onPageChange(i + 1)}>{i + 1}</button>
                                 </li>
                             ))}
-                            <li className={`page-item ${currentPage === totalPages && 'disabled'}`}>
-                                <button className="page-link" onClick={() => onPageChange(currentPage + 1)}>Próximo</button>
+                            <li className={`page-item ${safePage >= totalPages && 'disabled'}`}>
+                                <button className="page-link" disabled={safePage >= totalPages} onClick={() => onPageChange(Math.min(totalPages, safePage + 1))}>Próximo</button>
                             </li>
                         </ul>
                     </nav>

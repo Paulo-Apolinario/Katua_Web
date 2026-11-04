@@ -9,7 +9,7 @@ export function PevScope({ children }) {
 }
 export function PevPage({ title, description, actions, children }) {
   return (
-    <main className="container-fluid py-4 pev-workspace">
+    <section className="container-fluid py-4 pev-workspace">
       <HeadTags title={`${title} | KATUÁ`} />
       <div className="pev-eyebrow">KATUÁ · PONTOS DE ENTREGA VOLUNTÁRIA</div>
       <header className="d-flex justify-content-between align-items-start flex-wrap gap-3 mt-2 mb-4">
@@ -45,7 +45,7 @@ export function PevPage({ title, description, actions, children }) {
         </a>
       </nav>
       {children}
-    </main>
+    </section>
   );
 }
 export function PevState({ resource, children }) {

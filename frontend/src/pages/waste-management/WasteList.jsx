@@ -209,7 +209,7 @@ function CollectionList({ cooperativeName }) {
       ].filter(([, date]) => date)
     : [];
   return (
-    <main className="container-fluid py-4 collection-workspace">
+    <section className="container-fluid py-4 collection-workspace">
       <HeadTags title="Lista de Coletas | KATUÁ" />
       <div className="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
         <div>
@@ -758,6 +758,6 @@ function CollectionList({ cooperativeName }) {
           )}
         </CollectionDialog>
       )}
-    </main>
+    </section>
   );
 }

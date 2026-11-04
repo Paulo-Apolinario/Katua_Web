@@ -148,7 +148,7 @@ export default function RoutePlans() {
     setNotice("");
   }
   return (
-    <main className="route-planner">
+    <section className="route-planner">
       <ManagementHeader
         title="Rotas fixas"
         description="Programe rotas por pontos cadastrados ou por bairros e ruas, com inclusão de pontos durante a execução."
@@ -590,6 +590,6 @@ export default function RoutePlans() {
           ))}
         </>
       )}
-    </main>
+    </section>
   );
 }

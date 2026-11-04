@@ -1,12 +1,14 @@
+import SessionRecovery from "../components/SessionRecovery";
 import { Navigate, useLocation } from "react-router";
 import { useAdminAuth } from "../context/AdminAuthContext";
 
 const AdminPrivateRoute = ({ children }) => {
-  const { admin, loading } = useAdminAuth();
+  const { admin, loading, bootstrapError } = useAdminAuth();
   const { pathname } = useLocation();
 
+  if (bootstrapError) return <SessionRecovery />;
   if (loading) {
-    return <div></div>;
+    return <p role="status" className="p-4">Confirmando sessão...</p>;
   }
 
   if (!admin) {

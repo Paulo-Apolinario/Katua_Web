@@ -17,14 +17,16 @@ const isPanelUser = (user) => {
 export const AdminAuthProvider = ({ children }) => {
   const [admin, setAdmin] = useState(() => getStoredUser());
   const [loading, setLoading] = useState(true);
+  const [bootstrapError, setBootstrapError] = useState("");
+  const [retryVersion, setRetryVersion] = useState(0);
   const [token, setToken] = useState(() => getStoredToken());
 
   useEffect(() => {
-    const expire = () => { setToken(null); setAdmin(null); setLoading(false); };
+    const expire = () => { setBootstrapError(""); setToken(null); setAdmin(null); setLoading(false); };
     const changed = (event) => {
       if (event.key !== "auth_token") return;
       if (!event.newValue) expire();
-      else { setAdmin(null); setLoading(true); setToken(event.newValue); }
+      else { setBootstrapError(""); setAdmin(null); setLoading(true); setToken(event.newValue); }
     };
     window.addEventListener(SESSION_EXPIRED_EVENT, expire);
     window.addEventListener("storage", changed);
@@ -34,6 +36,8 @@ export const AdminAuthProvider = ({ children }) => {
   useEffect(() => {
     let active = true;
     const bootstrapAuth = async () => {
+      setBootstrapError("");
+      setLoading(true);
       if (!token) {
         clearAuthData();
         setAdmin(null);
@@ -63,9 +67,9 @@ export const AdminAuthProvider = ({ children }) => {
       } catch (error) {
         if (!active || (getStoredToken() && token !== getStoredToken())) return;
         console.error("Auth error:", error);
-        clearAuthData();
-        setToken(null);
-        setAdmin(null);
+        if (error?.status === 401 || error?.status === 403) {
+          clearAuthData(); setToken(null); setAdmin(null);
+        } else setBootstrapError(error?.message || "Não foi possível confirmar sua sessão. Tente novamente.");
       } finally {
         if (active) setLoading(false);
       }
@@ -73,7 +77,7 @@ export const AdminAuthProvider = ({ children }) => {
 
     bootstrapAuth();
     return () => { active = false; };
-  }, [token]);
+  }, [token, retryVersion]);
 
   const login = ({ token: newToken, user }) => {
     if (!newToken || !user) {
@@ -91,6 +95,7 @@ export const AdminAuthProvider = ({ children }) => {
       user,
     });
 
+    setBootstrapError("");
     setToken(newToken);
     setAdmin(user);
   };
@@ -103,6 +108,7 @@ export const AdminAuthProvider = ({ children }) => {
   };
 
   const logout = () => {
+    setBootstrapError("");
     clearAuthData();
     setToken(null);
     setAdmin(null);
@@ -117,7 +123,9 @@ export const AdminAuthProvider = ({ children }) => {
         login,
         logout,
         updateAdmin,
-        isAuthenticated: Boolean(admin && token),
+        bootstrapError,
+        retryBootstrap: () => setRetryVersion(value => value + 1),
+        isAuthenticated: Boolean(admin && token) && !bootstrapError && !loading,
       }}
     >
       {children}

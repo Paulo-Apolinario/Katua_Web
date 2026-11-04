@@ -340,7 +340,7 @@ export default function RoutePlanner({ id }) {
     }
   }
   return (
-    <main className="route-planner">
+    <section className="route-planner">
       <HeadTags title={id ? "Planejar rota" : "Cadastrar rota"} />
       <ManagementHeader
         title={id ? "Planejar rota" : "Cadastrar rota"}
@@ -1192,6 +1192,6 @@ export default function RoutePlanner({ id }) {
           </form>
         </>
       )}
-    </main>
+    </section>
   );
 }

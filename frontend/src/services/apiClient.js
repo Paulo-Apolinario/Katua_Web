@@ -1,5 +1,8 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
 
+export const READ_RESULT_EVENT = "katua:read-result";
+const readVersions = new Map();
+
 export const SESSION_EXPIRED_EVENT = "katua:session-expired";
 
 export const TOKEN_KEY = "auth_token";
@@ -52,6 +55,15 @@ const isPlainObject = (value) => {
 
 export const apiRequest = async (endpoint, options = {}) => {
   const token = getStoredToken();
+  const page = window.location.pathname;
+  const readKey = page + ':' + endpoint.split('?')[0];
+  const isRead = (options.method || 'GET').toUpperCase() === 'GET' && !endpoint.startsWith('/auth/') && endpoint !== '/settings/branding' && !endpoint.startsWith('/inbox');
+  const readVersion = isRead ? (readVersions.get(readKey) || 0) + 1 : 0;
+  if (isRead) readVersions.set(readKey, readVersion);
+  const readResult = message => {
+    if (isRead && token === getStoredToken() && page === window.location.pathname && readVersions.get(readKey) === readVersion)
+      window.dispatchEvent(new CustomEvent(READ_RESULT_EVENT, { detail: { key: readKey, page, message } }));
+  };
 
   const hasBody = options.body !== undefined && options.body !== null;
   const shouldStringifyBody = hasBody && isPlainObject(options.body);
@@ -91,13 +103,16 @@ export const apiRequest = async (endpoint, options = {}) => {
         message, status: response.status, statusCode: response.status,
       });
     }
+    readResult("");
     return data;
   } catch (error) {
-    if (error.status) throw error;
+    if (error.status) { if (error.status !== 401) readResult(error.message); throw error; }
     if (signal?.aborted) throw error;
-    throw Object.assign(new Error(timedOut
+    const failure = Object.assign(new Error(timedOut
       ? "O servidor demorou para responder. Atualize para conferir o resultado antes de repetir a operação."
       : "Não foi possível conectar ao servidor. Verifique sua conexão e tente atualizar."), { code: timedOut ? "TIMEOUT" : "NETWORK_ERROR" });
+    readResult(failure.message);
+    throw failure;
   } finally {
     clearTimeout(timer);
     signal?.removeEventListener("abort", cancel);
