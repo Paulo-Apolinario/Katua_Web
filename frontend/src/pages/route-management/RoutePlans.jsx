@@ -35,7 +35,7 @@ const makeDraft = (base) => ({
   active: true,
   startsOn: today(),
   endsOn: "",
-  weekdays: [1, 3, 5],
+  weekdays: [1, 2, 3, 4, 5],
   intervalWeeks: 1,
   departureTime: "08:00",
   estimatedMinutes: 240,
@@ -200,6 +200,7 @@ export default function RoutePlans() {
               <div className="route-planning-main">
                 <section className="card p-4">
                   <h2>1. Identificação e frequência</h2>
+                  <div className="d-flex flex-wrap gap-2 mb-3" aria-label="Dias de atendimento"><button type="button" className="btn btn-outline-success" onClick={()=>{patch('weekdays',[0,1,2,3,4,5,6]);patch('intervalWeeks',1);}}>Diária: todos os dias</button><button type="button" className="btn btn-outline-success" onClick={()=>{patch('weekdays',[1,2,3,4,5]);patch('intervalWeeks',1);}}>Segunda a sexta</button></div><p className="small">Cadastre as casas e pontos atendidos no bairro. Cada data terá sua própria execução e o resultado de um dia não remove pontos da programação futura.</p>
                   <div className="route-fields">
                     <label>
                       Nome da rota fixa

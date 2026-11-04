@@ -668,7 +668,7 @@ export default function RoutePlanner({ id }) {
                                 : c.routePoint?.kind === "ADDRESS"
                                   ? "Ponto avulso"
                                   : "Gerador"}{" "}
-                              · {status(c.status)} · {c.id.slice(-8)}
+                              · {c.attendanceOutcome==='NOT_COLLECTED'?'Sem coleta no dia':status(c.status)} · {c.id.slice(-8)}
                             </span>
                             <span className="small d-block">{address(c)}</span>
                             <span className="small d-block">
@@ -940,7 +940,7 @@ export default function RoutePlanner({ id }) {
                               </span>
                               <span className="small d-block">
                                 {quantitiesLabel(quantities(c))} ·{" "}
-                                {status(c.status)} · Catador:{" "}
+                                {c.attendanceOutcome==='NOT_COLLECTED'?'Sem coleta no dia':status(c.status)} · Catador:{" "}
                                 {c.collector?.name || "Não definido"}
                               </span>
                               <span className="small d-block">

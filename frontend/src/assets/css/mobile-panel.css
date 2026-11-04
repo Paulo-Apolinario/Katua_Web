@@ -1,0 +1,39 @@
+/* Scoped authentication layout: the hidden desktop illustration must not retain a grid track. */
+.katua-login { display:grid; grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr); min-height:100vh; min-height:100svh; background:#fff; }
+.katua-login-main { min-width:0; display:flex; align-items:center; justify-content:center; padding:32px; }
+.katua-login-form { width:100%; max-width:390px; }
+.katua-login-methods { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.katua-login-methods button { min-height:44px; margin:0; white-space:nowrap; }
+.katua-login :is(input,button,a) { -webkit-tap-highlight-color:transparent; }
+.katua-login input { min-width:0; width:100%; font-size:16px; }
+.katua-login button:focus-visible,.katua-login a:focus-visible { outline:3px solid #198754; outline-offset:3px; }
+@media(max-width:991.98px){
+ .katua-login { grid-template-columns:minmax(0,1fr); }
+ .katua-login-main { align-items:flex-start; padding:max(28px,env(safe-area-inset-top)) max(20px,env(safe-area-inset-right)) max(28px,env(safe-area-inset-bottom)) max(20px,env(safe-area-inset-left)); }
+ .katua-login-form { max-width:440px; margin-inline:auto; margin-block:0; }
+ .katua-login-visual { display:none!important; }
+ .katua-login input { min-height:48px; }
+ .katua-login-form h1 { font-size:clamp(25px,6vw,30px)!important; line-height:1.15; }
+ .katua-login-form form button[type=submit] { min-height:48px; }
+ .auth-container { min-height:100svh; height:auto; }
+ .auth-container .left-section { width:100%; min-width:0; padding:28px 20px; }
+ .auth-container .right-section { display:none; }
+ .katua-admin .page-content { margin-top:12px!important; min-height:calc(100svh - 80px); }
+ .katua-admin .custom-container { width:100%; max-width:100%; min-width:0; padding-inline:12px; }
+ .katua-admin .management-workspace { padding-inline:0!important; }
+ .katua-admin .page-content > .custom-container > :is(main,section) { min-width:0; }
+ .katua-admin .page-content .container-fluid { padding-inline:0; }
+ .katua-admin .page-content .p-4 { padding:16px!important; }
+ .katua-admin .page-content :is(h1,.h3) { font-size:clamp(21px,5.5vw,27px); }
+ .katua-admin .page-content :is(h2,.h5) { overflow-wrap:anywhere; }
+ .katua-admin .page-content :is(input,select,textarea) { font-size:16px; min-width:0; }
+ .katua-admin .page-content :is(input:not([type=checkbox]):not([type=radio]),select) { min-height:44px; }
+ .katua-admin .page-content :is(button.btn,a.btn) { min-height:40px; display:inline-flex; align-items:center; justify-content:center; }
+ .katua-admin .page-content :is(.card,.row,[class*=col-]) { min-width:0; }
+ .katua-admin .page-content .table-responsive { max-width:100%; -webkit-overflow-scrolling:touch; }
+ .katua-admin .page-content .management-header-actions { width:100%; }
+ .katua-admin .page-content .management-header-actions > * { flex:1 1 145px; }
+ .katua-admin .header { position:sticky; top:0; z-index:1000; }
+ .katua-admin .header .nav { min-height:64px; height:auto; padding-block:8px; }
+}
+@media(max-width:360px){.katua-login-main{padding-inline:16px}.katua-login-methods{gap:8px}.katua-admin .custom-container{padding-inline:10px}}

@@ -12,7 +12,7 @@ const AuthenticationLayout = ({ children }) => {
                 <div className="right-section">
                     <img src={dashboard_img} alt="Dashboard" />
                     <div className="marketing-content">
-                        <h1 className="main-heading">The smartest way to manage waste operations</h1>
+                        <h1 className="main-heading">Gestão de coletas e materiais para sua cooperativa</h1>
                     </div>
                 </div>
             </div>

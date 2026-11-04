@@ -84,20 +84,11 @@ const Login = () => {
     <>
       <HeadTags title="Login" />
 
-      <div
-        style={{
-          height: "100vh",
-          display: "grid",
-          gridTemplateColumns: "0.9fr 1.1fr",
-          overflow: "hidden",
-          background: "#ffffff",
-        }}
-      >
+      <div className="katua-login">
         <div
-          className="d-flex align-items-center justify-content-center"
-          style={{ padding: "24px" }}
+          className="katua-login-main"
         >
-          <div style={{ width: "100%", maxWidth: 390 }}>
+          <div className="katua-login-form">
             <div className="mb-3">
               <div
                 className="d-flex align-items-center justify-content-center mb-3"
@@ -136,7 +127,7 @@ const Login = () => {
               </p>
             </div>
 
-            {!linkToken && <div className="d-flex gap-3 mb-3" role="group" aria-label="Forma de acesso">
+            {!linkToken && <div className="katua-login-methods mb-3" role="group" aria-label="Forma de acesso">
               <button type="button" className={`btn btn-sm ${!quickAccess ? "btn-success" : "btn-outline-success"}`} disabled={submitting} onClick={() => setQuickAccess(false)}>Senha</button>
               <button type="button" className={`btn btn-sm ${quickAccess ? "btn-success" : "btn-outline-success"}`} disabled={submitting} onClick={() => setQuickAccess(true)}>Acesso rápido</button>
             </div>}
@@ -166,7 +157,7 @@ const Login = () => {
 
                   <input
                     type="email"
-                    id="email"
+                    id="email" autoComplete="username" inputMode="email" autoCapitalize="none"
                     className={`form-control ${
                       errors.email ? "border-danger" : ""
                     }`}
@@ -213,7 +204,7 @@ const Login = () => {
 
                   <input
                     type={visible ? "text" : "password"}
-                    id="password"
+                    id="password" autoComplete="current-password"
                     className={`form-control ${
                       errors.password ? "border-danger" : ""
                     }`}
@@ -232,6 +223,7 @@ const Login = () => {
 
                   <button
                     type="button"
+                    aria-label={visible?"Ocultar senha":"Mostrar senha"}
                     onClick={() => setVisible((prev) => !prev)}
                     disabled={submitting}
                     style={{
@@ -263,11 +255,11 @@ const Login = () => {
                   height: 46,
                   border: "none",
                   borderRadius: 10,
-                  background: submitting ? "#65a30d" : "#138a00",
+                  background: submitting ? "#6ba88f" : "#087b55",
                   color: "#ffffff",
                   fontWeight: 800,
                   fontSize: 15,
-                  boxShadow: "0 10px 20px rgba(19, 138, 0, 0.16)",
+                  boxShadow: "0 10px 20px rgba(8, 123, 85, 0.16)",
                 }}
               >
                 {submitting ? "Aguarde..." : linkToken ? "Confirmar acesso" : quickAccess ? "Enviar link" : "Entrar"}
@@ -291,7 +283,7 @@ const Login = () => {
         </div>
 
         <div
-          className="d-none d-lg-flex align-items-center justify-content-center"
+          className="katua-login-visual d-none d-lg-flex align-items-center justify-content-center"
           style={{
             height: "100vh",
             background:

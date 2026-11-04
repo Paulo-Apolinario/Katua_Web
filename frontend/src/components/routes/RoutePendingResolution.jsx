@@ -34,11 +34,11 @@ export default function RoutePendingResolution({ route, dirty, onReload, onBusy 
   return <section className="card p-4 mb-4" aria-label="Pendências da execução">
     <h2>Pendências e encerramento da execução</h2>
     {routeOverdue(route) && <p role="status" className="alert alert-warning">Programação vencida. A execução permanece aguardando decisão da cooperativa.</p>}
-    <p><strong>{routeOutcomeLabel(route)}</strong> · {performed.length} coletado(s) · {remaining.length} pendente(s) · {points.filter(c => c.status === "CANCELLED").length} cancelado(s)/não atendido(s).</p>
+    <p><strong>{routeOutcomeLabel(route)}</strong> · {performed.length} coletado(s) · {remaining.length} pendente(s) · {points.filter(c => c.attendanceOutcome === "NOT_COLLECTED").length} sem coleta no dia · {points.filter(c => c.status === "CANCELLED" && c.attendanceOutcome !== "NOT_COLLECTED").length} cancelado(s).</p>
     {reports.some(e => remaining.some(c => c.id === e.collectionId)) && <div className="alert alert-warning">A equipe registrou pontos não atendidos. Os relatos não cancelam coletas automaticamente.</div>}
     {remaining.length > 0 && <ul>{remaining.map(c => { const report = [...reports].reverse().find(e => e.collectionId === c.id);return <li key={c.id}><strong>{title(c)}</strong> — {report ? report.reason : "Sem relato de impedimento"}{report && <small className="d-block">{report.actorName} · {dateLabel(report.at)}</small>}</li>; })}</ul>}
     {!closed && remaining.length > 0 && <form onSubmit={submit}>
-      <p className="small text-muted">A decisão afeta somente esta execução e os pontos ainda não coletados. Coletas realizadas, materiais, comprovantes e produção permanecem preservados. A programação recorrente continua ativa.</p>
+      <p className="small text-muted">A decisão afeta somente esta execução e os pontos ainda não coletados. Coletas realizadas, materiais, comprovantes e produção permanecem preservados. Os pontos não atendidos ficam registrados como sem coleta neste dia. A programação recorrente e os pontos dos próximos dias continuam ativos.</p>
       <p className="small text-muted">Antes de confirmar, peça à equipe para sincronizar as coletas salvas offline.</p>
       {dirty && <p role="status" className="alert alert-info">Salve ou descarte as alterações do planejamento antes de tratar as pendências.</p>}
       <label className="form-label" htmlFor="route-pending-action">Decisão da cooperativa</label>
@@ -46,7 +46,7 @@ export default function RoutePendingResolution({ route, dirty, onReload, onBusy 
         <option value="">Selecione uma decisão</option>
         {!route.startedAt && route.status === "SCHEDULED" && !performed.length && !points.some(c => c.startedAt) && <option value="RESCHEDULE">Reagendar esta execução</option>}
         <option value="RESCHEDULE_REMAINING">Reagendar somente os pontos pendentes em nova execução</option>
-        {performed.length > 0 ? <option value="CLOSE_PARTIAL">Encerrar com pendências e cancelar os pontos não atendidos</option> : <option value="CANCEL_REMAINING">Cancelar esta execução e os pontos não atendidos</option>}
+        {performed.length > 0 ? <option value="CLOSE_PARTIAL">Encerrar o dia: preservar coletas e marcar os demais como sem coleta</option> : <option value="CANCEL_REMAINING">Cancelar esta execução e os pontos não atendidos</option>}
       </select>
       {reprogram && <div className="row g-2 mb-3"><label className="col-sm-6">Nova data<input aria-label="Nova data da execução" type="date" className="form-control" value={date} onChange={e => setDate(e.target.value)} required disabled={busy} /></label><label className="col-sm-6">Horário no Ceará<input aria-label="Novo horário da execução" type="time" className="form-control" value={time} onChange={e => setTime(e.target.value)} required disabled={busy} /></label></div>}
       <label htmlFor="route-pending-reason" className="form-label">Justificativa da decisão</label>

@@ -8,7 +8,7 @@ import { ManagementWorkspace } from "../components/management/ManagementWorkspac
 const AdminLayout = () => {
   const [active, setActive] = useState(true);
   return (
-    <>
+    <div className="katua-admin">
       <HeadTags />
       <Sidebar active={active} setActive={setActive} />
       <Header active={active} setActive={setActive} />
@@ -19,7 +19,7 @@ const AdminLayout = () => {
           </ManagementWorkspace>
         </div>
       </main>
-    </>
+    </div>
   );
 };
 

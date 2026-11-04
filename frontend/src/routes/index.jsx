@@ -1,3 +1,4 @@
+import IntakeDeliverers from "../pages/waste-management/IntakeDeliverers";
 import DriverTracking from "../pages/staff-management/DriverTracking";
 import MaterialIntakes from "../pages/waste-management/MaterialIntakes";
 import ServiceOrders from "../pages/waste-management/ServiceOrders";
@@ -250,6 +251,7 @@ const Router = () => {
 
             {/* Staff Management */}
             <Route path="driver-tracking" element={<DriverTracking />} />
+            <Route path="intake-deliverers" element={<IntakeDeliverers/>}/>
             <Route path="material-intakes" element={<MaterialIntakes />} />
             <Route path="staff-list" element={<StaffList />} />
 

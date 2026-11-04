@@ -37,6 +37,7 @@ const Header = ({ active, setActive }) => {
         <li className="nav-item">
           <button
             className="nav-link sidebar-btn"
+            aria-label="Abrir ou recolher menu lateral" aria-controls="katua-sidebar"
             onClick={() => setActive(!active)}
           >
             <PanelRight />

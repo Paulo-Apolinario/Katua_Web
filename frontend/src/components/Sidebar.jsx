@@ -46,10 +46,12 @@ const Sidebar = ({ active, setActive }) => {
     };
   }, [admin?.id, admin?.role]);
 
+  useEffect(()=>{if(window.innerWidth<1366)setActive(true);},[location.pathname]);
+  useEffect(()=>{if(active||window.innerWidth>=1366)return;const previous=document.body.style.overflow;document.body.style.overflow='hidden';const escape=e=>{if(e.key==='Escape')setActive(true);};window.addEventListener('keydown',escape);return()=>{document.body.style.overflow=previous;window.removeEventListener('keydown',escape);};},[active,setActive]);
   const isWasteSectionActive =
     location.pathname.startsWith("/service-orders") ||
     location.pathname.startsWith("/extra-collection-orders") ||
-    location.pathname.startsWith("/material-intakes") || location.pathname.startsWith("/waste-list") ||
+    location.pathname.startsWith("/intake-deliverers") || location.pathname.startsWith("/material-intakes") || location.pathname.startsWith("/waste-list") ||
     location.pathname.startsWith("/create-waste") ||
     location.pathname.startsWith("/edit-waste") ||
     location.pathname.startsWith("/collection-requests");
@@ -150,7 +152,7 @@ const Sidebar = ({ active, setActive }) => {
         onClick={closeSidebarOnMobile}
       />
 
-      <div className={`sidebar tablet-sidebar py-3 ${active ? "" : "close"}`}>
+      <div id="katua-sidebar" className={`sidebar tablet-sidebar py-3 ${active ? "" : "close"}`}>
         <div className="logo-wrap">
           <div className="logo-a">
             <img
@@ -234,6 +236,7 @@ const Sidebar = ({ active, setActive }) => {
               }`}
               id="waste"
             >
+              <li><NavLink to="/intake-deliverers" className={({isActive})=>isActive?"active":""}><span className="dot-wrap"><span className="dot"/></span><span className="submenu-text">Entregadores avulsos</span></NavLink></li>
               <li><NavLink to="/material-intakes" className={({isActive})=>isActive?"active":""}><span className="dot-wrap"><span className="dot" /></span><span className="submenu-text">Entradas e coletas avulsas</span></NavLink></li>
               <li><NavLink to="/service-orders" className={({ isActive }) => isActive ? "active" : ""}><span className="dot-wrap"><span className="dot" /></span><span className="submenu-text">Ordens de Serviço</span></NavLink></li>
               <li>

@@ -1,5 +1,6 @@
 import { CollectionBadge } from "./WorkspaceParts";
 export default function FieldOperationBadge({ collection }) {
+  if(collection?.attendanceOutcome === "NOT_COLLECTED") return <span className="badge text-bg-secondary">Sem coleta no dia</span>;
   if (
     collection?.status === "PENDING" &&
     collection.route?.status === "IN_PROGRESS"
