@@ -168,7 +168,7 @@ const open = async () => {
 };
 try {
   browser = await chromium.launch({
-    executablePath: "/tmp/katua-pev-browser",
+    executablePath: process.env.KATUA_CHROMIUM_BIN || "/tmp/katua-pev-browser",
     headless: true,
     args: ["--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu"],
   });
@@ -473,6 +473,10 @@ try {
     });
     await card.getByLabel("Avisar no sino sobre novas recomendações").uncheck();
     await card.getByLabel("Executar análises automaticamente").uncheck();
+    if (process.env.AGENTS_EVENTS_UI === "1")
+      await card
+        .getByLabel("Intervalo mínimo entre análises por evento (minutos)")
+        .fill("2");
     await card
       .getByRole("button", { name: "Salvar configurações", exact: true })
       .click();
@@ -483,6 +487,8 @@ try {
     assert.equal(cfg.notificationsEnabled, false);
     assert.equal(cfg.automationsEnabled, false);
     assert.equal(cfg.enabled, true);
+    if (process.env.AGENTS_EVENTS_UI === "1")
+      assert.equal(cfg.eventIntervalMinutes, 2);
   });
   await test("Central executa análise manual real com resultado no histórico", async () => {
     const card = page.locator(".agents-config").filter({
@@ -590,6 +596,60 @@ try {
     await page.locator(".agents-activity").first().waitFor();
     assert.equal(await page.locator('main [role="alert"]').count(), 0);
   });
+  if (process.env.AGENTS_EVENTS_UI === "1") {
+    await test("Eventos operacionais exibem fila persistente e tentativas reais", async () => {
+      await page
+        .locator("main")
+        .getByRole("button", { name: "Eventos operacionais", exact: true })
+        .click();
+      await page.locator(".agents-activity").first().waitFor();
+      const events = await api("/agents/events?limit=1");
+      assert.equal(events.status, 200);
+      assert.equal(events.data.data.length, 1);
+      assert((await page.locator("main").innerText()).includes("Tentativas:"));
+    });
+    await test("Aviso aberto após mudança da rota informa contexto histórico sem executar", async () => {
+      await page.locator('.header a[href="/notifications"]').click();
+      await page
+        .getByRole("heading", { name: "Central de avisos", exact: true })
+        .waitFor();
+      const notices = (await api("/notifications")).data.notifications;
+      let notice, before, index;
+      for (const [i, n] of notices.entries()) {
+        if (n.data?.routeId !== fixture.routeId) continue;
+        const candidate = (await api("/agents/proposals/" + n.data.proposalId))
+          .data.proposal;
+        if (candidate.freshness && !candidate.freshness.current) {
+          notice = n;
+          before = candidate;
+          index = i;
+          break;
+        }
+      }
+      assert(
+        notice,
+        "É necessário selecionar o aviso antigo, não a recomendação atualizada pela consulta anterior.",
+      );
+      await page
+        .locator(".list-group-item")
+        .nth(index)
+        .getByRole("button", { name: "Analisar com assistente", exact: true })
+        .click();
+      await chat()
+        .locator(".agents-context .agents-warning")
+        .filter({ hasText: "Dados alterados desde a análise." })
+        .waitFor();
+      assert.equal(before.freshness.current, false);
+      await page.screenshot({
+        path: path.join(out, "historical-context.png"),
+        fullPage: false,
+      });
+      const after = (await api("/agents/proposals/" + notice.data.proposalId))
+        .data.proposal;
+      assert.equal(after.status, before.status);
+      await chat().getByRole("button", { name: "Minimizar conversa" }).click();
+    });
+  }
   await test("Outra cooperativa não acessa conversa, proposta ou contexto alheio", async () => {
     const other = await makeContext(fixture.otherToken, fixture.otherUser);
     const p = await other.newPage();
@@ -699,6 +759,12 @@ try {
   await test("Nenhum erro JavaScript nos fluxos da interface principal", () =>
     assert.deepEqual(errors, []));
 } catch (e) {
+  if (!results.some((r) => r.status === "FAIL"))
+    results.push({
+      name: "Infraestrutura ou execução da validação",
+      status: "FAIL",
+      error: String(e),
+    });
   console.error(e);
 } finally {
   fs.writeFileSync(

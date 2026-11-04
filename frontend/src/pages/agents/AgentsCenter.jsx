@@ -27,6 +27,9 @@ function AgentConfigCard({ config, lastRun, signal, onUpdated }) {
     [automatic, setAutomatic] = useState(config.automationsEnabled),
     [notifications, setNotifications] = useState(config.notificationsEnabled),
     [interval, setInterval] = useState(config.intervalMinutes),
+    [eventInterval, setEventInterval] = useState(
+      config.eventIntervalMinutes ?? 5,
+    ),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [uncertain, setUncertain] = useState(false),
@@ -44,6 +47,7 @@ function AgentConfigCard({ config, lastRun, signal, onUpdated }) {
               automationsEnabled: automatic,
               notificationsEnabled: notifications,
               intervalMinutes: Number(interval),
+              eventIntervalMinutes: Number(eventInterval),
               expectedVersion: config.version,
               eventId: agentEventId(),
             }
@@ -132,6 +136,19 @@ function AgentConfigCard({ config, lastRun, signal, onUpdated }) {
           />{" "}
           Avisar no sino sobre novas recomendações
         </label>
+        <label htmlFor={`events-${config.key}`}>
+          Intervalo mínimo entre análises por evento (minutos)
+        </label>
+        <input
+          id={`events-${config.key}`}
+          type="number"
+          min={1}
+          max={60}
+          required
+          value={eventInterval}
+          disabled={busy || uncertain}
+          onChange={(e) => setEventInterval(e.target.value)}
+        />
         <label htmlFor={`interval-${config.key}`}>
           Intervalo automático (minutos)
         </label>
@@ -383,11 +400,13 @@ function AgentRecords({ type, revision, onUpdated }) {
             </strong>
             <p>
               {agentDate(row.startedAt)} ·{" "}
-              {row.origin === "SCHEDULED"
-                ? "Automática"
-                : row.origin === "COMMAND"
-                  ? "Comando no assistente"
-                  : "Solicitada pela gestão"}
+              {row.origin === "EVENT"
+                ? "Por evento operacional"
+                : row.origin === "SCHEDULED"
+                  ? "Automática"
+                  : row.origin === "COMMAND"
+                    ? "Comando no assistente"
+                    : "Solicitada pela gestão"}
             </p>
             {row.result?.summary && <p>{row.result.summary}</p>}
             <button
@@ -397,6 +416,65 @@ function AgentRecords({ type, revision, onUpdated }) {
             >
               Ver análise
             </button>
+          </article>
+        ) : type === "events" ? (
+          <article className="agents-activity" key={row.id}>
+            <strong>
+              {agentName(row.agent)} ·{" "}
+              {
+                {
+                  PENDING: "Aguardando análise",
+                  PROCESSING: "Em análise",
+                  DONE: "Processado",
+                  DEAD: "Precisa de revisão",
+                  SKIPPED: "Não processado",
+                }[row.status]
+              }
+            </strong>
+            <p>
+              {{
+                Schedule: "Solicitação/agendamento",
+                Collection: "Coleta",
+                Route: "Rota",
+                SystemAlert: "Ocorrência",
+                Vehicle: "Veículo",
+                Driver: "Motorista",
+                Collector: "Catador",
+                ExtraCollectionOrder: "Ordem extra",
+                PevRequest: "Relato de PEV",
+              }[row.event?.source] || "Registro operacional"}{" "}
+              · {agentDate(row.event?.occurredAt)}
+            </p>
+            <small>
+              Referência: {row.event?.entityId} · Tentativas: {row.attempts}
+            </small>
+            {row.errorCode && (
+              <p>
+                Última situação:{" "}
+                {{
+                  AGENT_DISABLED: "Agente ou automação desativados",
+                  EVENT_EXPIRED: "Prazo do evento ultrapassado",
+                  LEASE_EXPIRED: "Execução interrompida",
+                  TIME_BUDGET_EXCEEDED: "Tempo de análise ultrapassado",
+                  ANALYSIS_FAILED: "Falha temporária na análise",
+                  RATE_LIMIT: "Aguardando a janela do limite de análises",
+                  RUN_BUSY: "Aguardando análise em andamento",
+                  SERVER_BUSY: "Aguardando disponibilidade do servidor",
+                  EVENT_COOLDOWN: "Aguardando o intervalo configurado",
+                }[row.errorCode] ||
+                  "Não foi possível concluir; confira o histórico"}
+                .
+              </p>
+            )}
+            {row.runId && (
+              <button
+                type="button"
+                disabled={detailBusy}
+                onClick={() => showRun(row.runId)}
+              >
+                Ver análise
+              </button>
+            )}
           </article>
         ) : (
           <article className="agents-activity" key={row.id}>
@@ -456,6 +534,7 @@ function Center() {
     ["occurrences", "Ocorrências"],
     ["proposals", "Recomendações"],
     ["runs", "Análises"],
+    ["events", "Eventos operacionais"],
     ["audit", "Histórico de atividades"],
   ];
   return (

@@ -59,6 +59,24 @@ export default function AnalysisResult({ data, onProposal }) {
           </ul>
         </details>
       )}
+      {data.eventSources?.length > 0 && (
+        <details>
+          <summary>
+            Eventos que motivaram esta análise ({data.eventSources.length})
+          </summary>
+          <ul>
+            {data.eventSources.map((e) => (
+              <li key={e.id}>
+                Referência {e.entityId} · evento {e.id}
+              </li>
+            ))}
+          </ul>
+          <p>
+            Eventos próximos foram analisados juntos. O resultado usa a situação
+            atual dos registros.
+          </p>
+        </details>
+      )}
       {data.proposalIds?.length > 0 && (
         <div className="agents-actions">
           {data.proposalIds.map((id, i) => (

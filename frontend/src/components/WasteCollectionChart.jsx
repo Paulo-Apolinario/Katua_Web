@@ -6,8 +6,8 @@ const WasteCollectionChart = ({ isSidebarOpen }) => {
   const containerRef = useRef(null);
   const [series, setSeries] = useState([{ name: 'Waste Collected', data: [] }]);
   const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [, setLoading] = useState(true);
+  const [, setError] = useState(null);
   const token = localStorage.getItem('auth_token');
 
   // Fetch waste collection trends data on component mount

@@ -126,6 +126,14 @@ export default function AgentChat() {
                 <strong>{agentName(a.context.agent)}</strong>
                 <h3>{a.context.title}</h3>
                 <p>{a.context.description}</p>
+                {a.context.proposal?.freshness &&
+                  !a.context.proposal.freshness.current && (
+                    <p className="agents-warning" role="status">
+                      Dados alterados desde a análise.{" "}
+                      {a.context.proposal.freshness.reason} Esta recomendação é
+                      histórica; consulte a situação atual antes de decidir.
+                    </p>
+                  )}
                 <small>Referência: {a.context.id}</small>
                 <p>
                   Este contexto foi consultado no servidor. Abrir aqui não
@@ -145,7 +153,7 @@ export default function AgentChat() {
                   )}
                 {a.context.run?.result && (
                   <details>
-                    <summary>Ver análise de origem</summary>
+                    <summary>Ver análise de origem (histórica)</summary>
                     <AnalysisResult
                       data={a.context.run.result}
                       onProposal={(id) => a.openContext({ proposalId: id })}

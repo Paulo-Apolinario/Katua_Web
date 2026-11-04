@@ -31,6 +31,7 @@ export const agentsService = {
     request(`/proposals/${key(id)}/decision`, { method: "POST", body, signal }),
   occurrences: (q, signal) => request(`/occurrences${query(q)}`, { signal }),
   occurrence: (id, signal) => request(`/occurrences/${key(id)}`, { signal }),
+  events: (q, signal) => request(`/events${query(q)}`, { signal }),
   audit: (q, signal) => request(`/audit${query(q)}`, { signal }),
 };
 export const agentEventId = () => `web_${crypto.randomUUID()}`;

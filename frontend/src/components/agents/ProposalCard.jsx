@@ -55,6 +55,12 @@ export default function ProposalCard({ proposal, onUpdated, signal }) {
         <h3>{proposal.title}</h3>
         <span className="agents-badge">{statusName(proposal.status)}</span>
       </div>
+      {proposal.freshness && !proposal.freshness.current && (
+        <p role="status" className="agents-warning">
+          Dados alterados desde a análise. {proposal.freshness.reason} Execute
+          uma nova análise antes de aprovar.
+        </p>
+      )}
       <p>
         <strong>Sugestão:</strong> {proposal.description}
       </p>
@@ -75,6 +81,15 @@ export default function ProposalCard({ proposal, onUpdated, signal }) {
         {e.area && <p>Área e dia de referência: {e.area}</p>}
         {e.routeId && <p>Rota: {e.routeId}</p>}
         {e.alertId && <p>Ocorrência: {e.alertId}</p>}
+        {Array.isArray(e.alerts) && (
+          <ul>
+            {e.alerts.map((r) => (
+              <li key={r.id}>
+                Ocorrência {r.id} · ciclo {r.cycle}
+              </li>
+            ))}
+          </ul>
+        )}
         {e.revisionAt && <p>Dados da rota em: {agentDate(e.revisionAt)}</p>}
         {records.length > 0 && (
           <ul>
@@ -112,7 +127,11 @@ export default function ProposalCard({ proposal, onUpdated, signal }) {
         </button>
         {proposal.status === "PENDING" && !decision && (
           <>
-            <button type="button" onClick={() => setDecision("APPROVED")}>
+            <button
+              type="button"
+              disabled={!proposal.freshness?.current}
+              onClick={() => setDecision("APPROVED")}
+            >
               Registrar aprovação
             </button>
             <button type="button" onClick={() => setDecision("REJECTED")}>

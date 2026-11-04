@@ -6,8 +6,8 @@ const BarChart = ({ timeRange }) => {
     const [series, setSeries] = useState([{ name: 'Waste Collected', data: [] }]);
     const [categories, setCategories] = useState([]);
     const [zoneData, setZoneData] = useState([]);
-    const [error, setError] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const [, setError] = useState(null);
+    const [, setLoading] = useState(true);
     const token = localStorage.getItem("auth_token");
 
     useEffect(() => {
@@ -101,7 +101,7 @@ const BarChart = ({ timeRange }) => {
             tooltip: {
                 intersect: false,
                 shared: false,
-                custom: function({ series, seriesIndex, dataPointIndex, w }) {
+                custom: function({ series, seriesIndex, dataPointIndex }) {
                     const value = series[seriesIndex][dataPointIndex];
                     const month = categories[dataPointIndex];
                     const zones = zoneData[dataPointIndex] || [{ zone_name: `Zone ${dataPointIndex + 1}`, quantity: value }];
