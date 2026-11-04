@@ -18,7 +18,7 @@
   position: fixed;
   right: 16px;
   bottom: 76px;
-  width: 390px;
+  width: 440px;
   max-width: calc(100vw - 24px);
   height: min(760px, calc(100dvh - 100px));
   z-index: 1035;
@@ -354,4 +354,111 @@
   .agents-chat * {
     scroll-behavior: auto !important;
   }
+}
+
+.agents-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e1eae5;
+}
+.agents-toolbar a {
+  font-size: 12px;
+}
+.agents-chat .agents-history {
+  margin: 0 0 12px;
+  border-bottom: 1px solid #e1eae5;
+  padding-bottom: 8px;
+}
+.agents-command-menu {
+  margin-bottom: 12px;
+  padding: 0 10px;
+  border: 1px solid #d5e3db;
+  border-radius: 10px;
+  background: #f8fbf9;
+}
+.agents-command-menu > summary {
+  font-size: 13px;
+}
+.agents-chat .agents-quick-group h3 {
+  font-size: 13px;
+  color: #526b62;
+}
+.agents-chat .agents-quick button {
+  line-height: 1.4;
+}
+.agents-message-user {
+  border-color: #cce3d7 !important;
+}
+.agents-answer-header {
+  display: grid;
+  gap: 5px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e0e9e3;
+}
+.agents-answer-header > strong {
+  color: #526b62;
+  font-size: 12px;
+}
+.agents-answer-header h3 {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.4;
+}
+.agents-answer-header small {
+  color: #60756b;
+  font-size: 11px;
+}
+.agents-chat .agents-counts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.agents-chat .agents-counts > div {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid #dce7e0;
+  border-radius: 9px;
+  background: #fff;
+}
+.agents-chat .agents-counts dt {
+  font-size: 12px;
+  line-height: 1.4;
+}
+.agents-chat .agents-counts dd {
+  font-size: 20px;
+  line-height: 1.1;
+}
+.agents-priority {
+  display: inline-block;
+  margin: 6px 0 6px 8px;
+  padding: 3px 7px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+.agents-priority-high {
+  color: #8b3321;
+  background: #ffede7;
+}
+.agents-priority-medium {
+  color: #755500;
+  background: #fff3d0;
+}
+.agents-input-help {
+  display: block;
+  margin-top: 8px;
+  color: #526b62;
+  font-size: 11px !important;
+  line-height: 1.5;
+}
+
+.agents-toolbar {
+  flex-shrink: 0;
+  padding: 10px 12px;
+  background: #fff;
 }

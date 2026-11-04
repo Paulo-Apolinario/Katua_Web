@@ -182,6 +182,9 @@ const open = async () => {
     await page
       .getByRole("button", { name: "Abrir assistente KATUÁ", exact: true })
       .click();
+  const menu = chat().locator(".agents-command-menu");
+  if (!(await menu.evaluate((e) => e.open)))
+    await menu.locator(":scope > summary").click();
   await page
     .getByRole("button", {
       name: "Quais coletas estão pendentes?",
@@ -224,6 +227,14 @@ try {
         .evaluate((e) => e === document.activeElement),
       true,
     );
+    await page.locator("#katua-agent-input").fill("linha 1");
+    await page.locator("#katua-agent-input").press("Shift+Enter");
+    await page.keyboard.type("linha 2");
+    assert.equal(
+      await page.locator("#katua-agent-input").inputValue(),
+      "linha 1\nlinha 2",
+    );
+    await page.locator("#katua-agent-input").fill("");
     await page.keyboard.press("Escape");
     assert.equal(await chat().count(), 0);
     assert.equal(
@@ -338,6 +349,7 @@ try {
   });
   let conversation;
   await test("Comando rápido identifica o agente e persiste duas mensagens reais", async () => {
+    await open();
     delayCommand = true;
     await chat()
       .getByRole("button", {
@@ -368,6 +380,7 @@ try {
     await page.reload();
     await page.locator("main.page-content").waitFor();
     await open();
+    await chat().locator(".agents-history > summary").click();
     await page.locator("#agents-conversation").selectOption(conversation);
     await chat()
       .locator(".agents-messages")
@@ -377,6 +390,7 @@ try {
     assert.equal(await page.locator(".agents-messages>li").count(), 2);
   });
   await test("Comando de rotas é atendido pelo Agente de Rotas", async () => {
+    await open();
     await chat()
       .getByRole("button", {
         name: "Quais rotas precisam de atenção?",
@@ -419,6 +433,7 @@ try {
     );
   });
   await test("Nova análise de mesma evidência não duplica notificações", async () => {
+    await open();
     const before = (await api("/notifications")).data.notifications.filter(
       (n) => n.data?.proposalId,
     ).length;
@@ -441,6 +456,7 @@ try {
     assert.equal(after, before);
   });
   await test("Perda de resposta recupera o mesmo evento sem duplicar execução", async () => {
+    await open();
     const before = new Set(
       (await api("/agents/runs?limit=50")).data.data.map((r) => r.id),
     );
@@ -825,14 +841,13 @@ try {
       .click();
     await page
       .locator("#katua-agent-input")
-      .fill("por favor me mostre as coletas de hoje");
+      .fill("VC PODERIA MOSTRAR AS COLETAS DE HJ");
+    await page.locator("#katua-agent-input").press("Enter");
     await chat()
-      .getByRole("button", { name: "Enviar comando", exact: true })
-      .click();
-    await chat()
-      .locator(".agents-messages")
+      .locator(".agents-messages .agents-counts")
       .getByText("Coletas programadas para hoje", { exact: true })
       .waitFor();
+    await chat().getByRole("button", { name: "Comandos", exact: true }).click();
     assert(
       await chat()
         .getByRole("button", {
@@ -863,7 +878,7 @@ try {
       })
       .click();
     await chat()
-      .locator(".agents-messages")
+      .locator(".agents-messages .agents-counts")
       .getByText("Rotas sem motorista ou veículo", { exact: true })
       .waitFor();
   });

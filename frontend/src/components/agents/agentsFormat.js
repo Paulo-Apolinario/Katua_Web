@@ -55,6 +55,13 @@ export const countLabels = {
   pendingEventDeliveries: "Entregas de eventos pendentes",
   processingEventDeliveries: "Entregas em processamento",
   deadEventDeliveries: "Entregas que precisam de revisão",
+  overdueRequests: "Solicitações atrasadas",
+  overdueExtraOrders: "Ordens extras atrasadas",
+  overduePevReports: "Relatos de PEV atrasados",
+  priorityRecordsInSample: "Registros para revisão no recorte",
+  highPriorityInSample: "Atenção alta no recorte",
+  mediumPriorityInSample: "Atenção média no recorte",
+  groupingSuggestions: "Possibilidades de agrupamento",
   activeRequests: "Solicitações ativas",
   extraOrdersAwaitingReview: "Ordens extras aguardando análise",
   pevReportsAwaitingCollection: "Relatos de PEV aguardando coleta",
@@ -87,3 +94,18 @@ export const mergeRows = (old, rows) => [
   ...new Map([...old, ...rows].map((r) => [r.id, r])).values(),
 ];
 export const aborted = (e) => e?.name === "AbortError";
+
+export const commandTitle = (key) =>
+  ({
+    PENDING_COLLECTIONS: "Pendências de coleta",
+    OVERDUE_REQUESTS: "Solicitações atrasadas",
+    COLLECTION_PRIORITIES: "Prioridades de atendimento",
+    TODAY_COLLECTIONS: "Coletas programadas para hoje",
+    SCHEDULED_ROUTES: "Rotas programadas",
+    ROUTES_ATTENTION: "Rotas que precisam de atenção",
+    ROUTES_WITHOUT_RESOURCES: "Rotas sem motorista ou veículo",
+    OPERATIONAL_SUMMARY: "Resumo operacional",
+    ATTENTION_OCCURRENCES: "Ocorrências que precisam de atenção",
+    PENDING_PROPOSALS: "Recomendações aguardando revisão",
+    AUTOMATION_HEALTH: "Saúde das automações",
+  })[key] || "Resultado da consulta";

@@ -7,7 +7,21 @@ import AnalysisResult from "./AnalysisResult";
 import "./agents.css";
 export default function AgentChat() {
   const a = useAgents(),
-    input = useRef(null);
+    input = useRef(null),
+    scroll = useRef(null),
+    quickMenu = useRef(null);
+  const lastMessageId = a?.messages?.at(-1)?.id;
+  useEffect(() => {
+    if (
+      a?.isOpen &&
+      scroll.current &&
+      (lastMessageId || a?.error || a?.pendingRun)
+    )
+      scroll.current.scrollTop = scroll.current.scrollHeight;
+  }, [a?.isOpen, lastMessageId, a?.error, a?.pendingRun]);
+  useEffect(() => {
+    if (a?.context?.id && scroll.current) scroll.current.scrollTop = 0;
+  }, [a?.context?.id]);
   const commandGroups = (a?.catalog?.agents || [])
     .filter((agent) => agent.enabled)
     .map((agent) => ({
@@ -60,7 +74,7 @@ export default function AgentChat() {
               <h2 id="katua-agent-title">
                 <Bot aria-hidden="true" size={20} /> Assistente KATUÁ
               </h2>
-              <small>Comandos e análises da cooperativa</small>
+              <small>Consultas e apoio à gestão · Por regras</small>
             </div>
             <div className="agents-actions">
               <button
@@ -79,15 +93,41 @@ export default function AgentChat() {
               </button>
             </div>
           </header>
-          <div className="agents-chat-scroll">
-            <p className="agents-disclosure">
-              Assistente por regras. Use os comandos disponíveis; as análises
-              não executam alterações operacionais. Você pode escrever frases
-              simples, como “me mostre as coletas atrasadas”. Se houver dúvida,
-              pediremos que escolha uma consulta.
-            </p>
+          <div className="agents-toolbar">
+            <button
+              type="button"
+              disabled={locked}
+              onClick={() => a.selectConversation(null)}
+            >
+              Nova conversa
+            </button>
+            <button
+              type="button"
+              disabled={!hasCommands}
+              aria-controls="agents-command-menu"
+              onClick={() => {
+                if (quickMenu.current) {
+                  quickMenu.current.open = true;
+                  quickMenu.current.querySelector("summary")?.focus();
+                }
+                if (scroll.current) scroll.current.scrollTop = 0;
+              }}
+            >
+              Comandos
+            </button>
+            <button
+              type="button"
+              disabled={a.busy || a.loading}
+              onClick={a.refresh}
+              aria-label="Atualizar histórico"
+            >
+              Atualizar
+            </button>
             <Link to="/agents">Abrir Central de Agentes</Link>
-            <div className="agents-history">
+          </div>
+          <div className="agents-chat-scroll" ref={scroll}>
+            <details className="agents-history">
+              <summary>Conversas anteriores ({a.conversations.length})</summary>
               <label htmlFor="agents-conversation">
                 Histórico de conversas
               </label>
@@ -104,32 +144,23 @@ export default function AgentChat() {
                   </option>
                 ))}
               </select>
-              <div className="agents-actions">
+              {a.historyCursor && (
                 <button
                   type="button"
                   disabled={locked}
-                  onClick={() => a.selectConversation(null)}
+                  onClick={a.moreConversations}
                 >
-                  Nova conversa
+                  Mais conversas
                 </button>
-                {a.historyCursor && (
-                  <button
-                    type="button"
-                    disabled={locked}
-                    onClick={a.moreConversations}
-                  >
-                    Mais conversas
-                  </button>
-                )}
-                <button
-                  type="button"
-                  disabled={a.busy || a.loading}
-                  onClick={a.refresh}
-                >
-                  Atualizar histórico
-                </button>
-              </div>
-            </div>
+              )}
+            </details>
+            {!a.messages.length && (
+              <p className="agents-disclosure">
+                Escreva o que deseja consultar ou escolha um comando. Aceito
+                frases simples e peço esclarecimento quando houver mais de uma
+                opção.
+              </p>
+            )}
             {a.contextLoading && (
               <p role="status">Conferindo o acesso à referência…</p>
             )}
@@ -202,33 +233,47 @@ export default function AgentChat() {
                 </small>
               </section>
             )}
-            {a.error && (
-              <div role="alert" className="agents-error">
-                {a.error}
-                {a.uncertain && (
-                  <button
-                    type="button"
-                    disabled={a.busy}
-                    onClick={() => a.send(null, true)}
-                  >
-                    Consultar o envio anterior
-                  </button>
-                )}
-              </div>
-            )}
-            {a.pendingRun && (
-              <div role="status" className="agents-warning">
-                Análise em andamento.
-                <button type="button" disabled={a.busy} onClick={a.checkRun}>
-                  Reconsultar resultado
-                </button>
-              </div>
-            )}
             {a.messagesCursor && (
               <button type="button" disabled={locked} onClick={a.olderMessages}>
                 Carregar mensagens anteriores
               </button>
             )}
+            <details
+              className="agents-command-menu"
+              id="agents-command-menu"
+              ref={quickMenu}
+              open={!a.messages.length}
+            >
+              <summary>Comandos rápidos</summary>
+              <div className="agents-quick">
+                {commandGroups.map((agent) => (
+                  <section
+                    className="agents-quick-group"
+                    key={agent.key}
+                    aria-label={agent.label}
+                  >
+                    <h3>{agent.label}</h3>
+                    {agent.commands.map((c) => (
+                      <button
+                        type="button"
+                        key={c.key}
+                        disabled={locked}
+                        onClick={() => a.send(c.key)}
+                      >
+                        {c.example}
+                      </button>
+                    ))}
+                  </section>
+                ))}
+                {!hasCommands && a.catalog && !a.loading && (
+                  <p role="status">
+                    Nenhum agente está habilitado para consultas. Habilite um
+                    agente na Central de Agentes para ver os comandos
+                    disponíveis.
+                  </p>
+                )}
+              </div>
+            </details>
             <ol
               className="agents-messages"
               role="log"
@@ -287,7 +332,8 @@ export default function AgentChat() {
                   )}{" "}
                   {m.ephemeral && (
                     <small>
-                      Orientação desta sessão. Use um dos comandos abaixo.
+                      Orientação desta sessão. Escolha uma opção ou reformule o
+                      pedido.
                     </small>
                   )}
                 </li>
@@ -299,6 +345,28 @@ export default function AgentChat() {
                 conversa anterior.
               </p>
             )}
+            {a.error && (
+              <div role="alert" className="agents-error">
+                {a.error}
+                {a.uncertain && (
+                  <button
+                    type="button"
+                    disabled={a.busy}
+                    onClick={() => a.send(null, true)}
+                  >
+                    Consultar o envio anterior
+                  </button>
+                )}
+              </div>
+            )}
+            {a.pendingRun && (
+              <div role="status" className="agents-warning">
+                Análise em andamento.
+                <button type="button" disabled={a.busy} onClick={a.checkRun}>
+                  Reconsultar resultado
+                </button>
+              </div>
+            )}
             <p className="agents-status" role="status" aria-live="polite">
               {a.busy
                 ? "Consultando o agente…"
@@ -306,37 +374,6 @@ export default function AgentChat() {
                   ? "Carregando histórico e comandos…"
                   : ""}
             </p>
-            <details open>
-              <summary>Comandos rápidos</summary>
-              <div className="agents-quick">
-                {commandGroups.map((agent) => (
-                  <section
-                    className="agents-quick-group"
-                    key={agent.key}
-                    aria-label={agent.label}
-                  >
-                    <h3>{agent.label}</h3>
-                    {agent.commands.map((c) => (
-                      <button
-                        type="button"
-                        key={c.key}
-                        disabled={locked}
-                        onClick={() => a.send(c.key)}
-                      >
-                        {c.example}
-                      </button>
-                    ))}
-                  </section>
-                ))}
-                {!hasCommands && a.catalog && !a.loading && (
-                  <p role="status">
-                    Nenhum agente está habilitado para consultas. Habilite um
-                    agente na Central de Agentes para ver os comandos
-                    disponíveis.
-                  </p>
-                )}
-              </div>
-            </details>
           </div>
           <form
             className="agents-chat-form"
@@ -357,6 +394,17 @@ export default function AgentChat() {
                   a.busy || a.uncertain || !!a.pendingRun || !hasCommands
                 }
                 onChange={(e) => a.setDraft(e.target.value)}
+                aria-describedby="agents-input-help"
+                onKeyDown={(e) => {
+                  if (
+                    e.key === "Enter" &&
+                    !e.shiftKey &&
+                    !e.nativeEvent.isComposing
+                  ) {
+                    e.preventDefault();
+                    if (!locked && hasCommands && a.draft.trim()) void a.send();
+                  }
+                }}
                 placeholder={
                   hasCommands
                     ? `Ex.: ${commandGroups[0].commands[0].example}`
@@ -371,6 +419,10 @@ export default function AgentChat() {
                 <Send size={19} aria-hidden="true" />
               </button>
             </div>
+            <small id="agents-input-help" className="agents-input-help">
+              Enter para enviar · Shift + Enter para nova linha. As consultas
+              não alteram registros operacionais.
+            </small>
           </form>
         </aside>
       )}

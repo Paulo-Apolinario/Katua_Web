@@ -1,6 +1,8 @@
 import { Link } from "react-router";
 import {
   agentName,
+  agentDate,
+  commandTitle,
   countLabels,
   safeAgentHref,
   statusName,
@@ -9,8 +11,14 @@ export default function AnalysisResult({ data, onProposal }) {
   if (!data) return null;
   return (
     <div className="agents-result">
-      <strong>{agentName(data.agent)}</strong>
-      <p>{data.summary}</p>
+      <header className="agents-answer-header">
+        <strong>{agentName(data.agent)}</strong>
+        <h3>{data.title || commandTitle(data.command)}</h3>
+        {data.generatedAt && (
+          <small>Consulta em {agentDate(data.generatedAt)}</small>
+        )}
+      </header>
+      <p className="agents-answer-summary">{data.summary}</p>
       {data.counts && (
         <dl className="agents-counts">
           {Object.entries(data.counts)
@@ -44,6 +52,18 @@ export default function AnalysisResult({ data, onProposal }) {
             {data.items.map((item) => (
               <li key={`${item.kind}:${item.id}`}>
                 <strong>{item.title}</strong>
+                {item.priority && (
+                  <span
+                    className={`agents-priority agents-priority-${item.priority.toLowerCase()}`}
+                  >
+                    Atenção {item.priority === "HIGH" ? "alta" : "média"}
+                  </span>
+                )}
+                {item.date && (
+                  <small className="d-block">
+                    Data de referência: {agentDate(item.date)}
+                  </small>
+                )}
                 {item.status && (
                   <span className="d-block">{statusName(item.status)}</span>
                 )}
