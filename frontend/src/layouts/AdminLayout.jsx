@@ -1,6 +1,5 @@
 import AgentsProvider from "../components/agents/AgentsProvider";
 import AgentChat from "../components/agents/AgentChat";
-import { useAgents } from "../components/agents/agentsContext";
 import { useAdminAuth } from "../context/AdminAuthContext";
 import PanelReadNotice from "../components/PanelReadNotice";
 import { useState } from "react";
@@ -11,10 +10,9 @@ import HeadTags from "../components/HeadTags";
 import { ManagementWorkspace } from "../components/management/ManagementWorkspace";
 
 const AdminWorkspace = () => {
-  const agents = useAgents();
   const [active, setActive] = useState(true);
   return (
-    <div className={`katua-admin ${agents?.isOpen ? "agents-chat-open" : ""}`}>
+    <div className="katua-admin">
       <HeadTags />
       <Sidebar active={active} setActive={setActive} />
       <Header active={active} setActive={setActive} />

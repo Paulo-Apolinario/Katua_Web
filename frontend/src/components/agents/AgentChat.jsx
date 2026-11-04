@@ -8,11 +8,20 @@ import "./agents.css";
 export default function AgentChat() {
   const a = useAgents(),
     input = useRef(null);
+  const commandGroups = (a?.catalog?.agents || [])
+    .filter((agent) => agent.enabled)
+    .map((agent) => ({
+      ...agent,
+      commands: (a?.catalog.commands || []).filter((c) => c.agent === agent.key),
+    }))
+    .filter((agent) => agent.commands.length);
+  const hasCommands = commandGroups.length > 0;
   useEffect(() => {
-    if (a?.isOpen) input.current?.focus();
-  }, [a?.isOpen]);
+    if (a?.isOpen && hasCommands) input.current?.focus();
+  }, [a?.isOpen, hasCommands]);
   if (!a?.enabled) return null;
   const locked = a.busy || a.loading || a.uncertain || !!a.pendingRun;
+  const contextAgentEnabled = commandGroups.some((agent) => agent.key === a.context?.agent);
   return (
     <>
       <button
@@ -162,7 +171,7 @@ export default function AgentChat() {
                 )}
                 <button
                   type="button"
-                  disabled={locked}
+                  disabled={locked || !contextAgentEnabled}
                   onClick={() =>
                     a.send(
                       a.context.agent === "ROUTES"
@@ -175,6 +184,11 @@ export default function AgentChat() {
                 >
                   Consultar situação atual com este agente
                 </button>
+                {!contextAgentEnabled && a.catalog && (
+                  <p className="agents-warning" role="status">
+                    Este agente está desabilitado. Habilite-o na Central de Agentes para consultar a situação atual.
+                  </p>
+                )}
                 <small className="d-block">
                   Executa a análise atual da cooperativa; não é uma consulta
                   restrita somente a esta referência.
@@ -267,16 +281,26 @@ export default function AgentChat() {
             <details open>
               <summary>Comandos rápidos</summary>
               <div className="agents-quick">
-                {a.catalog?.commands?.map((c) => (
-                  <button
-                    type="button"
-                    key={c.key}
-                    disabled={locked}
-                    onClick={() => a.send(c.key)}
-                  >
-                    {c.example}
-                  </button>
+                {commandGroups.map((agent) => (
+                  <section className="agents-quick-group" key={agent.key} aria-label={agent.label}>
+                    <h3>{agent.label}</h3>
+                    {agent.commands.map((c) => (
+                      <button
+                        type="button"
+                        key={c.key}
+                        disabled={locked}
+                        onClick={() => a.send(c.key)}
+                      >
+                        {c.example}
+                      </button>
+                    ))}
+                  </section>
                 ))}
+                {!hasCommands && a.catalog && !a.loading && (
+                  <p role="status">
+                    Nenhum agente está habilitado para consultas. Habilite um agente na Central de Agentes para ver os comandos disponíveis.
+                  </p>
+                )}
               </div>
             </details>
           </div>
@@ -295,13 +319,13 @@ export default function AgentChat() {
                 rows={2}
                 maxLength={800}
                 value={a.draft}
-                disabled={a.busy || a.uncertain || !!a.pendingRun}
+                disabled={a.busy || a.uncertain || !!a.pendingRun || !hasCommands}
                 onChange={(e) => a.setDraft(e.target.value)}
-                placeholder="Ex.: Mostrar resumo operacional."
+                placeholder={hasCommands ? `Ex.: ${commandGroups[0].commands[0].example}` : "Habilite um agente para consultar."}
               />
               <button
                 type="submit"
-                disabled={locked || !a.draft.trim()}
+                disabled={locked || !hasCommands || !a.draft.trim()}
                 aria-label="Enviar comando"
               >
                 <Send size={19} aria-hidden="true" />

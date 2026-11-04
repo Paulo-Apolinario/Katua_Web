@@ -155,6 +155,13 @@
   gap: 7px;
   padding: 8px 0;
 }
+.agents-quick-group {
+  display: grid;
+  gap: 7px;
+}
+.agents-quick-group h3 {
+  margin: 8px 0 2px;
+}
 .agents-quick button {
   text-align: left;
 }
@@ -330,27 +337,7 @@
 .agents-activity ol {
   padding-left: 20px;
 }
-@media (min-width: 1200px) {
-  .katua-admin.agents-chat-open > .page-content {
-    margin-right: 0;
-    width: calc(100% - 422px);
-    max-width: calc(100% - 422px);
-  }
-}
-@media (min-width: 1366px) {
-  .katua-admin.agents-chat-open .sidebar.close ~ .page-content {
-    width: calc(100% - 422px);
-    max-width: calc(100% - 422px);
-  }
-  .katua-admin.agents-chat-open .sidebar:not(.close) ~ .page-content {
-    width: calc(100% - 280px - 422px);
-    max-width: calc(100% - 280px - 422px);
-  }
-}
 @media (max-width: 1199px) {
-  .katua-admin.agents-chat-open > .page-content {
-    padding-bottom: min(70dvh, 650px);
-  }
   .agents-chat {
     height: min(65dvh, 620px);
     bottom: 72px;

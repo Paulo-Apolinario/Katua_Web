@@ -153,6 +153,18 @@ async function go(url) {
   await page.goto("http://127.0.0.1:5181" + url);
   await page.locator("main.page-content").waitFor();
 }
+async function setAgentEnabled(agent, enabled) {
+  const config = (await api("/agents")).data.agents.find((c) => c.key === agent);
+  const response = await fetch(`http://127.0.0.1:3339/agents/${agent}/config`, {
+    method: "PATCH",
+    headers: { authorization: `Bearer ${fixture.token}`, "content-type": "application/json" },
+    body: JSON.stringify({ enabled, expectedVersion: config.version, eventId: `web_${crypto.randomUUID()}` }),
+  });
+  assert.equal(response.status, 200, await response.text());
+}
+async function refreshCommands() {
+  await page.evaluate(() => window.dispatchEvent(new Event("katua:agents-changed")));
+}
 const chat = () => page.locator("#katua-agent-chat");
 const open = async () => {
   if (!(await chat().count()))
@@ -192,6 +204,7 @@ try {
     await launcher.focus();
     await page.keyboard.press("Enter");
     await page.locator("#katua-agent-input").waitFor();
+    await page.waitForFunction(() => document.activeElement?.id === "katua-agent-input");
     assert.equal(
       await page
         .locator("#katua-agent-input")
@@ -205,6 +218,33 @@ try {
       true,
     );
     assert.equal(await page.evaluate(() => document.body.style.overflow), "");
+  });
+  await test("Comandos rápidos mostram apenas agentes habilitados e atualizam com a configuração", async () => {
+    await open();
+    await setAgentEnabled("ROUTES", false);
+    await setAgentEnabled("MANAGER", false);
+    await refreshCommands();
+    await chat().getByRole("button", { name: "Verificar rotas programadas.", exact: true }).waitFor({ state: "hidden" });
+    assert.equal(await chat().locator(".agents-quick button").count(), 3);
+    assert.equal(await chat().getByRole("button", { name: "Mostrar resumo operacional.", exact: true }).count(), 0);
+    await setAgentEnabled("ROUTES", true);
+    await refreshCommands();
+    await chat().getByRole("button", { name: "Verificar rotas programadas.", exact: true }).waitFor();
+    assert.equal(await chat().locator(".agents-quick button").count(), 5);
+    await setAgentEnabled("MANAGER", true);
+    await refreshCommands();
+    await chat().getByRole("button", { name: "Mostrar resumo operacional.", exact: true }).waitFor();
+  });
+  await test("Sem agente habilitado há orientação e nenhum envio disponível", async () => {
+    for (const agent of ["COLLECTIONS", "ROUTES", "MANAGER"]) await setAgentEnabled(agent, false);
+    await refreshCommands();
+    await chat().getByText("Nenhum agente está habilitado para consultas.", { exact: false }).waitFor();
+    assert.equal(await chat().locator(".agents-quick button").count(), 0);
+    assert(await page.locator("#katua-agent-input").isDisabled());
+    assert(await chat().getByRole("button", { name: "Enviar comando", exact: true }).isDisabled());
+    for (const agent of ["COLLECTIONS", "ROUTES", "MANAGER"]) await setAgentEnabled(agent, true);
+    await refreshCommands();
+    await chat().getByRole("button", { name: "Quais coletas estão pendentes?", exact: true }).waitFor();
   });
   await test("Chat acompanha navegação e preserva rascunho", async () => {
     await open();
@@ -281,7 +321,7 @@ try {
     await page.locator("main.page-content").waitFor();
     await open();
     await page.locator("#agents-conversation").selectOption(conversation);
-    await chat()
+    await chat().locator(".agents-messages")
       .getByText("Agente de Coletas", { exact: true })
       .first()
       .waitFor();
@@ -294,7 +334,7 @@ try {
         exact: true,
       })
       .click();
-    await chat()
+    await chat().locator(".agents-messages")
       .getByText("Agente de Rotas", { exact: true })
       .first()
       .waitFor();
@@ -370,7 +410,7 @@ try {
     await chat()
       .getByRole("button", { name: "Consultar o envio anterior" })
       .click();
-    await chat().getByText("Agente Gestor", { exact: true }).first().waitFor();
+    await chat().locator(".agents-messages").getByText("Agente Gestor", { exact: true }).first().waitFor();
     const calls = requests
       .filter((r) => r.method === "POST" && r.path === "/agents/commands")
       .slice(-2);
@@ -411,34 +451,28 @@ try {
       () => !document.querySelector("#katua-agent-chat .agents-error"),
     );
   });
-  await test("Layout desktop e tablet, sem sobrepor campos ou transbordar", async () => {
+  await test("Assistente sobreposto preserva largura e posição da página em desktop e tablet", async () => {
+    await go("/staff-list");
+    if (await chat().count()) await chat().getByRole("button", { name: "Minimizar conversa" }).click();
+    const menu = page.getByRole("button", { name: "Abrir ou recolher menu lateral", exact: true });
+    for (const width of [1440, 1280, 820]) {
+      await page.setViewportSize({ width, height: 1000 });
+      for (let sidebar = 0; sidebar < (width >= 1366 ? 2 : 1); sidebar++) {
+        await page.waitForTimeout(250);
+        const before = await page.locator("main.page-content").boundingBox();
+        await open();
+        const after = await page.locator("main.page-content").boundingBox();
+        assert(Math.abs(before.width - after.width) < 1);
+        assert(Math.abs(before.x - after.x) < 1);
+        const pane = await chat().boundingBox();
+        assert(pane.x >= 0 && pane.x + pane.width <= width);
+        if (width === 1440 && sidebar === 0) await page.screenshot({ path: path.join(out, "desktop.png"), fullPage: false });
+        await chat().getByRole("button", { name: "Minimizar conversa" }).click();
+        if (width >= 1366) await menu.click();
+      }
+    }
     await go("/agents");
     await open();
-    await page.locator(".agents-config").first().waitFor();
-    const boxes = await page.locator("main.page-content").boundingBox(),
-      pane = await chat().boundingBox();
-    assert(boxes.x + boxes.width <= pane.x + 1);
-    const menu = page.getByRole("button", {
-      name: "Abrir ou recolher menu lateral",
-      exact: true,
-    });
-    await menu.click();
-    await page.waitForTimeout(250);
-    const collapsed = await page.locator("main.page-content").boundingBox();
-    assert(collapsed.x + collapsed.width <= pane.x + 1);
-    await menu.click();
-    await page.waitForTimeout(250);
-    await page.screenshot({
-      path: path.join(out, "desktop.png"),
-      fullPage: false,
-    });
-    await page.setViewportSize({ width: 820, height: 1180 });
-    assert(
-      await page.evaluate(
-        () => document.documentElement.scrollWidth <= innerWidth + 2,
-      ),
-    );
-    assert((await chat().boundingBox()).height < 1180);
   });
   await test("Celular apresenta controles e formulário acessíveis sem travar rolagem", async () => {
     await page.setViewportSize({ width: 390, height: 844 });
@@ -524,7 +558,7 @@ try {
       .first()
       .getByRole("button", { name: "Analisar com assistente" })
       .click();
-    await chat().getByText("Agente Gestor", { exact: true }).first().waitFor();
+    await chat().locator(".agents-context").getByText("Agente Gestor", { exact: true }).first().waitFor();
     await chat().getByRole("button", { name: "Minimizar conversa" }).click();
   });
   await test("Propostas permitem decisão humana e não exibem execução operacional", async () => {
