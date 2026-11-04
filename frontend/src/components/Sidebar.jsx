@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { apiRequest } from "../services/apiClient";
 import {
   House,
-  Bot,
   ChevronRight,
   Settings,
   ChartLine,
@@ -131,6 +130,7 @@ const Sidebar = ({ active, setActive }) => {
     location.pathname.startsWith("/environmental-impact");
 
   const isSettingSectionActive =
+    location.pathname.startsWith("/agents") ||
     location.pathname.startsWith("/system-alerts") ||
     location.pathname.startsWith("/settings") ||
     location.pathname.startsWith("/smtp-config") ||
@@ -212,7 +212,6 @@ const Sidebar = ({ active, setActive }) => {
             </NavLink>
           </li>
 
-          {admin?.role === 'COOPERATIVE' && <li className="nav-item"><NavLink to="/agents" className={({isActive})=>`nav-link ${isActive?'active':''}`}><div className="icon-wrap"><Bot /></div><span className="text">Central de Agentes</span></NavLink></li>}
           {/* Waste Collection */}
           <li className="nav-item">
             <a
@@ -881,6 +880,9 @@ const Sidebar = ({ active, setActive }) => {
               {[
                 ["/account-security", "Minha conta e segurança"],
                 ["/operational-preferences", "Preferências operacionais"],
+                ...(admin?.role === "COOPERATIVE"
+                  ? [["/agents", "Central de Agentes"]]
+                  : []),
                 ["/settings-history", "Histórico de alterações"],
               ].map(([to, label]) => (
                 <li key={to}>
