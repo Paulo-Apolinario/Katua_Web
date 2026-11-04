@@ -1,3 +1,4 @@
+import AgentsCenter from "../pages/agents/AgentsCenter";
 import IntakeDeliverers from "../pages/waste-management/IntakeDeliverers";
 import DriverTracking from "../pages/staff-management/DriverTracking";
 import MaterialIntakes from "../pages/waste-management/MaterialIntakes";
@@ -125,6 +126,7 @@ const Router = () => {
             {/* Dashboard */}
             <Route index element={<Dashboard />} />
             <Route path="notifications" element={<Notifications />} />
+            <Route path="agents" element={<AgentsCenter />} />
 
             {/* Waste Collection Management */}
             <Route path="waste-list" element={<WasteList />} />

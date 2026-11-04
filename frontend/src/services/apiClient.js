@@ -57,7 +57,7 @@ export const apiRequest = async (endpoint, options = {}) => {
   const token = getStoredToken();
   const page = window.location.pathname;
   const readKey = page + ':' + endpoint.split('?')[0];
-  const isRead = (options.method || 'GET').toUpperCase() === 'GET' && !endpoint.startsWith('/auth/') && endpoint !== '/settings/branding' && !endpoint.startsWith('/inbox');
+  const isRead = !options.suppressReadNotice && (options.method || 'GET').toUpperCase() === 'GET' && !endpoint.startsWith('/auth/') && endpoint !== '/settings/branding' && !endpoint.startsWith('/inbox');
   const readVersion = isRead ? (readVersions.get(readKey) || 0) + 1 : 0;
   if (isRead) readVersions.set(readKey, readVersion);
   const readResult = message => {
@@ -77,7 +77,7 @@ export const apiRequest = async (endpoint, options = {}) => {
     ...options.headers,
   };
 
-  const { timeoutMs = 20000, signal, ...fetchOptions } = options;
+  const { timeoutMs = 20000, signal, suppressReadNotice: _suppressReadNotice, ...fetchOptions } = options;
   const controller = new AbortController();
   let timedOut = false;
   const cancel = () => controller.abort(signal?.reason);

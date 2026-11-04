@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { apiRequest } from "../services/apiClient";
 import {
   House,
+  Bot,
   ChevronRight,
   Settings,
   ChartLine,
@@ -211,6 +212,7 @@ const Sidebar = ({ active, setActive }) => {
             </NavLink>
           </li>
 
+          {admin?.role === 'COOPERATIVE' && <li className="nav-item"><NavLink to="/agents" className={({isActive})=>`nav-link ${isActive?'active':''}`}><div className="icon-wrap"><Bot /></div><span className="text">Central de Agentes</span></NavLink></li>}
           {/* Waste Collection */}
           <li className="nav-item">
             <a

@@ -1,3 +1,5 @@
+import { useAgents } from "../components/agents/agentsContext";
+import { isAgentNotice } from "../components/agents/agentsFormat";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
 import { loadInbox, markNoticeRead, markAllRead, noticeTarget } from "../services/inboxService";
@@ -6,6 +8,7 @@ const noticeDate = (value) => { const date = new Date(value); return Number.isFi
 import RefreshNotice from "../components/RefreshNotice";
 import HeadTags from "../components/HeadTags";
 export default function Notifications() {
+  const agents = useAgents();
   const [data, setData] = useState(null), [error, setError] = useState(""), [busy, setBusy] = useState(false), [at, setAt] = useState(null), [historyLoaded, setHistoryLoaded] = useState(false);
   const request = useRef({ version: 0 }), working = useRef(false);
   const load = useCallback(async (cursor) => {
@@ -47,6 +50,7 @@ export default function Notifications() {
     <ul className="list-group mb-3">{data?.notifications.map(n => <li key={n.id} className="list-group-item p-3">
       <div className="d-flex justify-content-between gap-3 flex-wrap"><div><strong>{n.title}</strong>{!n.readAt && <span className="badge text-bg-success ms-2">Novo</span>}<small className="d-block text-muted">{noticeDate(n.createdAt)}</small></div>
       <div className="d-flex gap-2 align-items-center">{!n.readAt && <button disabled={busy} className="btn btn-sm btn-outline-secondary" onClick={() => read(n.id)}>Marcar como lido</button>}
+      {agents?.enabled && isAgentNotice(n) && <button type="button" className="btn btn-sm btn-outline-success" onClick={()=>agents.openContext({proposalId:n.data.proposalId})}>Analisar com assistente</button>}
       {noticeTarget(n) && <Link className="btn btn-sm btn-outline-success" to={noticeTarget(n)}>Abrir atendimento</Link>}</div></div><p className="mt-2 mb-0" style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{n.message}</p>
     </li>)}</ul>
     {data && !data.notifications.length && <p>Nenhum aviso registrado.</p>}
