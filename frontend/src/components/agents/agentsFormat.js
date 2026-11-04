@@ -23,6 +23,15 @@ export const statusName = (key) =>
     INFO: "Informativa",
     NEEDS_INFO: "Aguardando informações",
     PENDING_REVIEW: "Aguardando análise",
+    PROCESSING: "Em processamento",
+    DEAD: "Precisa de revisão",
+    DONE: "Processado",
+    SKIPPED: "Ignorado",
+    COLLECTED: "Coletada em campo",
+    RECEIVED: "Recebida",
+    SORTING: "Em triagem",
+    COMPLETED: "Concluída",
+    CANCELLED: "Cancelada",
   })[key] || "Não informado";
 export const agentDate = (value) => {
   if (!value) return "Não registrada";
@@ -36,6 +45,16 @@ export const agentDate = (value) => {
     : "Data indisponível";
 };
 export const countLabels = {
+  todayCollections: "Coletas programadas para hoje",
+  todayUnassignedRequests: "Solicitações de hoje sem coleta vinculada",
+  routesWithoutResources: "Rotas sem motorista ou veículo",
+  routesWithoutDriver: "Rotas sem motorista",
+  routesWithoutVehicle: "Rotas sem veículo",
+  pendingProposals: "Recomendações aguardando revisão",
+  failedAnalyses24h: "Análises com falha nas últimas 24 horas",
+  pendingEventDeliveries: "Entregas de eventos pendentes",
+  processingEventDeliveries: "Entregas em processamento",
+  deadEventDeliveries: "Entregas que precisam de revisão",
   activeRequests: "Solicitações ativas",
   extraOrdersAwaitingReview: "Ordens extras aguardando análise",
   pevReportsAwaitingCollection: "Relatos de PEV aguardando coleta",

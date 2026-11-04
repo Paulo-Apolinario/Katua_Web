@@ -227,6 +227,7 @@ export default function AgentsProvider({ children, enabled }) {
             id: body.eventId,
             role: "ASSISTANT",
             content: result.message,
+            suggestions: result.suggestions || [],
             ephemeral: true,
           },
         ]);

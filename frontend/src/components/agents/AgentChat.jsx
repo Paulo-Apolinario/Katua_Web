@@ -12,7 +12,9 @@ export default function AgentChat() {
     .filter((agent) => agent.enabled)
     .map((agent) => ({
       ...agent,
-      commands: (a?.catalog.commands || []).filter((c) => c.agent === agent.key),
+      commands: (a?.catalog.commands || []).filter(
+        (c) => c.agent === agent.key,
+      ),
     }))
     .filter((agent) => agent.commands.length);
   const hasCommands = commandGroups.length > 0;
@@ -21,7 +23,9 @@ export default function AgentChat() {
   }, [a?.isOpen, hasCommands]);
   if (!a?.enabled) return null;
   const locked = a.busy || a.loading || a.uncertain || !!a.pendingRun;
-  const contextAgentEnabled = commandGroups.some((agent) => agent.key === a.context?.agent);
+  const contextAgentEnabled = commandGroups.some(
+    (agent) => agent.key === a.context?.agent,
+  );
   return (
     <>
       <button
@@ -78,7 +82,9 @@ export default function AgentChat() {
           <div className="agents-chat-scroll">
             <p className="agents-disclosure">
               Assistente por regras. Use os comandos disponíveis; as análises
-              não executam alterações operacionais.
+              não executam alterações operacionais. Você pode escrever frases
+              simples, como “me mostre as coletas atrasadas”. Se houver dúvida,
+              pediremos que escolha uma consulta.
             </p>
             <Link to="/agents">Abrir Central de Agentes</Link>
             <div className="agents-history">
@@ -186,7 +192,8 @@ export default function AgentChat() {
                 </button>
                 {!contextAgentEnabled && a.catalog && (
                   <p className="agents-warning" role="status">
-                    Este agente está desabilitado. Habilite-o na Central de Agentes para consultar a situação atual.
+                    Este agente está desabilitado. Habilite-o na Central de
+                    Agentes para consultar a situação atual.
                   </p>
                 )}
                 <small className="d-block">
@@ -251,6 +258,27 @@ export default function AgentChat() {
                         : m.content}
                     </p>
                   )}
+                  {m.suggestions?.length > 0 && (
+                    <div
+                      className="agents-quick"
+                      aria-label="Opções para esclarecer o comando"
+                    >
+                      {m.suggestions
+                        .filter((c) =>
+                          commandGroups.some((agent) => agent.key === c.agent),
+                        )
+                        .map((c) => (
+                          <button
+                            key={c.key}
+                            type="button"
+                            disabled={locked}
+                            onClick={() => a.send(c.key)}
+                          >
+                            {c.example}
+                          </button>
+                        ))}
+                    </div>
+                  )}
                   {m.data && (
                     <AnalysisResult
                       data={m.data}
@@ -282,7 +310,11 @@ export default function AgentChat() {
               <summary>Comandos rápidos</summary>
               <div className="agents-quick">
                 {commandGroups.map((agent) => (
-                  <section className="agents-quick-group" key={agent.key} aria-label={agent.label}>
+                  <section
+                    className="agents-quick-group"
+                    key={agent.key}
+                    aria-label={agent.label}
+                  >
                     <h3>{agent.label}</h3>
                     {agent.commands.map((c) => (
                       <button
@@ -298,7 +330,9 @@ export default function AgentChat() {
                 ))}
                 {!hasCommands && a.catalog && !a.loading && (
                   <p role="status">
-                    Nenhum agente está habilitado para consultas. Habilite um agente na Central de Agentes para ver os comandos disponíveis.
+                    Nenhum agente está habilitado para consultas. Habilite um
+                    agente na Central de Agentes para ver os comandos
+                    disponíveis.
                   </p>
                 )}
               </div>
@@ -319,9 +353,15 @@ export default function AgentChat() {
                 rows={2}
                 maxLength={800}
                 value={a.draft}
-                disabled={a.busy || a.uncertain || !!a.pendingRun || !hasCommands}
+                disabled={
+                  a.busy || a.uncertain || !!a.pendingRun || !hasCommands
+                }
                 onChange={(e) => a.setDraft(e.target.value)}
-                placeholder={hasCommands ? `Ex.: ${commandGroups[0].commands[0].example}` : "Habilite um agente para consultar."}
+                placeholder={
+                  hasCommands
+                    ? `Ex.: ${commandGroups[0].commands[0].example}`
+                    : "Habilite um agente para consultar."
+                }
               />
               <button
                 type="submit"

@@ -51,8 +51,14 @@ export default function AnalysisResult({ data, onProposal }) {
                 {item.reasons?.map((r, i) => (
                   <p key={i}>{r}</p>
                 ))}
-                {safeAgentHref(item.href) && (
-                  <Link to={safeAgentHref(item.href)}>Abrir registro</Link>
+                {item.kind === "AGENT_PROPOSAL" && onProposal ? (
+                  <button type="button" onClick={() => onProposal(item.id)}>
+                    Analisar recomendação
+                  </button>
+                ) : (
+                  safeAgentHref(item.href) && (
+                    <Link to={safeAgentHref(item.href)}>Abrir registro</Link>
+                  )
                 )}
               </li>
             ))}
