@@ -177,7 +177,7 @@ const StaffList = () => {
                 setCurrentPage(1);
               }}
               renderActions={(row) => (
-                <div className="actions d-flex align-items-center gap-10">
+                <div className="actions driver-row-actions d-flex align-items-center">
                   <PrivacyAcceptanceStatus kind="drivers" id={row.id} />
                   <Link className="btn btn-sm btn-outline-success" to={"/driver-tracking?motorista="+row.id}>Acompanhar</Link>
                   <Link

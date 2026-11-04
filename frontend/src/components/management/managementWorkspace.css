@@ -456,3 +456,31 @@
 
 .calendar-event-link strong { overflow-wrap: normal; word-break: normal; }
 .management-workspace .calendar-events-table td:nth-child(3) { white-space: nowrap; }
+
+/* Keep the complete driver action group together inside the scrollable table. */
+.management-workspace .actions.driver-row-actions {
+  flex-wrap: nowrap;
+  align-items: flex-start !important;
+  gap: 8px;
+  width: max-content;
+  min-width: max-content;
+}
+.management-workspace .driver-row-actions > * {
+  flex: 0 0 auto;
+}
+.management-workspace .driver-row-actions > a,
+.management-workspace .driver-row-actions > div > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  white-space: nowrap;
+  margin: 0;
+}
+@media (max-width: 991.98px) {
+  .management-workspace .driver-row-actions > a,
+  .management-workspace .driver-row-actions > div > button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
