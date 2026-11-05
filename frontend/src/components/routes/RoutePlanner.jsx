@@ -2,7 +2,7 @@ import { routeOutcomeLabel } from "../../utils/routeLifecycle";
 import RoutePendingResolution from "./RoutePendingResolution";
 import TeamPicker from "./TeamPicker";
 import RoutePointsEditor from "./RoutePointsEditor";
-import RouteOptimization, { RouteEndpoints } from "./RouteOptimization";
+import RouteOptimization from "./RouteOptimization";
 import {
   getPlanningSources,
   pointCollection,
@@ -235,6 +235,19 @@ export default function RoutePlanner({ id }) {
       return next;
     });
   }
+  const alreadyPlanned = (collection) =>
+    selected.some(
+      (c) =>
+        c._planned &&
+        ((c.routePoint.kind === "GENERATOR" &&
+          c.routePoint.sourceId ===
+            (collection.generatorId ||
+              collection.generator?.id ||
+              collection.schedule?.generatorId)) ||
+          (c.routePoint.kind === "PEV" &&
+            c.routePoint.sourceId ===
+              (collection.binId || collection.bin?.id))),
+    );
   async function save(e) {
     e.preventDefault();
     if (pending.current || locked) return;
@@ -384,7 +397,15 @@ export default function RoutePlanner({ id }) {
               histórico disponíveis para consulta.
             </p>
           )}
-          {id && data.route && <RoutePendingResolution key={data.route.id} route={data.route} dirty={dirty} onReload={load} onBusy={setSaving} />}
+          {id && data.route && (
+            <RoutePendingResolution
+              key={data.route.id}
+              route={data.route}
+              dirty={dirty}
+              onReload={load}
+              onBusy={setSaving}
+            />
+          )}
           <form onSubmit={save}>
             <fieldset disabled={saving}>
               <div className="route-planning-layout">
@@ -539,47 +560,10 @@ export default function RoutePlanner({ id }) {
                   </section>
                   <section className="card p-4">
                     <h2>Catadores e horário</h2>
-                    <TeamPicker
-                      teams={data.sources.teams}
-                      teamId={form.teamId}
-                      disabled={saving || data.route?.status === "IN_PROGRESS"}
-                      onChange={(t) =>
-                        setForm((p) => ({
-                          ...p,
-                          teamId: t?.id || null,
-                          collectorIds: t ? [...t.memberIds] : p.collectorIds,
-                        }))
-                      }
-                    />
-                    <div className="route-fields">
-                      <label>
-                        Saída prevista
-                        <input
-                          className="form-control"
-                          type="time"
-                          disabled={locked}
-                          value={form.departureTime}
-                          onChange={(e) =>
-                            patch("departureTime", e.target.value)
-                          }
-                        />
-                      </label>
-                      <label>
-                        Duração prevista (minutos)
-                        <input
-                          type="number"
-                          min={15}
-                          max={1440}
-                          className="form-control"
-                          disabled={locked}
-                          value={form.estimatedMinutes}
-                          onChange={(e) =>
-                            patch("estimatedMinutes", Number(e.target.value))
-                          }
-                        />
-                      </label>
-                    </div>
-                    <div className="d-flex gap-3 flex-wrap mt-3">
+                    <p className="small mb-2">
+                      Selecione os catadores participantes
+                    </p>
+                    <div className="route-collector-options">
                       {data.sources.collectors.map((c) => (
                         <label key={c.id}>
                           <input
@@ -609,12 +593,32 @@ export default function RoutePlanner({ id }) {
                       O primeiro catador selecionado será responsável pelos
                       novos pontos sem responsável específico.
                     </p>
-                    <RouteEndpoints
-                      startPoint={form.startPoint}
-                      endPoint={form.endPoint}
-                      onChange={patch}
-                      disabled={locked}
+                    <TeamPicker
+                      teams={data.sources.teams}
+                      teamId={form.teamId}
+                      disabled={saving || data.route?.status === "IN_PROGRESS"}
+                      onChange={(t) =>
+                        setForm((p) => ({
+                          ...p,
+                          teamId: t?.id || null,
+                          collectorIds: t ? [...t.memberIds] : p.collectorIds,
+                        }))
+                      }
                     />
+                    <div className="route-fields">
+                      <label>
+                        Saída prevista
+                        <input
+                          className="form-control"
+                          type="time"
+                          disabled={locked}
+                          value={form.departureTime}
+                          onChange={(e) =>
+                            patch("departureTime", e.target.value)
+                          }
+                        />
+                      </label>
+                    </div>
                   </section>
                   <section className="card p-4">
                     <h2>3. Sequência de coletas</h2>
@@ -668,7 +672,11 @@ export default function RoutePlanner({ id }) {
                                 : c.routePoint?.kind === "ADDRESS"
                                   ? "Ponto avulso"
                                   : "Gerador"}{" "}
-                              · {c.attendanceOutcome==='NOT_COLLECTED'?'Sem coleta no dia':status(c.status)} · {c.id.slice(-8)}
+                              ·{" "}
+                              {c.attendanceOutcome === "NOT_COLLECTED"
+                                ? "Sem coleta no dia"
+                                : status(c.status)}{" "}
+                              · {c.id.slice(-8)}
                             </span>
                             <span className="small d-block">{address(c)}</span>
                             <span className="small d-block">
@@ -681,7 +689,8 @@ export default function RoutePlanner({ id }) {
                             {!hasCoordinates(origin(c)) && (
                               <span className="small text-warning d-block">
                                 Sem coordenadas.{" "}
-                                <Link className="btn btn-sm btn-outline-success align-self-center"
+                                <Link
+                                  className="btn btn-sm btn-outline-success align-self-center"
                                   to={
                                     c.bin
                                       ? "/edit-bin/" + c.bin.id
@@ -755,6 +764,43 @@ export default function RoutePlanner({ id }) {
                       <RoutePointsEditor
                         hideSources
                         sources={data.sources}
+                        occupiedSources={selected
+                          .filter((c) => !c._planned)
+                          .flatMap((c) => [
+                            ...(c.routePoint?.sourceId
+                              ? [
+                                  {
+                                    kind: c.routePoint.kind,
+                                    sourceId: c.routePoint.sourceId,
+                                  },
+                                ]
+                              : []),
+                            ...(c.generatorId ||
+                            c.generator?.id ||
+                            c.schedule?.generatorId
+                              ? [
+                                  {
+                                    kind: "GENERATOR",
+                                    sourceId:
+                                      c.generatorId ||
+                                      c.generator?.id ||
+                                      c.schedule?.generatorId,
+                                  },
+                                ]
+                              : []),
+                            ...(c.binId || c.bin?.id
+                              ? [
+                                  {
+                                    kind: "PEV",
+                                    sourceId: c.binId || c.bin?.id,
+                                  },
+                                ]
+                              : []),
+                          ])}
+                        maxPoints={Math.min(
+                          100,
+                          200 - selected.filter((c) => !c._planned).length,
+                        )}
                         collectorIds={form.collectorIds}
                         points={selected
                           .filter((c) => c.id === editingPoint)
@@ -820,7 +866,7 @@ export default function RoutePlanner({ id }) {
                     )}
                   </section>
                   {!locked && (
-                    <section className="card p-4">
+                    <section className="card p-4 route-available-panel">
                       <h2>Coletas disponíveis</h2>
                       <p className="small">
                         Pendentes ou em andamento, sem vínculo com outra rota.
@@ -922,6 +968,26 @@ export default function RoutePlanner({ id }) {
                           />
                         </label>
                       </div>
+                      <div className="route-filter-summary">
+                        <span>{filtered.length} coleta(s) encontrada(s)</span>
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-secondary"
+                          disabled={
+                            !search && !city && !neighborhood && !type && !date
+                          }
+                          onClick={() => {
+                            setSearch("");
+                            setCity("");
+                            setNeighborhood("");
+                            setType("");
+                            setDate("");
+                            setPage(1);
+                          }}
+                        >
+                          Limpar filtros
+                        </button>
+                      </div>
                       <div className="route-available-list mt-3">
                         {filtered.slice((page - 1) * 8, page * 8).map((c) => (
                           <article key={c.id}>
@@ -940,8 +1006,10 @@ export default function RoutePlanner({ id }) {
                               </span>
                               <span className="small d-block">
                                 {quantitiesLabel(quantities(c))} ·{" "}
-                                {c.attendanceOutcome==='NOT_COLLECTED'?'Sem coleta no dia':status(c.status)} · Catador:{" "}
-                                {c.collector?.name || "Não definido"}
+                                {c.attendanceOutcome === "NOT_COLLECTED"
+                                  ? "Sem coleta no dia"
+                                  : status(c.status)}{" "}
+                                · Catador: {c.collector?.name || "Não definido"}
                               </span>
                               <span className="small d-block">
                                 Programação:{" "}
@@ -957,7 +1025,14 @@ export default function RoutePlanner({ id }) {
                             <button
                               type="button"
                               className="btn btn-sm btn-outline-success"
-                              disabled={selected.length >= 200}
+                              disabled={
+                                selected.length >= 200 || alreadyPlanned(c)
+                              }
+                              title={
+                                alreadyPlanned(c)
+                                  ? "Este cadastro já está incluído como novo ponto da rota."
+                                  : undefined
+                              }
                               onClick={() => {
                                 setSelected((s) =>
                                   s.some((x) => x.id === c.id) ? s : [...s, c],
@@ -965,7 +1040,10 @@ export default function RoutePlanner({ id }) {
                                 setPage(1);
                               }}
                             >
-                              <Plus size={15} /> Adicionar coleta
+                              <Plus size={15} />{" "}
+                              {alreadyPlanned(c)
+                                ? "Já incluído nos pontos"
+                                : "Adicionar coleta"}
                             </button>
                           </article>
                         ))}
@@ -1004,7 +1082,13 @@ export default function RoutePlanner({ id }) {
                       <p className="small">
                         Novos pontos geram atendimentos ao salvar esta execução.
                         Para programação recorrente, use{" "}
-                        <Link className="btn btn-sm btn-outline-success align-self-center" to="/route-plans">Rotas fixas</Link>.
+                        <Link
+                          className="btn btn-sm btn-outline-success align-self-center"
+                          to="/route-plans"
+                        >
+                          Rotas fixas
+                        </Link>
+                        .
                       </p>
                       <RoutePointsEditor
                         onReloadSources={async () => {
@@ -1012,6 +1096,43 @@ export default function RoutePlanner({ id }) {
                           setData((d) => ({ ...d, sources }));
                         }}
                         sources={data.sources}
+                        occupiedSources={selected
+                          .filter((c) => !c._planned)
+                          .flatMap((c) => [
+                            ...(c.routePoint?.sourceId
+                              ? [
+                                  {
+                                    kind: c.routePoint.kind,
+                                    sourceId: c.routePoint.sourceId,
+                                  },
+                                ]
+                              : []),
+                            ...(c.generatorId ||
+                            c.generator?.id ||
+                            c.schedule?.generatorId
+                              ? [
+                                  {
+                                    kind: "GENERATOR",
+                                    sourceId:
+                                      c.generatorId ||
+                                      c.generator?.id ||
+                                      c.schedule?.generatorId,
+                                  },
+                                ]
+                              : []),
+                            ...(c.binId || c.bin?.id
+                              ? [
+                                  {
+                                    kind: "PEV",
+                                    sourceId: c.binId || c.bin?.id,
+                                  },
+                                ]
+                              : []),
+                          ])}
+                        maxPoints={Math.min(
+                          100,
+                          200 - selected.filter((c) => !c._planned).length,
+                        )}
                         collectorIds={form.collectorIds}
                         points={selected
                           .filter((c) => c._planned)
@@ -1170,19 +1291,28 @@ export default function RoutePlanner({ id }) {
                         <button
                           type="button"
                           className="btn btn-outline-success"
-                          disabled={dirty || (data.route.collections || []).some(c => ["PENDING", "IN_PROGRESS"].includes(c.status))}
+                          disabled={
+                            dirty ||
+                            (data.route.collections || []).some((c) =>
+                              ["PENDING", "IN_PROGRESS"].includes(c.status),
+                            )
+                          }
                           onClick={() => changeStatus("COMPLETED")}
                         >
                           Concluir rota salva
                         </button>
-                        {!(data.route.collections || []).some(c => c.status !== "CANCELLED") && <button
-                          type="button"
-                          className="btn btn-outline-danger"
-                          disabled={dirty}
-                          onClick={() => changeStatus("CANCELLED")}
-                        >
-                          Cancelar rota salva
-                        </button>}
+                        {!(data.route.collections || []).some(
+                          (c) => c.status !== "CANCELLED",
+                        ) && (
+                          <button
+                            type="button"
+                            className="btn btn-outline-danger"
+                            disabled={dirty}
+                            onClick={() => changeStatus("CANCELLED")}
+                          >
+                            Cancelar rota salva
+                          </button>
+                        )}
                       </div>
                     </section>
                   )}

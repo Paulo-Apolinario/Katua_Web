@@ -2,6 +2,13 @@ import { useState } from "react";
 import { Plus, MapPin, Pencil, Trash2, ArrowUp, ArrowDown } from "lucide-react";
 import GeneratorLocationEditor from "../generators/GeneratorLocationEditor";
 import { geocodeAddressWithGoogle } from "../generators/geocodeAddress";
+import { normalizeSearchText } from "../../utils/generatorNeighborhood";
+import {
+  sourceAddress,
+  neighborhoodGroups,
+  neighborhoodPreview,
+  appendNeighborhoodPoints,
+} from "./neighborhoodPoints";
 const blank = () => ({
   key: crypto.randomUUID(),
   kind: "ADDRESS",
@@ -22,12 +29,7 @@ const blank = () => ({
   weekdays: [],
 });
 const weekdays = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
-const fullAddress = (p) =>
-  p.street || p.number || p.neighborhood || p.city
-    ? [p.street, p.number, p.neighborhood, p.city, p.state]
-        .filter(Boolean)
-        .join(", ")
-    : p.address || "";
+const fullAddress = sourceAddress;
 export default function RoutePointsEditor({
   points,
   onChange,
@@ -37,13 +39,46 @@ export default function RoutePointsEditor({
   recurring = false,
   hideSources = false,
   onReloadSources,
+  occupiedSources = [],
+  maxPoints = 100,
 }) {
   const [draft, setDraft] = useState(null),
     [editing, setEditing] = useState(null),
     [confirmed, setConfirmed] = useState(false),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
-    [search, setSearch] = useState("");
+    [search, setSearch] = useState(""),
+    [neighborhood, setNeighborhood] = useState(""),
+    [notice, setNotice] = useState("");
+  const groups = neighborhoodGroups(sources?.generators || []);
+  const group = groups.find((g) => g.key === neighborhood);
+  const preview = neighborhoodPreview(
+    group?.generators || [],
+    points,
+    occupiedSources,
+  );
+  const included = (kind, id) =>
+    [...points, ...occupiedSources].some(
+      (p) => p.kind === kind && p.sourceId === id,
+    );
+  function addNeighborhood() {
+    setError("");
+    setNotice("");
+    try {
+      const next = appendNeighborhoodPoints(
+        points,
+        group?.generators || [],
+        occupiedSources,
+        maxPoints,
+      );
+      onChange(next);
+      setNotice(
+        `${next.length - points.length} gerador(es) adicionado(s) ao planejamento. Confira a sequência e salve a rota.`,
+      );
+    } catch (e) {
+      setError(e.message);
+    }
+  }
   const change = (key, value) => {
     setDraft((d) => ({ ...d, [key]: value }));
     setError("");
@@ -156,11 +191,9 @@ export default function RoutePointsEditor({
     if (editing !== null)
       onChange(points.map((v, i) => (i === editing ? p : v)));
     else {
-      if (points.length >= 100) return setError("Limite de 100 pontos.");
-      if (
-        p.sourceId &&
-        points.some((x) => x.kind === p.kind && x.sourceId === p.sourceId)
-      )
+      if (points.length >= maxPoints)
+        return setError(`Limite de ${maxPoints} pontos neste planejamento.`);
+      if (p.sourceId && included(p.kind, p.sourceId))
         return setError("Este cadastro já está no roteiro.");
       onChange([...points, p]);
     }
@@ -173,14 +206,11 @@ export default function RoutePointsEditor({
     onChange(next);
   }
   const filtered = (items) =>
-    items
-      .filter((p) =>
-        [p.name, p.companyName, p.binId, fullAddress(p)]
-          .join(" ")
-          .toLocaleLowerCase("pt-BR")
-          .includes(search.toLocaleLowerCase("pt-BR")),
-      )
-      .slice(0, 20);
+    items.filter((p) =>
+      normalizeSearchText(
+        [p.name, p.companyName, p.binId, fullAddress(p)].join(" "),
+      ).includes(normalizeSearchText(search)),
+    );
   return (
     <div className="route-points-editor">
       {error && !draft && (
@@ -253,6 +283,74 @@ export default function RoutePointsEditor({
       </ol>
       {!disabled && !hideSources && (
         <>
+          <div className="route-neighborhood-picker">
+            <h3>Adicionar geradores por bairro</h3>
+            <p className="small">
+              Escolha o bairro e inclua seus geradores de uma vez. Municípios
+              diferentes aparecem separados.
+            </p>
+            <label className="d-block">
+              Bairro dos geradores
+              <select
+                className="form-select"
+                aria-label="Bairro dos geradores"
+                value={neighborhood}
+                onChange={(e) => {
+                  setNeighborhood(e.target.value);
+                  setNotice("");
+                  setError("");
+                }}
+              >
+                <option value="">Selecione um bairro</option>
+                {groups.map((g) => (
+                  <option key={g.key} value={g.key}>
+                    {g.label} ({g.generators.length})
+                  </option>
+                ))}
+              </select>
+            </label>
+            {group && (
+              <>
+                <p className="small mt-2" role="status">
+                  {preview.ready.length} para adicionar ·{" "}
+                  {preview.existing.length} já na rota ·{" "}
+                  {preview.invalid.length} com cadastro incompleto
+                </p>
+                {!!preview.invalid.length && (
+                  <details className="small mb-2">
+                    <summary>Cadastros que precisam de revisão</summary>
+                    <ul>
+                      {preview.invalid.map((g) => (
+                        <li key={g.id}>
+                          {g.companyName || g.name || g.id} — confira nome,
+                          endereço e localização no cadastro do gerador.
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
+              </>
+            )}
+            <button
+              type="button"
+              className="btn btn-success"
+              disabled={!preview.ready.length || !!draft || busy}
+              onClick={addNeighborhood}
+            >
+              <Plus size={16} /> Adicionar geradores do bairro
+              {group ? ` (${preview.ready.length})` : ""}
+            </button>
+            <small className="d-block mt-2">
+              Revisão antes de salvar: não repete geradores já selecionados.
+              Novos cadastros futuros no bairro devem ser incluídos na edição da
+              rota.
+            </small>
+            {notice && (
+              <p role="status" className="alert alert-success mt-2 mb-0">
+                {notice}
+              </p>
+            )}
+          </div>
           <label className="d-block">
             Buscar PEV ou gerador cadastrado
             <input
@@ -268,16 +366,30 @@ export default function RoutePointsEditor({
               ["GENERATOR", sources?.generators || []],
             ].map(([kind, items]) => (
               <div key={kind}>
-                <h3>{kind === "PEV" ? "PEVs" : "Geradores"}</h3>
+                <h3>
+                  {kind === "PEV" ? "PEVs" : "Geradores"}{" "}
+                  <small>({filtered(items).length})</small>
+                </h3>
                 <div className="route-source-options">
                   {filtered(items).map((p) => (
                     <button
                       type="button"
                       className="btn btn-outline-secondary text-start"
                       key={p.id}
+                      disabled={
+                        included(kind, p.id) || points.length >= maxPoints
+                      }
                       onClick={() => choose(kind, p)}
                     >
-                      <Plus size={14} /> {p.companyName || p.name || p.binId}
+                      <span>
+                        <strong>{p.companyName || p.name || p.binId}</strong>
+                        <small className="d-block">
+                          {fullAddress(p) || "Endereço a conferir"}
+                        </small>
+                      </span>
+                      <span>
+                        {included(kind, p.id) ? "Na rota" : <Plus size={16} />}
+                      </span>
                     </button>
                   ))}
                   {!filtered(items).length && (
@@ -299,11 +411,21 @@ export default function RoutePointsEditor({
           >
             <MapPin size={16} /> Adicionar ponto por endereço
           </button>
-          <div className="d-flex gap-3 mt-2">
-            <a className="btn btn-sm btn-outline-success align-self-center" href="/create-bin" target="_blank" rel="noreferrer">
+          <div className="d-flex gap-2 flex-wrap mt-2">
+            <a
+              className="btn btn-sm btn-outline-success align-self-center"
+              href="/create-bin"
+              target="_blank"
+              rel="noreferrer"
+            >
               Cadastrar novo PEV
             </a>
-            <a className="btn btn-sm btn-outline-success align-self-center" href="/create-generator" target="_blank" rel="noreferrer">
+            <a
+              className="btn btn-sm btn-outline-success align-self-center"
+              href="/create-generator"
+              target="_blank"
+              rel="noreferrer"
+            >
               Cadastrar novo gerador
             </a>
           </div>

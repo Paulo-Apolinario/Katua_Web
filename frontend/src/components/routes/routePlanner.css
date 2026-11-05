@@ -221,3 +221,74 @@
     flex-wrap: wrap;
   }
 }
+
+.route-collector-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+  margin: 8px 0 12px;
+}
+.route-collector-options label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid #dce7df;
+  border-radius: 8px;
+  background: #f8fbf9;
+}
+.route-neighborhood-picker {
+  padding: 16px;
+  margin: 16px 0;
+  border: 1px solid #c8dfd3;
+  border-radius: 12px;
+  background: #f3f9f6;
+}
+.route-filter-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #dce7df;
+  font-size: 0.875rem;
+}
+.route-available-panel .form-control,
+.route-available-panel .form-select,
+.route-neighborhood-picker .form-select {
+  min-height: 42px;
+}
+.route-source-options {
+  max-height: 280px;
+  padding-right: 4px;
+}
+.route-source-options .btn {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  white-space: normal;
+  min-height: 58px;
+}
+.route-source-options .btn > span:first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.route-source-options .btn small {
+  font-size: 11px;
+  font-weight: 400;
+}
+.route-available-panel .route-available-list:empty {
+  display: none;
+}
+@media (max-width: 600px) {
+  .route-neighborhood-picker {
+    padding: 12px;
+  }
+  .route-neighborhood-picker > .btn {
+    width: 100%;
+    white-space: normal;
+  }
+}

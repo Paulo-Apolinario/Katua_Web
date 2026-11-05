@@ -12,9 +12,7 @@ import {
 import { getAllDrivers } from "../../services/driverService";
 import { getAllVehicles } from "../../services/vehicleService";
 import RoutePointsEditor from "../../components/routes/RoutePointsEditor";
-import RouteOptimization, {
-  RouteEndpoints,
-} from "../../components/routes/RouteOptimization";
+import RouteOptimization from "../../components/routes/RouteOptimization";
 import RoutePlanningMap from "../../components/routes/RoutePlanningMap";
 import { array } from "../../components/routes/routePlanning";
 import "../../components/routes/routePlanner.css";
@@ -200,7 +198,36 @@ export default function RoutePlans() {
               <div className="route-planning-main">
                 <section className="card p-4">
                   <h2>1. Identificação e frequência</h2>
-                  <div className="d-flex flex-wrap gap-2 mb-3" aria-label="Dias de atendimento"><button type="button" className="btn btn-outline-success" onClick={()=>{patch('weekdays',[0,1,2,3,4,5,6]);patch('intervalWeeks',1);}}>Diária: todos os dias</button><button type="button" className="btn btn-outline-success" onClick={()=>{patch('weekdays',[1,2,3,4,5]);patch('intervalWeeks',1);}}>Segunda a sexta</button></div><p className="small">Cadastre as casas e pontos atendidos no bairro. Cada data terá sua própria execução e o resultado de um dia não remove pontos da programação futura.</p>
+                  <div
+                    className="d-flex flex-wrap gap-2 mb-3"
+                    aria-label="Dias de atendimento"
+                  >
+                    <button
+                      type="button"
+                      className="btn btn-outline-success"
+                      onClick={() => {
+                        patch("weekdays", [0, 1, 2, 3, 4, 5, 6]);
+                        patch("intervalWeeks", 1);
+                      }}
+                    >
+                      Diária: todos os dias
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-outline-success"
+                      onClick={() => {
+                        patch("weekdays", [1, 2, 3, 4, 5]);
+                        patch("intervalWeeks", 1);
+                      }}
+                    >
+                      Segunda a sexta
+                    </button>
+                  </div>
+                  <p className="small">
+                    Cadastre as casas e pontos atendidos no bairro. Cada data
+                    terá sua própria execução e o resultado de um dia não remove
+                    pontos da programação futura.
+                  </p>
                   <div className="route-fields">
                     <label>
                       Nome da rota fixa
@@ -254,20 +281,6 @@ export default function RoutePlans() {
                         required
                         value={draft.departureTime}
                         onChange={(e) => patch("departureTime", e.target.value)}
-                      />
-                    </label>
-                    <label>
-                      Duração prevista em minutos
-                      <input
-                        className="form-control"
-                        type="number"
-                        min={15}
-                        max={1440}
-                        required
-                        value={draft.estimatedMinutes}
-                        onChange={(e) =>
-                          patch("estimatedMinutes", Number(e.target.value))
-                        }
                       />
                     </label>
                   </div>
@@ -386,23 +399,11 @@ export default function RoutePlans() {
                       </select>
                     </label>
                   </div>
-                  <TeamPicker
-                    teams={sources.teams}
-                    teamId={draft.teamId}
-                    disabled={busy}
-                    onChange={(t) =>
-                      setDraft((p) => ({
-                        ...p,
-                        teamId: t?.id || null,
-                        collectorIds: t ? [...t.memberIds] : p.collectorIds,
-                      }))
-                    }
-                  />
                   <p className="mt-3 mb-2">
                     Catadores da equipe — o primeiro selecionado é o responsável
                     padrão.
                   </p>
-                  <div className="d-flex gap-3 flex-wrap">
+                  <div className="route-collector-options">
                     {sources.collectors.map((c) => (
                       <label key={c.id}>
                         <input
@@ -424,17 +425,61 @@ export default function RoutePlans() {
                       </label>
                     ))}
                   </div>
+                  <TeamPicker
+                    teams={sources.teams}
+                    teamId={draft.teamId}
+                    disabled={busy}
+                    onChange={(t) =>
+                      setDraft((p) => ({
+                        ...p,
+                        teamId: t?.id || null,
+                        collectorIds: t ? [...t.memberIds] : p.collectorIds,
+                      }))
+                    }
+                  />
                 </section>
                 <section className="card p-4">
-                  <h2>3. Saída, destino e pontos</h2>
-                  <label className="d-block mb-3">Forma de atendimento<select className="form-select" value={draft.coverageMode||'POINTS'} onChange={e=>patch('coverageMode',e.target.value)}><option value="POINTS">Pontos definidos no planejamento</option><option value="AREA">Coleta por bairro / área, com pontos opcionais</option></select></label>
-                  {draft.coverageMode==='AREA'&&<><label className="d-block mb-3">Bairros, ruas e limites atendidos *<textarea className="form-control" required minLength={3} maxLength={1000} value={draft.coverageArea||''} onChange={e=>patch('coverageArea',e.target.value)}/></label><p>A execução pode iniciar sem pontos cadastrados, após definição da equipe, motorista, veículo e data. Registre os pontos que precisar durante o trabalho. Para concluir, registre ao menos um atendimento realizado.</p></>}
+                  <h2>3. Pontos da rota</h2>
+                  <label className="d-block mb-3">
+                    Forma de atendimento
+                    <select
+                      className="form-select"
+                      aria-label="Forma de atendimento"
+                      value={draft.coverageMode || "POINTS"}
+                      onChange={(e) => patch("coverageMode", e.target.value)}
+                    >
+                      <option value="POINTS">
+                        Pontos definidos no planejamento
+                      </option>
+                      <option value="AREA">
+                        Coleta por bairro / área, com pontos opcionais
+                      </option>
+                    </select>
+                  </label>
+                  {draft.coverageMode === "AREA" && (
+                    <>
+                      <label className="d-block mb-3">
+                        Bairros, ruas e limites atendidos *
+                        <textarea
+                          className="form-control"
+                          required
+                          minLength={3}
+                          maxLength={1000}
+                          value={draft.coverageArea || ""}
+                          onChange={(e) =>
+                            patch("coverageArea", e.target.value)
+                          }
+                        />
+                      </label>
+                      <p>
+                        A execução pode iniciar sem pontos cadastrados, após
+                        definição da equipe, motorista, veículo e data. Registre
+                        os pontos que precisar durante o trabalho. Para
+                        concluir, registre ao menos um atendimento realizado.
+                      </p>
+                    </>
+                  )}
 
-                  <RouteEndpoints
-                    startPoint={draft.startPoint}
-                    endPoint={draft.endPoint}
-                    onChange={patch}
-                  />
                   <RouteOptimization
                     points={draft.points}
                     startPoint={draft.startPoint}
@@ -552,7 +597,10 @@ export default function RoutePlans() {
                 {p.weekdays.map((d) => days[d]).join(", ")} · {p.departureTime}
               </p>
               <p>
-                {p.coverageMode==='AREA'?'Coleta por área: '+p.coverageArea:p.points.length+' pontos'} · {p.collectorIds.length} catadores
+                {p.coverageMode === "AREA"
+                  ? "Coleta por área: " + p.coverageArea
+                  : p.points.length + " pontos"}{" "}
+                · {p.collectorIds.length} catadores
               </p>
               {p.lastGenerationError && (
                 <p
