@@ -1,0 +1,49 @@
+{
+  "date": "2026-11-04",
+  "environment": "Chromium + build Vite real + respostas de API simuladas locais; sem acesso à produção",
+  "passed": 10,
+  "failed": 0,
+  "results": [
+    {
+      "name": "Lista filtra bairro sem diferenciar acentos/maiúsculas e reúne sugestões cadastradas",
+      "status": "PASS"
+    },
+    {
+      "name": "Bairro combina com classificação e limpar filtros restaura todos, inclusive sem bairro",
+      "status": "PASS"
+    },
+    {
+      "name": "Histórico apresenta cartões com localização e permite selecionar geradores individualmente",
+      "status": "PASS"
+    },
+    {
+      "name": "Bairro restringe o histórico e preserva selecionados fora dele com aviso explícito",
+      "status": "PASS"
+    },
+    {
+      "name": "Selecionar resultados adiciona somente resultados visíveis sem perder a seleção anterior",
+      "status": "PASS"
+    },
+    {
+      "name": "Bairro inexistente mostra estado vazio e limpar pesquisa/bairro restaura o histórico selecionado",
+      "status": "PASS"
+    },
+    {
+      "name": "Limpar seleção preserva o bairro e não exibe histórico sem cadastro selecionado",
+      "status": "PASS"
+    },
+    {
+      "name": "Históricos compartilhados de motorista e catador preservam vínculos e participantes",
+      "status": "PASS"
+    },
+    {
+      "name": "Seletor e filtro se adaptam ao celular sem transbordar a página",
+      "status": "PASS"
+    },
+    {
+      "name": "Filtros e seleção não modificam cadastros nem geram erros JavaScript",
+      "status": "PASS"
+    }
+  ],
+  "errors": []
+}

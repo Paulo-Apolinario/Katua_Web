@@ -1,0 +1,108 @@
+.owner-history-picker-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 12px 0;
+}
+.owner-history-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
+  gap: 10px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 3px;
+  margin: 0;
+  border: 0;
+}
+.owner-history-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-height: 68px;
+  padding: 12px;
+  margin: 0;
+  border: 1px solid #dce6e0;
+  border-radius: 9px;
+  background: #fff;
+  cursor: pointer;
+}
+.owner-history-option:hover {
+  border-color: #72aa8e;
+  background: #f7fbf9;
+}
+.owner-history-option.is-selected {
+  border-color: #198754;
+  background: #edf8f1;
+}
+.owner-history-option:focus-within {
+  outline: 2px solid #198754;
+  outline-offset: 1px;
+}
+.owner-history-option input {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  margin-top: 3px;
+  accent-color: #198754;
+}
+.owner-history-option span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.owner-history-option strong {
+  display: block;
+  font-size: 14px;
+  line-height: 1.4;
+}
+.owner-history-option small {
+  display: block;
+  margin-top: 4px;
+  color: #63776b;
+  line-height: 1.4;
+}
+.owner-history-picker-empty {
+  grid-column: 1/-1;
+  margin: 0;
+  padding: 18px;
+  border: 1px dashed #dce6e0;
+  border-radius: 8px;
+  color: #63776b;
+}
+.owner-history-selected {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.owner-history-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border: 1px solid #a7cbb7;
+  border-radius: 20px;
+  background: #edf8f1;
+  color: #145f3d;
+  font-size: 12px;
+  cursor: pointer;
+}
+.owner-history-chip span {
+  font-size: 18px;
+  line-height: 1;
+}
+@media (max-width: 575.98px) {
+  .owner-history-picker-toolbar button {
+    min-height: 40px;
+  }
+  .owner-history-picker {
+    max-height: 340px;
+  }
+}
+
+.owner-history-chip.is-outside {
+  background: #fff7df;
+  border-color: #d9c37b;
+  color: #725900;
+}

@@ -1,6 +1,17 @@
+import NeighborhoodFilter from "../../components/generators/NeighborhoodFilter";
+import {
+  normalizeSearchText,
+  matchesNeighborhood,
+} from "../../utils/generatorNeighborhood";
 import PrivacyAcceptanceStatus from "../../components/registrations/PrivacyAcceptanceStatus";
 import RegistrationPdfExport from "../../components/registrations/RegistrationPdfExport";
-import { formatDocument, normalizeDocument, generatorCategory, categoryLabels, generatorTypeLabel } from "../../utils/generatorDocument";
+import {
+  formatDocument,
+  normalizeDocument,
+  generatorCategory,
+  categoryLabels,
+  generatorTypeLabel,
+} from "../../utils/generatorDocument";
 import { ManagementHeader } from "../../components/management/ManagementWorkspace";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
@@ -55,6 +66,7 @@ const GeneratorList = () => {
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState("");
   const [category, setCategory] = useState("");
+  const [neighborhood, setNeighborhood] = useState("");
 
   const loadGenerators = async () => {
     try {
@@ -74,10 +86,11 @@ const GeneratorList = () => {
   }, []);
 
   const filteredGenerators = useMemo(() => {
-    const term = searchText.trim().toLowerCase();
+    const term = normalizeSearchText(searchText);
 
     return generators.filter((generator) => {
       if (category && generatorCategory(generator) !== category) return false;
+      if (!matchesNeighborhood(generator, neighborhood)) return false;
       if (!term) return true;
       const values = [
         generator.name,
@@ -85,6 +98,7 @@ const GeneratorList = () => {
         generator.email,
         generator.phone,
         generator.city,
+        generator.neighborhood,
         generator.state,
         generator.type,
         generator.documentNumber,
@@ -94,14 +108,14 @@ const GeneratorList = () => {
         generator.accessStatus,
       ];
 
-      if (normalizeDocument(term) && generator.documentNumber?.includes(normalizeDocument(term))) return true;
-      return values.some((value) =>
-        String(value || "")
-          .toLowerCase()
-          .includes(term),
-      );
+      if (
+        normalizeDocument(term) &&
+        generator.documentNumber?.includes(normalizeDocument(term))
+      )
+        return true;
+      return values.some((value) => normalizeSearchText(value).includes(term));
     });
-  }, [generators, searchText, category]);
+  }, [generators, searchText, category, neighborhood]);
 
   const stats = useMemo(() => {
     const total = generators.length;
@@ -182,25 +196,67 @@ const GeneratorList = () => {
         <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
           <h4 className="mb-0 fw-600">Lista de Geradores</h4>
 
-          <div className="d-flex flex-wrap gap-2 align-items-center" style={{ minWidth: 0, maxWidth: "100%" }}>
-            <label className="small" htmlFor="generator-category">Classificação</label>
-            <select className="form-select w-auto" style={{ maxWidth: "100%" }} id="generator-category" value={category} onChange={e => setCategory(e.target.value)}>
+          <div
+            className="d-flex flex-wrap gap-2 align-items-center"
+            style={{ minWidth: 0, maxWidth: "100%" }}
+          >
+            <label className="small" htmlFor="generator-category">
+              Classificação
+            </label>
+            <select
+              className="form-select w-auto"
+              style={{ maxWidth: "100%" }}
+              id="generator-category"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+            >
               <option value="">Todas</option>
-              {Object.entries(categoryLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+              {Object.entries(categoryLabels).map(([key, label]) => (
+                <option key={key} value={key}>
+                  {label}
+                </option>
+              ))}
             </select>
-          <div className="management-search">
-            <Search size={18} />
-            <input
-              value={searchText}
-              onChange={(event) => setSearchText(event.target.value)}
-              placeholder="Buscar gerador..."
+            <div className="management-search">
+              <Search size={18} />
+              <input
+                value={searchText}
+                onChange={(event) => setSearchText(event.target.value)}
+                placeholder="Buscar gerador..."
 
-              aria-label="Buscar gerador..."
-            />
-          </div>
+                aria-label="Buscar gerador..."
+              />
+            </div>
           </div>
         </div>
 
+        <div className="row g-3 align-items-end mb-4">
+          <div className="col-md-7 col-xl-6">
+            <NeighborhoodFilter
+              id="generator-neighborhood"
+              generators={generators}
+              value={neighborhood}
+              onChange={setNeighborhood}
+            />
+          </div>
+          <div className="col-md-5 col-xl-6 d-flex gap-3 align-items-center flex-wrap">
+            <button
+              type="button"
+              className="secondary-btn btn-sm"
+              disabled={!searchText && !category && !neighborhood}
+              onClick={() => {
+                setSearchText("");
+                setCategory("");
+                setNeighborhood("");
+              }}
+            >
+              Limpar filtros
+            </button>
+            <span className="small text-muted" role="status">
+              {filteredGenerators.length} de {generators.length} gerador(es)
+            </span>
+          </div>
+        </div>
         <SimpleBar forceVisible="x" autoHide>
           <table className="table nowrap w-100">
             <thead>
@@ -208,7 +264,7 @@ const GeneratorList = () => {
                 <th>Gerador</th>
                 <th>Tipo</th>
                 <th>Contato</th>
-                <th>Cidade/UF</th>
+                <th>Bairro / Cidade</th>
                 <th>Acesso</th>
                 <th>Cadastro</th>
                 <th className="text-end">Ações</th>
@@ -245,7 +301,13 @@ const GeneratorList = () => {
                       </div>
                     </td>
 
-                    <td><div>{generatorTypeLabel(generator)}</div><small className="text-muted">{formatDocument(generator.documentNumber) || "CPF/CNPJ não informado"}</small></td>
+                    <td>
+                      <div>{generatorTypeLabel(generator)}</div>
+                      <small className="text-muted">
+                        {formatDocument(generator.documentNumber) ||
+                          "CPF/CNPJ não informado"}
+                      </small>
+                    </td>
 
                     <td>
                       <div>{generator.email || "N/A"}</div>
@@ -255,8 +317,13 @@ const GeneratorList = () => {
                     </td>
 
                     <td>
-                      {generator.city || "N/A"}
-                      {generator.state ? `/${generator.state}` : ""}
+                      <div>
+                        {generator.neighborhood || "Bairro não informado"}
+                      </div>
+                      <small className="text-muted">
+                        {generator.city || "Cidade não informada"}
+                        {generator.state ? `/${generator.state}` : ""}
+                      </small>
                     </td>
 
                     <td>
@@ -282,7 +349,10 @@ const GeneratorList = () => {
 
                     <td>
                       <div className="d-flex justify-content-end gap-2 flex-wrap">
-                        <PrivacyAcceptanceStatus kind="generators" id={generator.id}/>
+                        <PrivacyAcceptanceStatus
+                          kind="generators"
+                          id={generator.id}
+                        />
                         <Link
                           to={`/edit-generator/${generator.id}`}
                           className="btn btn-sm btn-outline-primary"
