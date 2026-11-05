@@ -1,3 +1,4 @@
+import { UNIT_LABELS } from "../../utils/collectionWorkspace";
 import { useEffect, useRef, useState } from "react";
 import { reviewCollectionQuantities } from "../../services/collectionService";
 const amount = (value) =>
@@ -19,7 +20,11 @@ export default function CollectionQuantityReview({
       Object.fromEntries(
         (collection.collectionMaterials || []).map((m) => [
           m.id,
-          String(m.quantity),
+          m.reportedQuantity == null &&
+          Number(m.quantity) === 0 &&
+          !collection.quantityReviewVersion
+            ? ""
+            : String(m.quantity),
         ]),
       ),
     );
@@ -33,7 +38,13 @@ export default function CollectionQuantityReview({
   const canEdit = ["RECEIVED", "SORTING"].includes(collection.status);
   const reviewed = (collection.quantityReviewVersion || 0) > 0;
   const editable = canEdit && (!reviewed || editing);
-  const changed = rows.some((m) => Number(values[m.id]) !== Number(m.quantity));
+  const pending = (m) =>
+    m.reportedQuantity == null &&
+    Number(m.quantity) === 0 &&
+    !collection.quantityReviewVersion;
+  const changed = rows.some(
+    (m) => !pending(m) && Number(values[m.id]) !== Number(m.quantity),
+  );
   async function save(event) {
     event.preventDefault();
     if (guard.current) return;
@@ -138,10 +149,20 @@ export default function CollectionQuantityReview({
                     <td data-label="Material">
                       {m.nameSnapshot}
                       <br />
-                      <small>{m.unit}</small>
+                      <small>
+                        {{
+                          KG: "kg",
+                          TON: "t",
+                          LITER: "L",
+                          UNIT: "un",
+                          CUBIC_METER: "m³",
+                        }[m.unit] || ""}
+                      </small>
                     </td>
                     <td data-label="Informado em campo">
-                      {amount(m.reportedQuantity ?? m.quantity)} {m.unit}
+                      {m.reportedQuantity == null
+                        ? "Não informado"
+                        : `${amount(m.reportedQuantity)} ${UNIT_LABELS[m.unit] || ""}`}
                     </td>
                     <td data-label="Quantidade recebida">
                       <input
@@ -165,39 +186,46 @@ export default function CollectionQuantityReview({
                       {Number(m.wasteEntry?.destinedQuantity) > 0 && (
                         <small>
                           Já destinado: {amount(m.wasteEntry.destinedQuantity)}{" "}
-                          {m.unit}
+                          {UNIT_LABELS[m.unit] || ""}
                         </small>
                       )}
                     </td>
                     <td data-label="Diferença com o informado">
-                      {values[m.id] === ""
+                      {m.reportedQuantity == null || values[m.id] === ""
                         ? "—"
                         : amount(
                             Number(values[m.id]) -
                               Number(m.reportedQuantity ?? m.quantity),
                           )}{" "}
-                      {m.unit}
+                      {UNIT_LABELS[m.unit] || ""}
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <label className="form-label" htmlFor="quantity-review-reason">
-            Justificativa {changed ? "(obrigatória)" : "(opcional)"}
-          </label>
-          <textarea
-            id="quantity-review-reason"
-            className="form-control mb-3"
-            rows={3}
-            maxLength={2000}
-            required={changed}
-            minLength={changed ? 5 : undefined}
-            disabled={busy}
-            value={reason}
-            onChange={(event) => setReason(event.target.value)}
-            placeholder="Ex.: diferença identificada na pesagem da balança da cooperativa."
-          />
+          <details open={changed} className="mb-3">
+            <summary>
+              {changed
+                ? "Justificativa da divergência (obrigatória)"
+                : "Observação da conferência (opcional)"}
+            </summary>
+            <label className="form-label" htmlFor="quantity-review-reason">
+              Justificativa {changed ? "(obrigatória)" : "(opcional)"}
+            </label>
+            <textarea
+              id="quantity-review-reason"
+              className="form-control mb-3"
+              rows={3}
+              maxLength={2000}
+              required={changed}
+              minLength={changed ? 5 : undefined}
+              disabled={busy}
+              value={reason}
+              onChange={(event) => setReason(event.target.value)}
+              placeholder="Ex.: diferença identificada na pesagem da balança da cooperativa."
+            />
+          </details>
           {error && (
             <p role="alert" className="text-danger">
               {error}

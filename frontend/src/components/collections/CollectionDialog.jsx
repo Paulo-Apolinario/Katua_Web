@@ -18,6 +18,15 @@ export default function CollectionDialog({
     document.body.style.overflow = "hidden";
     root.current?.focus();
     function keydown(e) {
+      const otherDialog = [
+        ...document.querySelectorAll('[role="dialog"][aria-modal="true"]'),
+      ].find(
+        (el) =>
+          el !== root.current &&
+          !root.current?.contains(el) &&
+          el.contains(document.activeElement),
+      );
+      if (otherDialog) return;
       if (e.key === "Escape" && !locked.current) {
         e.preventDefault();
         close.current();

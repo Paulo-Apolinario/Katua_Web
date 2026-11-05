@@ -1,3 +1,4 @@
+import { COLLECTION_STAGES } from "../../utils/collectionWorkspace";
 import { useLiveRefresh } from "../../hooks/useLiveRefresh";
 import { useSearchParams } from "react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -102,8 +103,8 @@ export default function ExtraOrdersWorkspace() {
       openedOrder.current = linkedOrder;
       void open(linkedOrder);
     }
-  // open is an action; polling must not reopen or reset this form.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // open is an action; polling must not reopen or reset this form.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [linkedOrder, busy]);
   async function open(id) {
     if (busy) return;
@@ -313,35 +314,41 @@ export default function ExtraOrdersWorkspace() {
                         Conferir localização
                       </a>
                     )}
-                    <div className="table-responsive">
-                      <table className="table align-middle">
-                        <thead>
-                          <tr>
-                            <th>Material</th>
-                            <th>Quantidade informada</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {selected.payload.materials.map((m, i) => (
-                            <tr key={i}>
-                              <td>
-                                {m.nameSnapshot ||
-                                  m.proposedMaterial?.name ||
-                                  context?.catalog.find(
-                                    (c) => c.id === m.wasteTypeId,
-                                  )?.name ||
-                                  "Material do catálogo"}
-                              </td>
-                              <td>
-                                {m.quantity == null
-                                  ? "Estimativa não informada"
-                                  : `${Number(m.quantity).toLocaleString("pt-BR")} ${unit[m.unit]}`}
-                              </td>
+                    <details open={!selected.collection?.quantityReviewVersion}>
+                      <summary>Relato original dos materiais</summary>
+                      <div className="table-responsive">
+                        <table className="table align-middle">
+                          <thead>
+                            <tr>
+                              <th>Material</th>
+                              <th>Quantidade informada</th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+                          </thead>
+                          <tbody>
+                            {selected.payload.materials.map((m, i) => (
+                              <tr key={i}>
+                                <td>
+                                  {m.nameSnapshot ||
+                                    m.proposedMaterial?.name ||
+                                    context?.catalog.find(
+                                      (c) => c.id === m.wasteTypeId,
+                                    )?.name ||
+                                    "Material do catálogo"}
+                                </td>
+                                <td>
+                                  {m.quantity == null
+                                    ? selected.payload.mode === "COLLECTED"
+                                      ? "Quantidade a conferir"
+                                      : "Estimativa não informada"
+                                    : `${Number(m.quantity).toLocaleString("pt-BR")} ${unit[m.unit]}`}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </details>
+
                     <p className="small text-muted">
                       As unidades são preservadas. A análise da O.C. não cria
                       lote de estoque.
@@ -364,18 +371,33 @@ export default function ExtraOrdersWorkspace() {
                         ))}
                       </div>
                     )}
+                    {!!selected.collection?.quantityReviewVersion && (
+                      <div className="alert alert-light border mt-3">
+                        <strong>Quantidades conferidas pela cooperativa</strong>
+                        {selected.collection.collectionMaterials?.map((m) => (
+                          <div key={m.id}>
+                            {m.nameSnapshot}:{" "}
+                            {Number(m.quantity).toLocaleString("pt-BR")}{" "}
+                            {unit[m.unit]}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                     {selected.collection && (
                       <div className="alert alert-success mt-3">
                         Coleta vinculada:{" "}
                         <span className="text-break">
                           {selected.collection.id}
                         </span>{" "}
-                        · {selected.collection.status}
+                        ·{" "}
+                        {COLLECTION_STAGES[selected.collection.status] ||
+                          "Situação não disponível"}
                         <br />
-                        <Link className="btn btn-sm btn-outline-success align-self-center"
+                        <Link
+                          className="btn btn-sm btn-outline-success align-self-center"
                           to={`/waste-list?coleta=${encodeURIComponent(selected.collection.id)}`}
                         >
-                          Abrir coleta para recebimento, triagem e encerramento
+                          Continuar atendimento da coleta
                         </Link>
                       </div>
                     )}
@@ -399,178 +421,228 @@ export default function ExtraOrdersWorkspace() {
                 </section>
               </div>
               <div className="col-xl-5">
-                <section className="card border-0 shadow-sm">
-                  <div className="card-body p-4">
-                    <h2 className="h5">Conferência da cooperativa</h2>
-                    <p className="small text-muted">
-                      Registre a decisão administrativa e, separadamente, a
-                      chegada física do material.
-                    </p>
-                    <label className="form-label" htmlFor="oc-notes">
-                      Observações da análise ou conferência
-                    </label>
-                    <textarea
-                      id="oc-notes"
-                      className="form-control mb-3"
-                      value={notes}
-                      disabled={busy}
-                      maxLength={2000}
-                      onChange={(e) => setNotes(e.target.value)}
-                    />
-                    <label className="d-flex gap-2 mb-4">
-                      <input
-                        type="checkbox"
-                        checked={confirmed}
+                {["PENDING_REVIEW", "NEEDS_INFO"].includes(selected.status) ? (
+                  <section className="card border-0 shadow-sm">
+                    <div className="card-body p-4">
+                      <h2 className="h5">1. Conferir e analisar a ordem</h2>
+                      <p className="small text-muted">
+                        Registre a decisão administrativa e, separadamente, a
+                        chegada física do material.
+                      </p>
+                      <label className="form-label" htmlFor="oc-notes">
+                        Observações da análise ou conferência
+                      </label>
+                      <textarea
+                        id="oc-notes"
+                        className="form-control mb-3"
+                        value={notes}
                         disabled={busy}
-                        onChange={(e) => setConfirmed(e.target.checked)}
+                        maxLength={2000}
+                        onChange={(e) => setNotes(e.target.value)}
                       />
-                      Conferi os dados e confirmo esta operação.
-                    </label>
-                    {["PENDING_REVIEW", "NEEDS_INFO"].includes(
-                      selected.status,
-                    ) && (
-                      <>
-                        <label className="form-label" htmlFor="oc-program">
-                          Programar atendimento (opcional)
-                        </label>
+                      <label className="d-flex gap-2 mb-4">
                         <input
-                          id="oc-program"
-                          type="date"
-                          className="form-control mb-3"
-                          value={scheduledDate}
+                          type="checkbox"
+                          checked={confirmed}
                           disabled={busy}
-                          onChange={(e) => setScheduledDate(e.target.value)}
+                          onChange={(e) => setConfirmed(e.target.checked)}
                         />
-                        <label className="form-label" htmlFor="oc-driver">
-                          Motorista (opcional)
-                        </label>
-                        <select
-                          id="oc-driver"
-                          className="form-select mb-3"
-                          value={driverId}
-                          disabled={busy}
-                          onChange={(e) => setDriverId(e.target.value)}
-                        >
-                          <option value="">Definir posteriormente</option>
-                          {context?.drivers.map((d) => (
-                            <option key={d.id} value={d.id}>
-                              {d.name}
-                            </option>
-                          ))}
-                        </select>
-                        <label className="form-label" htmlFor="oc-vehicle">
-                          Veículo (opcional)
-                        </label>
-                        <select
-                          id="oc-vehicle"
-                          className="form-select mb-3"
-                          value={vehicleId}
-                          disabled={busy}
-                          onChange={(e) => {
-                            setVehicleId(e.target.value);
-                            const v = context?.vehicles.find(
-                              (v) => v.id === e.target.value,
-                            );
-                            if (v?.driverId) setDriverId(v.driverId);
-                          }}
-                        >
-                          <option value="">Definir posteriormente</option>
-                          {context?.vehicles.map((v) => (
-                            <option key={v.id} value={v.id}>
-                              {v.plate}
-                            </option>
-                          ))}
-                        </select>
-                        <div className="d-grid gap-2 mb-4">
-                          <button
-                            className="btn btn-success"
-                            disabled={busy || !confirmed}
-                            onClick={() => void act("ACCEPT")}
-                          >
-                            Aceitar O.C. e vincular coleta
-                          </button>
-                          <button
-                            className="btn btn-outline-success"
-                            disabled={busy || !confirmed}
-                            onClick={() => void act("NEEDS_INFO")}
-                          >
-                            Solicitar complementação
-                          </button>
-                        </div>
-                        <h3 className="h6">Recusa e encaminhamento</h3>
-                        <label className="form-label" htmlFor="oc-custody">
-                          Onde está o material
-                        </label>
-                        <select
-                          id="oc-custody"
-                          className="form-select mb-3"
-                          value={custody}
-                          disabled={busy}
-                          onChange={(e) => setCustody(e.target.value)}
-                        >
-                          {Object.entries(custodyLabels).map(([key, label]) => (
-                            <option key={key} value={key}>
-                              {label}
-                            </option>
-                          ))}
-                        </select>
-                        <label
-                          className="form-label"
-                          htmlFor="oc-custody-notes"
-                        >
-                          Encaminhamento dado ao material
-                        </label>
-                        <textarea
-                          id="oc-custody-notes"
-                          className="form-control mb-3"
-                          maxLength={1000}
-                          value={custodyNotes}
-                          disabled={busy}
-                          onChange={(e) => setCustodyNotes(e.target.value)}
-                        />
-                        <button
-                          className="btn btn-outline-danger w-100 mb-4"
-                          disabled={busy || !confirmed}
-                          onClick={() => void act("REJECT")}
-                        >
-                          Recusar com justificativa
-                        </button>
-                      </>
-                    )}
-                    {selected.payload.mode === "COLLECTED" &&
-                      !selected.receivedAt &&
-                      selected.status !== "REJECTED" && (
+                        Conferi os dados e confirmo esta operação.
+                      </label>
+                      {["PENDING_REVIEW", "NEEDS_INFO"].includes(
+                        selected.status,
+                      ) && (
                         <>
-                          <h3 className="h6">Recebimento físico</h3>
-                          <p className="small text-muted">
-                            Pode ser confirmado antes da aprovação. Informe o
-                            momento real da chegada, no horário de Fortaleza.
-                          </p>
-                          <label
-                            className="form-label"
-                            htmlFor="oc-received-at"
-                          >
-                            Data e horário reais do recebimento
-                          </label>
-                          <input
-                            id="oc-received-at"
-                            type="datetime-local"
-                            className="form-control mb-3"
-                            value={receivedAt}
-                            disabled={busy}
-                            onChange={(e) => setReceivedAt(e.target.value)}
-                          />
-                          <button
-                            className="btn btn-outline-success w-100"
-                            disabled={busy || !confirmed}
-                            onClick={() => void act("RECEIVE")}
-                          >
-                            Confirmar recebimento físico
-                          </button>
+                          <details className="mb-3">
+                            <summary>Programação e recursos (opcional)</summary>
+                            <div className="mt-3">
+                              <label
+                                className="form-label"
+                                htmlFor="oc-program"
+                              >
+                                Programar atendimento (opcional)
+                              </label>
+                              <input
+                                id="oc-program"
+                                type="date"
+                                className="form-control mb-3"
+                                value={scheduledDate}
+                                disabled={busy}
+                                onChange={(e) =>
+                                  setScheduledDate(e.target.value)
+                                }
+                              />
+                              <label className="form-label" htmlFor="oc-driver">
+                                Motorista (opcional)
+                              </label>
+                              <select
+                                id="oc-driver"
+                                className="form-select mb-3"
+                                value={driverId}
+                                disabled={busy}
+                                onChange={(e) => setDriverId(e.target.value)}
+                              >
+                                <option value="">Definir posteriormente</option>
+                                {context?.drivers.map((d) => (
+                                  <option key={d.id} value={d.id}>
+                                    {d.name}
+                                  </option>
+                                ))}
+                              </select>
+                              <label
+                                className="form-label"
+                                htmlFor="oc-vehicle"
+                              >
+                                Veículo (opcional)
+                              </label>
+                              <select
+                                id="oc-vehicle"
+                                className="form-select mb-3"
+                                value={vehicleId}
+                                disabled={busy}
+                                onChange={(e) => {
+                                  setVehicleId(e.target.value);
+                                  const v = context?.vehicles.find(
+                                    (v) => v.id === e.target.value,
+                                  );
+                                  if (v?.driverId) setDriverId(v.driverId);
+                                }}
+                              >
+                                <option value="">Definir posteriormente</option>
+                                {context?.vehicles.map((v) => (
+                                  <option key={v.id} value={v.id}>
+                                    {v.plate}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          </details>
+                          <div className="d-grid gap-2 mb-4">
+                            <button
+                              className="btn btn-success"
+                              disabled={busy || !confirmed}
+                              onClick={() => void act("ACCEPT")}
+                            >
+                              Aceitar O.C. e vincular coleta
+                            </button>
+                            <button
+                              className="btn btn-outline-success"
+                              disabled={busy || !confirmed}
+                              onClick={() => void act("NEEDS_INFO")}
+                            >
+                              Solicitar complementação
+                            </button>
+                          </div>
+                          <details className="mb-3">
+                            <summary>Recusar a ordem</summary>
+                            <div className="mt-3">
+                              <h3 className="h6">Recusa e encaminhamento</h3>
+                              <label
+                                className="form-label"
+                                htmlFor="oc-custody"
+                              >
+                                Onde está o material
+                              </label>
+                              <select
+                                id="oc-custody"
+                                className="form-select mb-3"
+                                value={custody}
+                                disabled={busy}
+                                onChange={(e) => setCustody(e.target.value)}
+                              >
+                                {Object.entries(custodyLabels).map(
+                                  ([key, label]) => (
+                                    <option key={key} value={key}>
+                                      {label}
+                                    </option>
+                                  ),
+                                )}
+                              </select>
+                              <label
+                                className="form-label"
+                                htmlFor="oc-custody-notes"
+                              >
+                                Encaminhamento dado ao material
+                              </label>
+                              <textarea
+                                id="oc-custody-notes"
+                                className="form-control mb-3"
+                                maxLength={1000}
+                                value={custodyNotes}
+                                disabled={busy}
+                                onChange={(e) =>
+                                  setCustodyNotes(e.target.value)
+                                }
+                              />
+                              <button
+                                className="btn btn-outline-danger w-100 mb-4"
+                                disabled={busy || !confirmed}
+                                onClick={() => void act("REJECT")}
+                              >
+                                Recusar com justificativa
+                              </button>{" "}
+                            </div>
+                          </details>
                         </>
                       )}
+                      {selected.payload.mode === "COLLECTED" &&
+                        !selected.receivedAt &&
+                        selected.status !== "REJECTED" && (
+                          <>
+                            <details className="mt-3">
+                              <summary>
+                                Material chegou antes da análise?
+                              </summary>
+                              <div className="mt-3">
+                                <h3 className="h6">Recebimento físico</h3>
+                                <p className="small text-muted">
+                                  Pode ser confirmado antes da aprovação.
+                                  Informe o momento real da chegada, no horário
+                                  de Fortaleza.
+                                </p>
+                                <label
+                                  className="form-label"
+                                  htmlFor="oc-received-at"
+                                >
+                                  Data e horário reais do recebimento
+                                </label>
+                                <input
+                                  id="oc-received-at"
+                                  type="datetime-local"
+                                  className="form-control mb-3"
+                                  value={receivedAt}
+                                  disabled={busy}
+                                  onChange={(e) =>
+                                    setReceivedAt(e.target.value)
+                                  }
+                                />
+                                <button
+                                  className="btn btn-outline-success w-100"
+                                  disabled={busy || !confirmed}
+                                  onClick={() => void act("RECEIVE")}
+                                >
+                                  Confirmar recebimento físico
+                                </button>{" "}
+                              </div>
+                            </details>
+                          </>
+                        )}
+                    </div>
+                  </section>
+                ) : (
+                  <div className="alert alert-info">
+                    <strong>
+                      {selected.status === "REJECTED"
+                        ? "Ordem recusada"
+                        : "Análise concluída"}
+                    </strong>
+                    <p className="mb-0">
+                      {selected.status === "REJECTED"
+                        ? "Consulte a justificativa e o encaminhamento registrados."
+                        : "A aprovação e as próximas etapas são acompanhadas na coleta vinculada. Use Continuar atendimento da coleta."}
+                    </p>
                   </div>
-                </section>
+                )}
               </div>
             </div>
           </>

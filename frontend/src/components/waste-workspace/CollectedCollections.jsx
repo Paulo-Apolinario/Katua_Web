@@ -25,8 +25,11 @@ const stages = [
 ];
 const units = (rows = [], field) => {
   const totals = new Map();
-  for (const row of rows) totals.set(row.unit,(totals.get(row.unit)||0)+Number(row[field]||0));
-  return [...totals].map(([unit,value])=>quantity(value,unit)).join(" · ") || "0";
+  for (const row of rows)
+    totals.set(row.unit, (totals.get(row.unit) || 0) + Number(row[field] || 0));
+  return (
+    [...totals].map(([unit, value]) => quantity(value, unit)).join(" · ") || "0"
+  );
 };
 export default function CollectedCollections({ editor, revision }) {
   const [params] = useSearchParams();
@@ -283,9 +286,27 @@ export default function CollectedCollections({ editor, revision }) {
     </WastePage>
   );
 }
-const entryLots = entry => [...new Map((entry.destinations || [])
-  .filter(destination => destination.status !== "CANCELLED" && destination.type === "STOCK" && (destination.stockLotId || destination.stockLot?.id))
-  .map(destination => {const id=destination.stockLotId || destination.stockLot.id;return [id,{id,code:destination.stockLot?.code || destination.stockLot?.lotCode}];})).values()];
+const entryLots = (entry) => [
+  ...new Map(
+    (entry.destinations || [])
+      .filter(
+        (destination) =>
+          destination.status !== "CANCELLED" &&
+          destination.type === "STOCK" &&
+          (destination.stockLotId || destination.stockLot?.id),
+      )
+      .map((destination) => {
+        const id = destination.stockLotId || destination.stockLot.id;
+        return [
+          id,
+          {
+            id,
+            code: destination.stockLot?.code || destination.stockLot?.lotCode,
+          },
+        ];
+      }),
+  ).values(),
+];
 function CollectionRow({ c, expanded, toggle, destine, busy }) {
   const entries = c.collectionWasteEntries,
     editable =
@@ -306,7 +327,11 @@ function CollectionRow({ c, expanded, toggle, destine, busy }) {
           <small className="d-block text-muted">
             Coleta #{shortId(c.id)} · {dateLabel(c.collectedAt, true)}
           </small>
-          {c.scheduleId && <small className="d-block text-muted">Solicitação #{shortId(c.scheduleId)}</small>}
+          {c.scheduleId && (
+            <small className="d-block text-muted">
+              Solicitação #{shortId(c.scheduleId)}
+            </small>
+          )}
           <small>
             {c.collector?.name || "Responsável não informado"}
             {c.route?.name ? " · " + c.route.name : ""}
@@ -316,7 +341,13 @@ function CollectionRow({ c, expanded, toggle, destine, busy }) {
           <span className="badge text-bg-light">
             {COLLECTION_STAGES[c.status]}
           </span>
-          <small className="d-block text-primary">{entries.some(e => entryDisposition(e).followUp > 0) ? "Materiais em acompanhamento" : entries.every(e => Number(e.remainingQuantity) <= 0) ? "Etapa dos materiais finalizada" : "Há material sem encaminhamento"}</small>
+          <small className="d-block text-primary">
+            {entries.some((e) => entryDisposition(e).followUp > 0)
+              ? "Materiais em acompanhamento"
+              : entries.every((e) => Number(e.remainingQuantity) <= 0)
+                ? "Etapa dos materiais finalizada"
+                : "Há material sem encaminhamento"}
+          </small>
           <small className="d-block">
             {entries.length} material(is) ·{" "}
             {c.quantityReviewVersion
@@ -324,8 +355,12 @@ function CollectionRow({ c, expanded, toggle, destine, busy }) {
               : "Conferência pendente"}
           </small>
         </td>
-        <td><strong>{units(entries, "remainingQuantity")}</strong>
-          {entries.every(entry=>Number(entry.remainingQuantity)<=0)&&entries.map(entry=><MaterialDestinations key={entry.id} entry={entry} compact />)}
+        <td>
+          <strong>{units(entries, "remainingQuantity")}</strong>
+          {entries.every((entry) => Number(entry.remainingQuantity) <= 0) &&
+            entries.map((entry) => (
+              <MaterialDestinations key={entry.id} entry={entry} compact />
+            ))}
         </td>
         <td>
           <div className="d-flex gap-2 flex-wrap">
@@ -338,13 +373,14 @@ function CollectionRow({ c, expanded, toggle, destine, busy }) {
               {expanded ? "Recolher materiais" : "Ver materiais"}
             </button>
             <Link
-              className="btn btn-sm btn-outline-secondary"
+              className="btn btn-sm btn-success"
               to={`/waste-list?coleta=${encodeURIComponent(c.id)}`}
             >
-              {!c.quantityReviewVersion &&
-              ["COLLECTED", "RECEIVED", "SORTING"].includes(c.status)
-                ? "Receber / conferir"
-                : "Ver coleta"}
+              {c.status === "COMPLETED"
+                ? "Acompanhar materiais"
+                : c.status === "CANCELLED"
+                  ? "Consultar registro"
+                  : "Continuar atendimento"}
             </Link>
           </div>
         </td>
@@ -358,7 +394,8 @@ function CollectionRow({ c, expanded, toggle, destine, busy }) {
                   <strong>{e.materialNameSnapshot}</strong>
                   <div className="small mt-2">
                     Registrado: {quantity(e.collectedQuantity, e.unit)} ·
-                    Alocado em movimentações: {quantity(e.destinedQuantity, e.unit)}
+                    Alocado em movimentações:{" "}
+                    {quantity(e.destinedQuantity, e.unit)}
                   </div>
                   <p className="mb-2">
                     Saldo:{" "}
@@ -366,7 +403,9 @@ function CollectionRow({ c, expanded, toggle, destine, busy }) {
                   </p>
                   {entryDisposition(e).followUp > 0 && (
                     <p className="small text-warning">
-                      Material em acompanhamento: {quantity(entryDisposition(e).followUp, e.unit)}. Continue nas destinações ou no lote de estoque.
+                      Material em acompanhamento:{" "}
+                      {quantity(entryDisposition(e).followUp, e.unit)}. Continue
+                      nas destinações ou no lote de estoque.
                     </p>
                   )}
                   <MaterialDestinations entry={e} showActions={false} />
@@ -385,8 +424,23 @@ function CollectionRow({ c, expanded, toggle, destine, busy }) {
                     >
                       Destinar
                     </button>
-                    {entryLots(e).map(lot => <Link className="btn btn-sm btn-outline-success" key={lot.id} to={`/waste-stock/lots/${lot.id}/edit`}>{entryLots(e).length>1 ? `Ver lote ${lot.code || shortId(lot.id)}` : "Ver lote e todas as saídas"}</Link>)}
-                    <Link className="btn btn-sm btn-outline-secondary" to={`/waste-destinations?entryId=${encodeURIComponent(e.id)}`}>Ver destinações e documentos</Link>
+                    {entryLots(e).map((lot) => (
+                      <Link
+                        className="btn btn-sm btn-outline-success"
+                        key={lot.id}
+                        to={`/waste-stock/lots/${lot.id}/edit`}
+                      >
+                        {entryLots(e).length > 1
+                          ? `Ver lote ${lot.code || shortId(lot.id)}`
+                          : "Ver lote e todas as saídas"}
+                      </Link>
+                    ))}
+                    <Link
+                      className="btn btn-sm btn-outline-secondary"
+                      to={`/waste-destinations?entryId=${encodeURIComponent(e.id)}`}
+                    >
+                      Ver destinações e documentos
+                    </Link>
                     <Link
                       className="btn btn-sm btn-outline-secondary"
                       to={`/collected-waste/${e.id}`}

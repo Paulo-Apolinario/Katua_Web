@@ -1,4 +1,4 @@
-import CollectionMaterialProgress from "../../components/collections/CollectionMaterialProgress";
+import CollectionWorkflow from "../../components/collections/CollectionWorkflow";
 import FixedRouteOperations from "../../components/collections/FixedRouteOperations";
 import FieldOperationBadge from "../../components/collections/FieldOperationBadge";
 import {
@@ -6,16 +6,12 @@ import {
   getFieldRoutes,
   getFieldOptions,
 } from "../../services/wasteWorkspaceService";
-import CollectionTeam from "../../components/collections/CollectionTeam";
-import CollectionQuantityReview from "../../components/collections/CollectionQuantityReview";
 import { downloadCollectionPdf } from "../../utils/collectionPdf";
-import CollectionIncidents from "../../components/collections/CollectionIncidents";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import HeadTags from "../../components/HeadTags";
 import { useAdminAuth } from "../../context/AdminAuthContext";
 import { getCollectionById } from "../../services/collectionService";
-import CollectionStageActions from "../../components/collections/CollectionStageActions";
 import CollectionDialog from "../../components/collections/CollectionDialog";
 import {
   MaterialTable,
@@ -223,18 +219,35 @@ function CollectionList({ cooperativeName }) {
             tratamento em Ver detalhes.
           </p>
           <div className="d-flex flex-wrap gap-2">
-            <Link className="btn btn-sm btn-outline-success" to="/material-intakes">Entradas e coletas avulsas</Link>
-            <Link className="btn btn-sm btn-outline-success" to="/extra-collection-orders">
+            <Link
+              className="btn btn-sm btn-outline-success"
+              to="/material-intakes"
+            >
+              Entradas e coletas avulsas
+            </Link>
+            <Link
+              className="btn btn-sm btn-outline-success"
+              to="/extra-collection-orders"
+            >
               Ordens de coleta extras
             </Link>
-            <Link className="btn btn-sm btn-outline-success" to="/collection-requests">
+            <Link
+              className="btn btn-sm btn-outline-success"
+              to="/collection-requests"
+            >
               Coletas solicitadas
             </Link>
-            <Link className="btn btn-sm btn-outline-success" to="/collected-waste">
+            <Link
+              className="btn btn-sm btn-outline-success"
+              to="/collected-waste"
+            >
               Gestão dos materiais coletados
             </Link>
             {kind === "fixed" && (
-              <Link className="btn btn-sm btn-outline-success" to="/route-plans">
+              <Link
+                className="btn btn-sm btn-outline-success"
+                to="/route-plans"
+              >
                 Gerenciar rotas fixas
               </Link>
             )}
@@ -279,9 +292,9 @@ function CollectionList({ cooperativeName }) {
       </nav>
       {kind === "fixed" && (
         <p className="small text-muted">
-          Execuções em ordem crescente de data programada, com as sem data ao final.
-          Uma linha por execução e data. Os filtros selecionam execuções; ao
-          expandir, todos os pontos da execução ficam disponíveis com seus
+          Execuções em ordem crescente de data programada, com as sem data ao
+          final. Uma linha por execução e data. Os filtros selecionam execuções;
+          ao expandir, todos os pontos da execução ficam disponíveis com seus
           próprios status.
         </p>
       )}
@@ -586,30 +599,41 @@ function CollectionList({ cooperativeName }) {
           ) : (
             selected && (
               <>
-                <div className="d-flex align-items-center flex-wrap gap-2 collection-detail-toolbar">
-                  <FieldOperationBadge collection={selected} />
-                  <Link className="btn btn-sm btn-outline-success" to={"/service-orders?collectionId="+encodeURIComponent(selected.id)}>O.S. e documentos</Link>
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-outline-success"
-                    disabled={operationBusy}
-                    onClick={() =>
-                      downloadCollectionPdf(selected, { cooperativeName })
-                    }
-                  >
-                    Salvar coleta em PDF
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-outline-secondary"
-                    disabled={operationBusy}
-                    onClick={() => openDetail(selected.id)}
-                  >
-                    Atualizar detalhes
-                  </button>
-                </div>
-                <CollectionQuantityReview
-                  key={`${selected.id}:${selected.status}`}
+                <details>
+                  <summary>Documentos e atualização do registro</summary>
+                  <div className="d-flex align-items-center flex-wrap gap-2 collection-detail-toolbar">
+                    <FieldOperationBadge collection={selected} />
+                    <Link
+                      className="btn btn-sm btn-outline-success"
+                      to={
+                        "/service-orders?collectionId=" +
+                        encodeURIComponent(selected.id)
+                      }
+                    >
+                      O.S. e documentos
+                    </Link>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-success"
+                      disabled={operationBusy}
+                      onClick={() =>
+                        downloadCollectionPdf(selected, { cooperativeName })
+                      }
+                    >
+                      Salvar coleta em PDF
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-outline-secondary"
+                      disabled={operationBusy}
+                      onClick={() => openDetail(selected.id)}
+                    >
+                      Atualizar detalhes
+                    </button>
+                  </div>
+                </details>
+
+                <CollectionWorkflow
                   collection={selected}
                   onBusy={setOperationBusy}
                   onChange={(updated) => {
@@ -622,59 +646,6 @@ function CollectionList({ cooperativeName }) {
                   }}
                 />
 
-                <CollectionMaterialProgress collection={selected} />
-                <CollectionStageActions
-                  key={`${selected.id}:${selected.status}`}
-                  collection={selected}
-                  onBusy={setOperationBusy}
-                  onChange={(updated) => {
-                    setSelected(updated);
-                    setItems((current) =>
-                      current.map((item) =>
-                        item.id === updated.id ? updated : item,
-                      ),
-                    );
-                  }}
-                />
-                <details
-                  className="workflow-details"
-                  open={Boolean(
-                    selected.participants?.length &&
-                    ["RECEIVED", "SORTING"].includes(selected.status) &&
-                    (!selected.allocationVersion ||
-                      selected.allocationQuantityVersion !==
-                        selected.quantityReviewVersion),
-                  )}
-                >
-                  <summary>Equipe e divisão dos materiais</summary>
-                  <CollectionTeam
-                    collection={selected}
-                    onBusy={setOperationBusy}
-                    onChange={(updated) => {
-                      setSelected(updated);
-                      setItems((current) =>
-                        current.map((item) =>
-                          item.id === updated.id ? updated : item,
-                        ),
-                      );
-                    }}
-                  />{" "}
-                </details>
-                <details className="workflow-details">
-                  <summary>Ocorrências e acompanhamento</summary>
-                  <CollectionIncidents
-                    collection={selected}
-                    onBusy={setOperationBusy}
-                    onChange={(updated) => {
-                      setSelected(updated);
-                      setItems((current) =>
-                        current.map((item) =>
-                          item.id === updated.id ? updated : item,
-                        ),
-                      );
-                    }}
-                  />
-                </details>
                 <details className="workflow-details">
                   <summary>Origem, materiais e histórico da coleta</summary>
                   <h3 className="fs-18 mt-3">{generatorName(selected)}</h3>
@@ -749,7 +720,10 @@ function CollectionList({ cooperativeName }) {
                     diferentes. As quantidades exibidas não representam saldo de
                     estoque.
                   </div>
-                  <Link className="btn btn-sm btn-outline-success align-self-center" to="/collected-waste">
+                  <Link
+                    className="btn btn-sm btn-outline-success align-self-center"
+                    to="/collected-waste"
+                  >
                     Consultar materiais e destinações
                   </Link>
                 </details>
