@@ -1,3 +1,4 @@
+import "./generatorList.css";
 import NeighborhoodFilter from "../../components/generators/NeighborhoodFilter";
 import {
   normalizeSearchText,
@@ -193,53 +194,59 @@ const GeneratorList = () => {
       </div>
 
       <div className="card p-25">
-        <div className="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+        <section
+          className="generator-filters"
+          aria-label="Filtros da lista de geradores"
+        >
           <h4 className="mb-0 fw-600">Lista de Geradores</h4>
-
-          <div
-            className="d-flex flex-wrap gap-2 align-items-center"
-            style={{ minWidth: 0, maxWidth: "100%" }}
-          >
-            <label className="small" htmlFor="generator-category">
-              Classificação
-            </label>
-            <select
-              className="form-select w-auto"
-              style={{ maxWidth: "100%" }}
-              id="generator-category"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-            >
-              <option value="">Todas</option>
-              {Object.entries(categoryLabels).map(([key, label]) => (
-                <option key={key} value={key}>
-                  {label}
-                </option>
-              ))}
-            </select>
-            <div className="management-search">
-              <Search size={18} />
-              <input
-                value={searchText}
-                onChange={(event) => setSearchText(event.target.value)}
-                placeholder="Buscar gerador..."
-
-                aria-label="Buscar gerador..."
+          <div className="generator-filters-grid">
+            <div>
+              <label className="form-label" htmlFor="generator-search">
+                Buscar gerador
+              </label>
+              <div className="generator-filter-search">
+                <Search size={18} aria-hidden="true" />
+                <input
+                  id="generator-search"
+                  className="form-control"
+                  value={searchText}
+                  onChange={(event) => setSearchText(event.target.value)}
+                  placeholder="Buscar gerador..."
+                  aria-label="Buscar gerador..."
+                />
+              </div>
+            </div>
+            <div>
+              <label className="form-label" htmlFor="generator-category">
+                Classificação
+              </label>
+              <select
+                className="form-select"
+                id="generator-category"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+              >
+                <option value="">Todas</option>
+                {Object.entries(categoryLabels).map(([key, label]) => (
+                  <option key={key} value={key}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="generator-filter-neighborhood">
+              <NeighborhoodFilter
+                id="generator-neighborhood"
+                generators={generators}
+                value={neighborhood}
+                onChange={setNeighborhood}
               />
             </div>
           </div>
-        </div>
-
-        <div className="row g-3 align-items-end mb-4">
-          <div className="col-md-7 col-xl-6">
-            <NeighborhoodFilter
-              id="generator-neighborhood"
-              generators={generators}
-              value={neighborhood}
-              onChange={setNeighborhood}
-            />
-          </div>
-          <div className="col-md-5 col-xl-6 d-flex gap-3 align-items-center flex-wrap">
+          <div className="generator-filters-footer">
+            <span className="small text-muted" role="status">
+              {filteredGenerators.length} de {generators.length} gerador(es)
+            </span>
             <button
               type="button"
               className="secondary-btn btn-sm"
@@ -252,11 +259,8 @@ const GeneratorList = () => {
             >
               Limpar filtros
             </button>
-            <span className="small text-muted" role="status">
-              {filteredGenerators.length} de {generators.length} gerador(es)
-            </span>
           </div>
-        </div>
+        </section>
         <SimpleBar forceVisible="x" autoHide>
           <table className="table nowrap w-100">
             <thead>
