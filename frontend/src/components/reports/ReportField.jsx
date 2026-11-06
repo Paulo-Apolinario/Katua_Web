@@ -6,6 +6,7 @@ export default function ReportField({
   options,
   type = "text",
   disabled = false,
+  min,
   help,
 }) {
   const id = useId();
@@ -32,7 +33,7 @@ export default function ReportField({
           className="form-control"
           type={type}
           step={type === "number" ? "any" : undefined}
-          min={type === "number" ? 0 : undefined}
+          min={min ?? (type === "number" ? 0 : undefined)}
           maxLength={1000}
           value={value ?? ""}
           onChange={(e) =>

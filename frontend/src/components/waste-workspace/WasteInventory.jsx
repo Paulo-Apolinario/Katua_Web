@@ -1,3 +1,5 @@
+import MaterialProfileForm from "./MaterialProfileForm";
+import { emptyProfile } from "../../utils/materialIdentification";
 import StockLotMovements from "../waste/StockLotMovements";
 import WorkspaceInventoryList from "./WorkspaceInventoryList";
 import {
@@ -44,6 +46,7 @@ export function InventoryScreen({ catalog = false }) {
   );
 }
 const typeInitial = {
+  technicalProfile: emptyProfile,
   name: "",
   category: "",
   subcategory: "",
@@ -152,7 +155,7 @@ function TypeForm({ id }) {
                 />
                 <Field
                   name="wasteClass"
-                  label="Classificação registrada"
+                  label="Classificação anterior (edição 2004)"
                   options={WASTE_CLASS_OPTIONS}
                   {...{ form, setForm }}
                 />
@@ -170,6 +173,7 @@ function TypeForm({ id }) {
                   {...{ form, setForm }}
                 />
               </div>
+              <MaterialProfileForm value={form.technicalProfile} onChange={technicalProfile=>setForm(f=>({...f,technicalProfile}))} />
             </fieldset>
             <p className="small text-muted mt-3">
               Confirme os códigos e a classificação com o responsável técnico.

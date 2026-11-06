@@ -1,3 +1,4 @@
+import { MATERIAL_OPTIONS } from "../../utils/materialIdentification";
 import { useState } from "react";
 import Field from "./ReportField";
 import { reportService } from "../../services/reportService";
@@ -8,7 +9,14 @@ export default function ReportSettings({ context, onSaved, onClose }) {
   const setGoal = (k, v) =>
     setForm((p) => ({ ...p, goals: { ...p.goals, [k]: v } }));
   const setMethod = (k, v) =>
-    setForm((p) => ({ ...p, methodology: { ...p.methodology, [k]: v } }));
+    setForm((p) => ({
+      ...p,
+      methodology: {
+        ...p.methodology,
+        [k]: v,
+        ...(k !== "approved" ? { approved: false } : {}),
+      },
+    }));
   async function save(e) {
     e.preventDefault();
     setError("");
@@ -27,9 +35,9 @@ export default function ReportSettings({ context, onSaved, onClose }) {
     <section className="card p-4 mb-4">
       <h2>Metas e metodologia da cooperativa</h2>
       <p>
-        Metas mensais e fatores opcionais para os relatórios detalhados. O resumo
-        ambiental utiliza automaticamente a referência simplificada do sistema;
-        não é necessário configurar fatores para visualizá-lo.
+        Os fatores são informados pela cooperativa e exigem validação técnica.
+        Não são fornecidos pela ABNT NBR 10004. Sem metodologia validada, as
+        quantidades físicas continuam disponíveis.
       </p>
       {error && (
         <p role="alert" className="alert alert-danger">
@@ -56,20 +64,35 @@ export default function ReportSettings({ context, onSaved, onClose }) {
               source: "Fonte e justificativa",
               url: "Link da referência",
               version: "Versão da metodologia",
+              approvedBy: "Responsável pela validação informado",
+              region: "Região / contexto de aplicação",
+              processScenario: "Cenário de referência e tratamento considerado",
+              validFrom: "Aplicável desde (AAAA-MM-DD)",
+              validUntil: "Aplicável até (AAAA-MM-DD, opcional)",
             }).map(([k, l]) => (
               <Field
                 key={k}
                 label={l}
-                value={form.methodology[k]}
+                value={form.methodology[k] ?? ""}
                 onChange={(v) => setMethod(k, v)}
               />
             ))}
           </div>
+          <label className="d-flex gap-2 mt-3">
+            <input
+              type="checkbox"
+              checked={form.methodology.approved === true}
+              onChange={(e) => setMethod("approved", e.target.checked)}
+            />
+            Confirmo que esta metodologia foi validada pelo responsável
+            informado.
+          </label>
           <p className="small text-muted mt-3">
             Campos sem fator permanecem sem estimativa, em vez de aparecerem
             como zero. Os fatores abaixo calculam potencial estimado a partir da
-            massa coletada, não emissão evitada comprovada. Materiais em litros,
-            m³ ou unidades não entram no cálculo.
+            massa conferida e com material identificado, não emissão evitada
+            comprovada. Materiais em litros, m³ ou unidades não entram no
+            cálculo.
           </p>
           {form.methodology.factors.map((f, i) => (
             <div className="report-grid report-rule" key={i}>
@@ -92,6 +115,19 @@ export default function ReportSettings({ context, onSaved, onClose }) {
                   )
                 }
               />
+              <Field
+                label={`Fator ${i + 1} — Composição a que se aplica`}
+                options={MATERIAL_OPTIONS}
+                value={f.materialCode || "UNKNOWN"}
+                onChange={(v) =>
+                  setMethod(
+                    "factors",
+                    form.methodology.factors.map((x, j) =>
+                      i === j ? { ...x, materialCode: v } : x,
+                    ),
+                  )
+                }
+              />
               {[
                 ["co2PerKg", "kg CO2e por kg de material"],
                 ["waterPerKg", "litros de água por kg de material"],
@@ -101,6 +137,7 @@ export default function ReportSettings({ context, onSaved, onClose }) {
                 <Field
                   key={key}
                   label={`Fator ${i + 1} — ${label}`}
+                  min={key === "co2PerKg" ? -1000000 : 0}
                   type="number"
                   value={f[key] ?? null}
                   onChange={(v) =>

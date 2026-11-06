@@ -1,3 +1,4 @@
+import { materialName } from "../../utils/materialIdentification";
 import StockMaterialDispatch from "./StockMaterialDispatch";
 import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useSearchParams } from "react-router";
@@ -458,6 +459,7 @@ function InventoryItem({
       <tr>
         <td>
           <strong>{i.name}</strong>
+          {catalog && <small className="d-block">{materialName(i.technicalProfile?.materialCode || "UNKNOWN")}{i.technicalProfile?.color ? ` · ${i.technicalProfile.color}` : ""}</small>}
           <small className="d-block text-muted">
             {i.category}
             {i.subcategory ? " · " + i.subcategory : ""}

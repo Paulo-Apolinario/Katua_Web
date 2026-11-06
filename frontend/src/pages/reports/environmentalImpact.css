@@ -1,0 +1,86 @@
+.impact-workspace {
+  max-width: 1500px;
+  margin: 0 auto;
+}
+.impact-workspace label {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+.impact-workspace label input,
+.impact-workspace label select {
+  margin-top: 0.4rem;
+}
+.impact-metric {
+  border: 1px solid #dcebe4;
+  background: #f5faf7;
+  padding: 1rem;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  height: 100%;
+}
+.impact-metric strong {
+  font-size: 1.3rem;
+  color: #075c45;
+}
+.impact-metric small {
+  color: #52665d;
+}
+.impact-tabs {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.impact-trace {
+  border: 1px solid #dce5df;
+  padding: 1rem;
+  border-radius: 10px;
+  margin-bottom: 0.8rem;
+}
+.impact-trace summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding: 0.25rem 0;
+}
+.impact-workspace dt {
+  margin-top: 0.7rem;
+}
+.impact-workspace dd {
+  overflow-wrap: anywhere;
+}
+.impact-modal {
+  position: fixed;
+  inset: 0;
+  background: #092c27a6;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+.impact-modal > form {
+  width: min(960px, 100%);
+  max-height: 92dvh;
+  overflow: auto;
+}
+.impact-workspace table th {
+  white-space: nowrap;
+}
+@media (max-width: 600px) {
+  .impact-workspace .card {
+    padding: 1rem !important;
+  }
+  .impact-tabs {
+    flex-wrap: nowrap;
+    overflow: auto;
+    padding-bottom: 0.5rem;
+  }
+  .impact-tabs button {
+    white-space: nowrap;
+  }
+  .impact-modal {
+    padding: 0.5rem;
+  }
+}
+.impact-workspace > .row { margin-left: 0; margin-right: 0; }

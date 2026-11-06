@@ -34,6 +34,7 @@ const normalizeWasteTypePayload = (payload = {}) => {
       source.wasteClass || "NOT_INFORMED",
     ).toUpperCase(),
     status: normalizeText(source.status || "ACTIVE").toUpperCase(),
+    ...(source.technicalProfile ? { technicalProfile: source.technicalProfile } : {}),
   };
 
   Object.assign(
@@ -160,6 +161,7 @@ export const patchWasteType = async (id, payload = {}) => {
 
   const source = payload.item || payload;
   const data = optionalFields(source, [
+    "technicalProfile",
     "name",
     "category",
     "subcategory",
