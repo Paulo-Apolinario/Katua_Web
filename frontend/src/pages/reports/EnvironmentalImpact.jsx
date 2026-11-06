@@ -1,3 +1,4 @@
+import ReferenceFactors from "../../components/reports/ReferenceFactors";
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { apiRequest } from "../../services/apiClient";
@@ -166,7 +167,8 @@ export default function EnvironmentalImpact() {
             Período
             <select
               className="form-select"
-              aria-label="Período" value={draft.mode}
+              aria-label="Período"
+              value={draft.mode}
               onChange={(e) => set("mode", e.target.value)}
             >
               <option value="week">Semana (segunda a domingo)</option>
@@ -182,7 +184,8 @@ export default function EnvironmentalImpact() {
                 className="form-control"
                 type="date"
                 required
-                aria-label="Data de referência" value={draft.reference}
+                aria-label="Data de referência"
+                value={draft.reference}
                 onChange={(e) => set("reference", e.target.value)}
               />
             </label>
@@ -194,7 +197,8 @@ export default function EnvironmentalImpact() {
                   className="form-control"
                   type="date"
                   required
-                  aria-label="De" value={draft.start}
+                  aria-label="De"
+                  value={draft.start}
                   onChange={(e) => set("start", e.target.value)}
                 />
               </label>
@@ -205,7 +209,8 @@ export default function EnvironmentalImpact() {
                   type="date"
                   required
                   min={draft.start}
-                  aria-label="Até" value={draft.end}
+                  aria-label="Até"
+                  value={draft.end}
                   onChange={(e) => set("end", e.target.value)}
                 />
               </label>
@@ -215,7 +220,8 @@ export default function EnvironmentalImpact() {
             Gerador
             <select
               className="form-select"
-              aria-label="Gerador" value={draft.generatorId}
+              aria-label="Gerador"
+              value={draft.generatorId}
               onChange={(e) => set("generatorId", e.target.value)}
             >
               <option value="">Geral · todas as origens</option>
@@ -230,7 +236,8 @@ export default function EnvironmentalImpact() {
             Material padronizado
             <select
               className="form-select"
-              aria-label="Material padronizado" value={draft.materialCode}
+              aria-label="Material padronizado"
+              value={draft.materialCode}
               onChange={(e) => set("materialCode", e.target.value)}
             >
               <option value="">Todos os materiais</option>
@@ -245,7 +252,8 @@ export default function EnvironmentalImpact() {
             Item comercial do catálogo
             <select
               className="form-select"
-              aria-label="Item comercial do catálogo" value={draft.materialId}
+              aria-label="Item comercial do catálogo"
+              value={draft.materialId}
               onChange={(e) => set("materialId", e.target.value)}
             >
               <option value="">Todos os itens</option>
@@ -260,7 +268,8 @@ export default function EnvironmentalImpact() {
             Conferência de quantidade
             <select
               className="form-select"
-              aria-label="Conferência de quantidade" value={draft.stage}
+              aria-label="Conferência de quantidade"
+              value={draft.stage}
               onChange={(e) => set("stage", e.target.value)}
             >
               <option value="ALL">Todas</option>
@@ -345,24 +354,55 @@ export default function EnvironmentalImpact() {
           <section className="card p-4 mb-4">
             <h2 className="fs-18">Estimativas ambientais</h2>
             <p className="small text-muted">
-              Potencial calculado sobre massa e identificação conferidas, dentro
-              da aplicação da metodologia. Não comprova reciclagem ou crédito de
-              carbono.
+              {data.calculationMode === "REFERENCE"
+                ? "Referência automática EPA WARM v16 (EUA): cenário de reciclagem em comparação ao aterro, aplicado à quantidade registrada. Não é uma medição local ou comprovação de reciclagem."
+                : "Potencial calculado sobre massa e identificação conferidas, dentro da aplicação da metodologia própria. Não comprova reciclagem ou crédito de carbono."}
             </p>
+            {data.calculationMode === "REFERENCE" && (
+              <p className="small">
+                <strong>Base de fatores já incluída.</strong> A correspondência
+                de referência usa material e descrição do catálogo; não altera a
+                classificação técnica. {num(data.referenceProvisionalMassKg)} kg
+                usados ainda têm quantidade provisória.
+              </p>
+            )}
             <div className="row g-3">
               {metrics
                 .filter(
                   ([, key]) => key !== "treesEquivalent" || data[key] != null,
                 )
                 .map(([label, key, unit]) => (
-                  <div className={`col-sm-6 ${data.treesEquivalent == null ? "col-xl-4" : "col-xl-3"}`} key={key}>
+                  <div
+                    className={`col-sm-6 ${data.treesEquivalent == null ? "col-xl-4" : "col-xl-3"}`}
+                    key={key}
+                  >
                     <div className="impact-metric">
-                      <span>{label}</span>
-                      <strong>{formatEstimate(data[key], unit)}</strong>
+                      <span>
+                        {data.calculationMode === "REFERENCE" &&
+                        key === "energyKwh"
+                          ? "Energia potencial equivalente"
+                          : label}
+                      </span>
+                      <strong>
+                        {formatEstimate(
+                          data[key],
+                          data.calculationMode === "REFERENCE" &&
+                            key === "energyKwh"
+                            ? "kWh eq."
+                            : unit,
+                        )}
+                      </strong>
                       <small>
                         {num(data.metricCoverage[key])} kg abrangidos de{" "}
                         {num(data.totalMassKg)} kg registrados
                       </small>
+                      {data.calculationMode === "REFERENCE" &&
+                        key === "waterLiters" && (
+                          <small>
+                            A base WARM selecionada não fornece fator de
+                            economia de água.
+                          </small>
+                        )}
                     </div>
                   </div>
                 ))}
@@ -440,11 +480,21 @@ export default function EnvironmentalImpact() {
                                 <small className="d-block text-muted">
                                   {basis[row.identificationBasis]}
                                 </small>
+                                {row.factorReference && (
+                                  <small className="d-block text-success">
+                                    Referência de cálculo:{" "}
+                                    {row.factorReference.label} · EPA WARM v16
+                                  </small>
+                                )}
                               </>
                             )}
                           </td>
                           <td>{formatUnits(row.units)}</td>
-                          <td>{row.units.KG != null ? `${num(row.confirmedMassKg)} kg` : "Unidade não mássica"}</td>
+                          <td>
+                            {row.units.KG != null
+                              ? `${num(row.confirmedMassKg)} kg`
+                              : "Unidade não mássica"}
+                          </td>
                           <td>{formatEstimate(row.co2Kg, "kg CO₂e")}</td>
                           <td>
                             {num(row.metricCoverage.co2Kg)} de{" "}
@@ -611,8 +661,9 @@ export default function EnvironmentalImpact() {
             {tab === "quality" && (
               <>
                 <h2 className="fs-18">Qualidade dos dados e metodologia</h2>
+                <ReferenceFactors data={data} />
                 <dl>
-                  <dt>Composição ainda não identificada</dt>
+                  <dt>Material padronizado ainda não registrado tecnicamente</dt>
                   <dd>{formatUnits(data.unknownUnits)}</dd>
                   <dt>
                     Identificação baseada no catálogo atual, sem registro
@@ -642,9 +693,11 @@ export default function EnvironmentalImpact() {
                   </dd>
                   <dt>Validação declarada</dt>
                   <dd>
-                    {data.methodology.approved
-                      ? "Declarada pela cooperativa; não constitui certificação do KATUÁ"
-                      : "Pendente"}
+                    {data.calculationMode === "REFERENCE"
+                      ? "Referência internacional automática; não é validação técnica local"
+                      : data.methodology.approved
+                        ? "Declarada pela cooperativa; não constitui certificação do KATUÁ"
+                        : "Pendente"}
                   </dd>
                 </dl>
                 <p className="small text-muted">{data.description}</p>

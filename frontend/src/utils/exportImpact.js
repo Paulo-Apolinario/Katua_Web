@@ -16,10 +16,32 @@ export async function exportImpact(kind, data, filters) {
     ["Período", `${data.start} a ${data.end}`],
     ["Gerador", generator],
     ["Item comercial", material],
-    ["Material padronizado", filters.materialCode ? materialName(filters.materialCode) : "Todos"],
-    ["Conferência de quantidade", {ALL:"Todas",CONFIRMED:"Conferidas",PROVISIONAL:"Provisórias"}[filters.stage] || filters.stage],
+    [
+      "Material padronizado",
+      filters.materialCode ? materialName(filters.materialCode) : "Todos",
+    ],
+    [
+      "Conferência de quantidade",
+      { ALL: "Todas", CONFIRMED: "Conferidas", PROVISIONAL: "Provisórias" }[
+        filters.stage
+      ] || filters.stage,
+    ],
     ["Base de datas", data.basis],
     ["Metodologia", data.methodology.label || "Não cadastrada"],
+    [
+      "Base do cálculo",
+      data.calculationMode === "REFERENCE"
+        ? "Referência internacional automática EPA WARM v16 (EUA), sem calibração local"
+        : data.calculationMode || "Metodologia própria",
+    ],
+    [
+      "Massa provisória usada na referência (kg)",
+      String(data.referenceProvisionalMassKg || 0),
+    ],
+    [
+      "Energia na base de referência",
+      "Energia total convertida em kWh equivalentes, não apenas eletricidade",
+    ],
     ["Versão", version],
     ["Revisão da configuração", String(data.methodologyRevision || 0)],
     ["Fonte", data.methodology.source || "Não informada"],
@@ -31,7 +53,9 @@ export async function exportImpact(kind, data, filters) {
       "Validação declarada",
       data.methodology.approved
         ? "Sim — declarada pela cooperativa"
-        : "Pendente",
+        : data.calculationMode === "REFERENCE"
+          ? "Referência internacional — não validada localmente"
+          : "Pendente",
     ],
     [
       "Aplicação",
@@ -66,8 +90,15 @@ export async function exportImpact(kind, data, filters) {
   ];
   const rows = data.materials.map((m) => [
     m.name,
-    m.materialCode,
-    m.identificationBasis,
+    materialName(m.materialCode) +
+      (m.factorReference
+        ? ` — referência: ${m.factorReference.label} (${m.factorReference.version})`
+        : ""),
+    {
+      CONFIRMED: "Conferida na coleta",
+      DECLARED_SNAPSHOT: "Declarada na coleta",
+      CURRENT_CATALOG: "Catálogo atual — histórico não confirmado",
+    }[m.identificationBasis] || m.identificationBasis,
     formatUnits(m.units),
     formatQuantity(m.confirmedMassKg),
     formatEstimate(m.co2Kg),
@@ -83,6 +114,35 @@ export async function exportImpact(kind, data, filters) {
     metadata.forEach((r) => info.addRow(r));
     info.columns = [{ width: 34 }, { width: 110 }];
     info.getColumn(2).alignment = { wrapText: true, vertical: "top" };
+    const factors = workbook.addWorksheet("Base de fatores");
+    factors.addRow([
+      "Referência",
+      "Versão",
+      "Material da fonte",
+      "CO2 aterro (t/short ton)",
+      "CO2 reciclagem (t/short ton)",
+      "Energia aterro (MMBtu/short ton)",
+      "Energia reciclagem (MMBtu/short ton)",
+      "CO2e potencial (kg/kg)",
+      "Energia potencial (kWh eq./kg)",
+      "Fonte",
+    ]);
+    (data.referenceFactors || []).forEach((f) =>
+      factors.addRow([
+        f.label,
+        f.version,
+        f.sourceMaterial,
+        f.original.landfillCo2,
+        f.original.recyclingCo2,
+        f.original.landfillEnergy,
+        f.original.recyclingEnergy,
+        f.co2PerKg,
+        f.energyPerKg,
+        f.url,
+      ]),
+    );
+    factors.columns = Array.from({ length: 10 }, () => ({ width: 30 }));
+    factors.getRow(1).font = { bold: true };
     const sheet = workbook.addWorksheet("Por material");
     sheet.addRow(columns);
     rows.forEach((r) => sheet.addRow(r));
@@ -122,13 +182,19 @@ export async function exportImpact(kind, data, filters) {
     const { jsPDF } = await import("jspdf"),
       { default: autoTable } = await import("jspdf-autotable");
     const pdf = new jsPDF({ orientation: "landscape" });
-    const pdfText = value => String(value ?? "").replace(/[−–—]/g,"-").replace(/₂/g,"2").replace(/³/g,"3").replace(/²/g,"2").replace(/…/g,"...");
+    const pdfText = (value) =>
+      String(value ?? "")
+        .replace(/[−–—]/g, "-")
+        .replace(/₂/g, "2")
+        .replace(/³/g, "3")
+        .replace(/²/g, "2")
+        .replace(/…/g, "...");
     pdf.setFontSize(17);
     pdf.text("KATUA - Relatório de impacto ambiental", 14, 18);
     autoTable(pdf, {
       startY: 25,
       head: [["Informação", "Registro"]],
-      body: metadata.map(row => row.map(pdfText)),
+      body: metadata.map((row) => row.map(pdfText)),
       styles: { fontSize: 8, overflow: "linebreak" },
       columnStyles: { 0: { cellWidth: 48 } },
       headStyles: { fillColor: [7, 92, 69] },
@@ -136,7 +202,7 @@ export async function exportImpact(kind, data, filters) {
     autoTable(pdf, {
       startY: pdf.lastAutoTable.finalY + 10,
       head: [columns.map(pdfText)],
-      body: rows.map(row => row.map(pdfText)),
+      body: rows.map((row) => row.map(pdfText)),
       styles: { fontSize: 7, overflow: "linebreak" },
       headStyles: { fillColor: [7, 92, 69] },
     });

@@ -13,6 +13,11 @@ export default function ReportSettings({ context, onSaved, onClose }) {
       ...p,
       methodology: {
         ...p.methodology,
+        calculationMode:
+          p.methodology.calculationMode ||
+          (p.methodology.approved && p.methodology.factors.length
+            ? "CUSTOM"
+            : "REFERENCE"),
         [k]: v,
         ...(k !== "approved" ? { approved: false } : {}),
       },
@@ -46,6 +51,36 @@ export default function ReportSettings({ context, onSaved, onClose }) {
       )}
       <form onSubmit={save}>
         <fieldset disabled={busy}>
+          <Field
+            label="Base do cálculo ambiental"
+            options={[
+              {
+                value: "REFERENCE",
+                label: "Automática — referência internacional EPA WARM v16",
+              },
+              {
+                value: "CUSTOM",
+                label: "Metodologia própria validada pela cooperativa",
+              },
+              {
+                value: "DISABLED",
+                label: "Somente quantidades, sem estimativas",
+              },
+            ]}
+            value={
+              form.methodology.calculationMode ||
+              (form.methodology.approved && form.methodology.factors.length
+                ? "CUSTOM"
+                : "REFERENCE")
+            }
+            onChange={(v) => setMethod("calculationMode", v)}
+          />
+          <p className="small text-muted">
+            A referência automática já contém fatores por material e não precisa
+            de digitação de coeficientes. É um cenário dos EUA, sem calibração
+            local. Água, árvores e materiais sem fator compatível permanecem sem
+            estimativa.
+          </p>
           <div className="report-grid">
             <Field
               label="Meta mensal de coletas executadas"
