@@ -13,3 +13,11 @@ Validação: build Vite, ESLint e oito cenários de navegador com dados sintéti
 Requer o backend atualizado antes do painel. Sem migrações. Preservar o build anterior para rollback; documentos e saldos existentes não são alterados.
 
 Consolidados vinculados a várias O.S. exibem “Compartilhado entre N O.S.” e “Total da saída”. O documento por lote exibe “Saída deste lote”. É o mesmo documento consolidado referenciado por suas origens, sem somar ou emitir novamente a baixa. Nomes históricos são identificados como “Origem registrada na emissão”; a interface não substitui o conteúdo preservado do comprovante pelo cadastro atual.
+
+## Uma entrada por destinação
+
+A visão principal agrupa o consolidado e os comprovantes por lote em uma única entrada. **Expandir lotes (N)** consulta os detalhes sob demanda e mostra a tabela com todos os lotes, quantidades retiradas, saldo anterior/restante e os botões **Visualizar lote** / **Baixar PDF do lote**. **Recolher lotes** volta à visão compacta; reabrir o mesmo item reutiliza os detalhes já consultados. Uma falha na consulta oferece nova tentativa e mantém o consolidado visível.
+
+A contagem e paginação são de destinações agrupadas. Saídas avulsas sem consolidado não desaparecem. A seleção explícita do tipo individual permite consultar esses comprovantes isoladamente. Os detalhes da O.S. também usam a visualização agrupada.
+
+Validação atual: 10 cenários de navegador, incluindo expansão/recolhimento sem nova requisição, PDFs individuais, falha/repetição da consulta e tabela com rolagem horizontal contida no celular. Atualizar backend antes do painel. Sem alterações nos arquivos emitidos ou saldos.

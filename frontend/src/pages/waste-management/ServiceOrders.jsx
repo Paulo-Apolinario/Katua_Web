@@ -1,3 +1,4 @@
+import StockDispatchLots from "../../components/waste-workspace/StockDispatchLots";
 import "./ServiceOrders.css";
 import { useCallback, useState } from "react";
 import { Link, useSearchParams } from "react-router";
@@ -22,6 +23,7 @@ export default function ServiceOrders() {
     page = Number(params.get("page")) || 1;
   const listQuery = new URLSearchParams(params);
   ["ordem", "aba"].forEach((k) => listQuery.delete(k));
+  if (tab === "documents") listQuery.set("grouped","1");
   const requestQuery = listQuery.toString();
   const list = useWasteResource(
     useCallback(
@@ -37,7 +39,7 @@ export default function ServiceOrders() {
     useCallback(
       () =>
         orderId
-          ? apiRequest("/service-orders/" + encodeURIComponent(orderId))
+          ? apiRequest("/service-orders/" + encodeURIComponent(orderId) + "?grouped=1")
           : Promise.resolve(null),
       [orderId],
     ),
@@ -149,6 +151,7 @@ export default function ServiceOrders() {
                 Baixar PDF
               </button>
             </div>
+            {d.kind === "STOCK_DISPATCH" && <StockDispatchLots document={d} busy={busy} onDocument={document} />}
           </article>
         ))}
       </div>
@@ -629,7 +632,7 @@ export default function ServiceOrders() {
                                 })
                               }
                             >
-                              Ver saídas ({o.stockExitCount})
+                              Ver saídas ({o.stockOperationCount ?? o.stockExitCount})
                             </button>
                           </>
                         ) : (
@@ -793,7 +796,8 @@ function DocumentIdentity({ document: d }) {
             : ""}
         </small>
       )}
-      {c.lotCount > 0 && (
+      {c.lotCount > 0 && d.kind === "STOCK_DISPATCH" && <small className="d-block mt-2 text-muted">{c.lotCount} lote(s) utilizados · detalhes na expansão abaixo</small>}
+      {c.lotCount > 0 && d.kind !== "STOCK_DISPATCH" && (
         <div className="service-document-lots mt-2">
           <span className="small text-muted">{c.lotCount} lote(s):</span>
           {c.lots.map((l) => (
