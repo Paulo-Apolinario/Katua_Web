@@ -18,10 +18,10 @@ const user = {
   isActive: true,
   accountStatus: "ACTIVE",
 };
-const linked = [{serviceOrder:{id:"order",number:"OS-2026-000001"}}];
+const linked = [{serviceOrder:{id:"order",number:"OS-2026-000001"}},{serviceOrder:{id:"other-order",number:"OS-2026-000002"}}];
 const docContext = {operation:"STOCK_EXIT",operationKind:"SALE",materials:[{name:"Papelão",quantity:"400.000",unit:"KG"}],materialCount:1,destinationName:"Recicladora São José",operationDate:"2026-11-06T12:00:00Z",lotCount:2,lots:[{id:"lot-1",code:"LOTE-101"},{id:"lot-2",code:"LOTE-102"}],origins:[]};
 const stock={id:"stock",number:"SAI-2026-TEST",kind:"STOCK_DISPATCH",createdAt:"2026-11-06T13:00:00Z",orders:linked,context:docContext};
-const perLot={...stock,id:"transport",number:"TR-2026-TEST",kind:"TRANSPORT_RECORD",context:{...docContext,materials:[{name:"Papelão",quantity:370,unit:"KG"}],lotCount:1,lots:[docContext.lots[0]]}};
+const perLot={...stock,id:"transport",number:"TR-2026-TEST",kind:"TRANSPORT_RECORD",orders:[linked[0]],context:{...docContext,materials:[{name:"Papelão",quantity:370,unit:"KG"}],lotCount:1,lots:[docContext.lots[0]]}};
 const manual={...stock,id:"manual",number:"SAI-MANUAL",orders:[],context:{...docContext,destinationName:"Cliente Manual",materials:[{name:"Óleo",quantity:80,unit:"LITER"}],lots:[{id:"manual-lot",code:"LOTE-OLEO"}],lotCount:1}};
 const plan={id:"plan",number:"OS-PROGRAMACAO",kind:"SERVICE_ORDER",createdAt:"2026-11-06T09:00:00Z",orders:linked,context:{operation:"COLLECTION",materials:[{name:"Papelão",quantity:null,unit:"KG"}],materialCount:1,origins:["Loja Papelão"],lots:[],lotCount:0}};
 const docs=[stock,perLot,manual,plan];
@@ -97,7 +97,7 @@ try {
  });
  await test("acesso direto pela O.S. filtra apenas suas saídas e exibe identidade do documento",async()=>{
    await click("Ver saídas (3)");await card(stock.number).waitFor();assert(reads.some(r=>r.includes("operation=STOCK_EXIT")&&r.includes("serviceOrderId=order")));
-   const d=card(stock.number);await d.getByText("Recicladora São José",{exact:true}).waitFor();await d.getByText("LOTE-102",{exact:true}).waitFor();assert((await d.innerText()).includes("400 kg"));assert((await d.innerText()).includes("Consolidado"));assert.equal(await card(manual.number).count(),0);
+   const d=card(stock.number);await d.getByText("Recicladora São José",{exact:true}).waitFor();await d.getByText("LOTE-102",{exact:true}).waitFor();assert((await d.innerText()).includes("400 kg"));assert((await d.innerText()).includes("Consolidado"));await d.getByText("Compartilhado entre 2 O.S.",{exact:true}).waitFor();assert((await d.innerText()).includes("Total da saída: Papelão · 400 kg"));assert.equal(await card(perLot.number).getByText("Compartilhado entre 2 O.S.",{exact:true}).count(),0);assert((await card(perLot.number).innerText()).includes("Saída deste lote: Papelão · 370 kg"));assert.equal(await card(manual.number).count(),0);
  });
  await test("atalho Destinação de lotes inclui saída sem O.S. e mantém tipos distintos",async()=>{
    await click("Destinação de lotes");await card(manual.number).waitFor();await card(manual.number).getByText("Sem O.S. vinculada",{exact:true}).waitFor();assert.equal(await card(plan.number).count(),0);assert.equal(await page.locator("article.service-document-card").count(),3);

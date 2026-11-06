@@ -101,6 +101,7 @@ export default function ServiceOrders() {
                   <span className="badge text-bg-success">Consolidado</span>
                 )}
               </div>
+              {d.kind === "STOCK_DISPATCH" && d.orders?.length > 1 && <div className="mb-2"><span className="badge text-bg-light border">Compartilhado entre {d.orders.length} O.S.</span><small className="d-block text-muted mt-1">Uma única saída, com referência nas O.S. abaixo. O total é o mesmo em todas elas.</small></div>}
               <DocumentIdentity document={d} />
               <div className="small text-muted mt-2">
                 Emitido em {dateLabel(d.createdAt, true)}
@@ -762,6 +763,7 @@ function DocumentIdentity({ document: d }) {
     <div className="service-document-identity">
       {!!c.materials?.length && (
         <h3 className="h6 mb-2">
+          {d.kind === "STOCK_DISPATCH" ? "Total da saída: " : d.kind === "TRANSPORT_RECORD" && c.operation === "STOCK_EXIT" ? "Saída deste lote: " : ""}
           {c.materials
             .map((m) =>
               [
@@ -808,7 +810,7 @@ function DocumentIdentity({ document: d }) {
       )}
       {!!c.origins?.length && (
         <small className="d-block mt-2 text-break">
-          Origem: {c.origins.join(" · ")}
+          Origem registrada na emissão: {c.origins.join(" · ")}
         </small>
       )}
       {c.routeName && <small className="d-block">Rota: {c.routeName}</small>}

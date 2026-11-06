@@ -11,3 +11,5 @@ Após confirmar uma saída em Estoque e Lotes, **Ver na central de documentos** 
 Validação: build Vite, ESLint e oito cenários de navegador com dados sintéticos: identificação na O.S., filtro direto por ordem, saídas sem O.S., busca de lote, prévia/PDF, limpeza e tipo, programação/download da O.S. e responsividade. Nenhuma operação de produção foi realizada.
 
 Requer o backend atualizado antes do painel. Sem migrações. Preservar o build anterior para rollback; documentos e saldos existentes não são alterados.
+
+Consolidados vinculados a várias O.S. exibem “Compartilhado entre N O.S.” e “Total da saída”. O documento por lote exibe “Saída deste lote”. É o mesmo documento consolidado referenciado por suas origens, sem somar ou emitir novamente a baixa. Nomes históricos são identificados como “Origem registrada na emissão”; a interface não substitui o conteúdo preservado do comprovante pelo cadastro atual.
