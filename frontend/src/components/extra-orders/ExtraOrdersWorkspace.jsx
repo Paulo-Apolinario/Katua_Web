@@ -129,9 +129,9 @@ export default function ExtraOrdersWorkspace() {
   }
   async function act(decision) {
     if (guard.current || !selected) return;
-    if (!confirmed || notes.trim().length < 5) {
+    if (!confirmed || (["REJECT", "NEEDS_INFO"].includes(decision) && notes.trim().length < 5)) {
       setError(
-        "Confirme a conferência e descreva a análise com pelo menos cinco caracteres.",
+        "Confirme a conferência. Para recusar ou pedir complementação, explique o motivo.",
       );
       return;
     }
@@ -430,7 +430,7 @@ export default function ExtraOrdersWorkspace() {
                         chegada física do material.
                       </p>
                       <label className="form-label" htmlFor="oc-notes">
-                        Observações da análise ou conferência
+                        Observações (opcionais para aceitar ou receber)
                       </label>
                       <textarea
                         id="oc-notes"

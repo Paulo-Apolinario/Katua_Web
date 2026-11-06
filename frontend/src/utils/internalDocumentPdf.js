@@ -2,6 +2,7 @@ import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 import { quantity } from "./collectionWorkspace";
 export const documentLabels = {
+  STOCK_DISPATCH: "Saída de material por quantidade",
   SERVICE_ORDER: "Ordem de serviço",
   START_RECORD: "Registro de início",
   COLLECTION_RECEIPT: "Comprovante de coleta",
@@ -60,6 +61,11 @@ const text = v => v === null || v === undefined || v === "" ? "Não informado" :
 export function internalDocumentSections(d) {
   const s = d.snapshot || {},
     sections = [["Identificação", [["Documento", d.number], ["Tipo", documentLabels[d.kind] || d.kind], ["Emitido em", dateLabel(d.createdAt, true)], ["O.S. vinculadas", (d.orders || []).map(o => o.serviceOrder.number).join(", ")], ["Cooperativa", s.cooperative?.name], ["CNPJ", s.cooperative?.document], ["Endereço", s.cooperative?.address], ["Responsável registrado", s.actor || s.movement?.actorName]]]];
+  if (s.dispatch) {
+    const a = s.dispatch;
+    sections.push(["Saída de material", [["Protocolo", a.operationId], ["Material", a.materialName], ["Tipo", label(a.kind)], ["Quantidade total", `${a.quantity} ${a.unit}`], ["Data e hora da saída", dateLabel(a.movementDate, true)], ["Registrado em", dateLabel(a.recordedAt, true)], ["Destinatário", a.destinationName], ["CPF / CNPJ", a.destinationDocument], ["Endereço de destino", a.destinationAddress], ["Motorista", a.transportDriverName], ["Placa", a.transportVehiclePlate], ["Documento de transporte", a.transportDocument], ["Documento ambiental", a.environmentalDocument], ["Observações", a.notes]]]);
+    for (const lot of a.allocations || []) sections.push([`Lote ${lot.lotCode}`, [["Identificador", lot.lotId], ["Coleta de origem", lot.originCollectionId], ["Movimentação", lot.movementId], ["Saldo anterior", `${lot.before} ${a.unit}`], ["Quantidade retirada", `${lot.quantity} ${a.unit}`], ["Saldo restante", `${lot.after} ${a.unit}`]]]);
+  }
   if (s.historicalReconstruction) sections.push(["Origem deste registro", [["Reconstrução", "Emitido com os dados disponíveis na implantação. Não comprova autorização ou emissão na data original do serviço."]]]);
   if (s.route) {
     const a = s.route;

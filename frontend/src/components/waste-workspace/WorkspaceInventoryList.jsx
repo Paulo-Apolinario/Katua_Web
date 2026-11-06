@@ -1,3 +1,4 @@
+import StockMaterialDispatch from "./StockMaterialDispatch";
 import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useSearchParams } from "react-router";
 import {
@@ -103,6 +104,7 @@ function Lots({ item, view, status }) {
   );
 }
 export default function WorkspaceInventoryList({ catalog = false }) {
+  const [dispatchItem, setDispatchItem] = useState(null);
   const location = useLocation(),
     [params, setParams] = useSearchParams(),
     view = catalog
@@ -380,6 +382,7 @@ export default function WorkspaceInventoryList({ catalog = false }) {
                         setExpanded((v) => (v === i.id ? null : i.id))
                       }
                       busy={op.busy || r.loading || !!r.error}
+                      dispatch={() => setDispatchItem(i)}
                       lotStatus={filters.status}
                       changeStatus={() => {
                         op.setError("");
@@ -405,6 +408,7 @@ export default function WorkspaceInventoryList({ catalog = false }) {
           )}
         </ResourceState>
       </section>
+      {dispatchItem && <StockMaterialDispatch item={dispatchItem} onClose={() => setDispatchItem(null)} onSaved={() => { setExpanded(null); void r.refresh(); }} />}
       {target && (
         <CollectionDialog
           title="Alterar situação do material"
@@ -446,6 +450,7 @@ function InventoryItem({
   toggle,
   busy,
   changeStatus,
+  dispatch,
   lotStatus,
 }) {
   return (
@@ -481,6 +486,7 @@ function InventoryItem({
         <td>{i._count.lots}</td>
         <td>
           <div className="d-flex gap-2 flex-wrap">
+            {!catalog && view === "current" && <button className="btn btn-sm btn-success" disabled={busy} onClick={dispatch}>Destinar quantidade</button>}
             {catalog ? (
               <>
                 <Link
