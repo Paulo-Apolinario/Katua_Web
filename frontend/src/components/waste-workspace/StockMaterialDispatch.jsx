@@ -1,3 +1,4 @@
+import { Link } from "react-router";
 import { useRef, useState } from "react";
 import { apiRequest } from "../../services/apiClient";
 import {
@@ -215,6 +216,7 @@ export default function StockMaterialDispatch({ item, onClose, onSaved }) {
           >
             Baixar documento interno em PDF
           </button>
+          <Link className="btn btn-outline-success mb-3 ms-2" to={'/service-orders?aba=documents&operation=STOCK_EXIT&q='+encodeURIComponent(doc.number)}>Ver na central de documentos</Link>
           {internalDocumentSections(doc).map(([title, rows]) => (
             <section key={title}>
               <h3 className="h6">{title}</h3>

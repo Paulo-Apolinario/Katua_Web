@@ -9,8 +9,115 @@
   text-wrap: wrap;
   overflow-wrap: anywhere;
 }
-.service-order-table th:first-child { width: 25%; }
-.service-order-table th:nth-child(2) { width: 19%; }
-.service-order-table th:nth-child(3) { width: 18%; }
-.service-order-table th:nth-child(4) { width: 12%; }
-.service-order-table th:last-child { width: 26%; }
+.service-order-table th:first-child {
+  width: 25%;
+}
+.service-order-table th:nth-child(2) {
+  width: 19%;
+}
+.service-order-table th:nth-child(3) {
+  width: 18%;
+}
+.service-order-table th:nth-child(4) {
+  width: 12%;
+}
+.service-order-table th:last-child {
+  width: 26%;
+}
+.service-document-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.service-document-hint {
+  line-height: 1.6;
+}
+.service-documents-list {
+  display: grid;
+  gap: 1rem;
+}
+.service-document-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 1rem;
+  border: 1px solid #dce6df;
+  border-radius: 12px;
+  padding: 1rem;
+  background: #fff;
+}
+.service-document-exit {
+  border-left: 4px solid #198754;
+}
+.service-document-main {
+  flex: 1 1 380px;
+  min-width: 0;
+}
+.service-document-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  flex: 0 0 auto;
+}
+.service-document-reference {
+  font-size: 0.75rem;
+  color: #65766e;
+}
+.service-document-lots {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.service-lot-tag {
+  padding: 0.2rem 0.5rem;
+  background: #eef6f1;
+  border: 1px solid #d4e7dc;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  overflow-wrap: anywhere;
+}
+.service-order-exit-badge {
+  display: block;
+  width: fit-content;
+  padding: 0.2rem 0.5rem;
+  margin-top: 0.4rem;
+  color: #0a633e;
+  background: #e5f4eb;
+  border-radius: 5px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.service-order-table {
+  min-width: 900px;
+}
+.service-order-table th:nth-child(2) {
+  width: 18%;
+}
+.service-order-table th:nth-child(3) {
+  width: 13%;
+}
+.service-order-table th:nth-child(4) {
+  width: 22%;
+}
+.service-order-table th:last-child {
+  width: 22%;
+}
+@media (max-width: 575px) {
+  .service-document-main {
+    flex-basis: 100%;
+  }
+  .service-document-actions {
+    width: 100%;
+  }
+  .service-document-actions .btn {
+    flex: 1;
+  }
+  .service-document-card {
+    padding: 0.85rem;
+  }
+  .service-document-identity h3 {
+    line-height: 1.6;
+  }
+}
