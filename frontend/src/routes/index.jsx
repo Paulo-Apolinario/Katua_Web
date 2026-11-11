@@ -92,6 +92,7 @@ import EditWasteStockLot from "../pages/waste-stock/EditWasteStockLot";
 
 // Reports
 import AnalyticsDashboard from "../pages/reports/AnalyticsDashboard";
+import ParticipationAnalytics from "../pages/analytics/ParticipationAnalytics";
 import WasteCollectionReports from "../pages/reports/WasteCollectionReports";
 import WasteTypeReports from "../pages/reports/WasteTypeReports";
 import StaffReports from "../pages/reports/StaffReports";
@@ -321,6 +322,7 @@ const Router = () => {
             />
 
             {/* Reports */}
+            <Route path="analytics/participation" element={<ParticipationAnalytics />} />
             <Route
               path="analytics-dashboard"
               element={<AnalyticsDashboard />}
