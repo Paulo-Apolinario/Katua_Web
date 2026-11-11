@@ -21,6 +21,7 @@ import MunicipalSidebar from "./environmental/MunicipalSidebar";
 import { useAdminAuth } from "../context/AdminAuthContext";
 import MenuSearch from "./modal/MenuSearch";
 import { NavLink, useLocation } from "react-router";
+import { ASSISTANT_VISIBLE } from '../config/features';
 
 const Sidebar = ({ active, setActive }) => {
   const location = useLocation();
@@ -880,7 +881,7 @@ const Sidebar = ({ active, setActive }) => {
               {[
                 ["/account-security", "Minha conta e segurança"],
                 ["/operational-preferences", "Preferências operacionais"],
-                ...(admin?.role === "COOPERATIVE"
+                ...(ASSISTANT_VISIBLE && admin?.role === "COOPERATIVE"
                   ? [["/agents", "Central de Agentes"]]
                   : []),
                 ["/settings-history", "Histórico de alterações"],

@@ -1,5 +1,6 @@
 import AgentsProvider from "../components/agents/AgentsProvider";
 import AgentChat from "../components/agents/AgentChat";
+import { ASSISTANT_VISIBLE } from '../config/features';
 import { useAdminAuth } from "../context/AdminAuthContext";
 import PanelReadNotice from "../components/PanelReadNotice";
 import { useState } from "react";
@@ -24,12 +25,12 @@ const AdminWorkspace = () => {
           </ManagementWorkspace>
         </div>
       </main>
-      <AgentChat />
+      {ASSISTANT_VISIBLE && <AgentChat />}
     </div>
   );
 };
 
 export default function AdminLayout(){
   const { admin, token } = useAdminAuth();
-  return <AgentsProvider key={`${admin?.id}:${token}`} enabled={admin?.role === 'COOPERATIVE'}><AdminWorkspace /></AgentsProvider>;
+  return <AgentsProvider key={`${admin?.id}:${token}`} enabled={ASSISTANT_VISIBLE && admin?.role === 'COOPERATIVE'}><AdminWorkspace /></AgentsProvider>;
 }

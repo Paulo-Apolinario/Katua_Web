@@ -1,4 +1,6 @@
 import AgentsCenter from "../pages/agents/AgentsCenter";
+import { ASSISTANT_VISIBLE } from '../config/features';
+import CoverageReceipts from '../pages/analytics/CoverageReceipts';
 import IntakeDeliverers from "../pages/waste-management/IntakeDeliverers";
 import DriverTracking from "../pages/staff-management/DriverTracking";
 import MaterialIntakes from "../pages/waste-management/MaterialIntakes";
@@ -127,7 +129,7 @@ const Router = () => {
             {/* Dashboard */}
             <Route index element={<Dashboard />} />
             <Route path="notifications" element={<Notifications />} />
-            <Route path="agents" element={<AgentsCenter />} />
+            <Route path="agents" element={ASSISTANT_VISIBLE ? <AgentsCenter /> : <Navigate to="/analytics/participation" replace />} />
 
             {/* Waste Collection Management */}
             <Route path="waste-list" element={<WasteList />} />
@@ -323,6 +325,7 @@ const Router = () => {
 
             {/* Reports */}
             <Route path="analytics/participation" element={<ParticipationAnalytics />} />
+            <Route path="analytics/participation/coverage/:bucket" element={<CoverageReceipts />} />
             <Route
               path="analytics-dashboard"
               element={<AnalyticsDashboard />}

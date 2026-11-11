@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useSearchParams } from "react-router";
 import {
   Bar,
   BarChart,
@@ -13,6 +14,8 @@ import { useAdminAuth } from "../../context/AdminAuthContext";
 import {
   participationRequest,
   recentPeriod,
+  participationFilters,
+  coverageLabels,
   profileLabels,
   statusLabels,
   number,
@@ -21,14 +24,6 @@ import {
 import "./participationAnalytics.css";
 import AttendanceAnalytics from "./AttendanceAnalytics";
 
-const coverageLabels = {
-  GENERATOR: "Geradores identificados",
-  PF: "Pessoas físicas identificadas",
-  PEV: "Coletas em PEVs",
-  DELIVERER: "Entregadores avulsos",
-  UNATTRIBUTED: "Origem não identificada",
-  CONFLICT: "Vínculos a conferir",
-};
 const qualityLabels = {
   missing_received_date: "Recebimentos sem data",
   future_received_date: "Recebimentos com data futura",
@@ -186,8 +181,11 @@ function ParticipantDetail({ partyKey, filters, onClose }) {
 
 export default function ParticipationAnalytics() {
   const { admin } = useAdminAuth();
-  const [draft, setDraft] = useState(() => recentPeriod()),
-    [filters, setFilters] = useState(() => recentPeriod());
+  const [params, setParams] = useSearchParams();
+  const filters = useMemo(() => participationFilters(params), [params]);
+  const [draft, setDraft] = useState(filters);
+  const setFilters = (value) => setParams(new URLSearchParams(value));
+  useEffect(() => setDraft(filters), [filters]);
   const [locations, setLocations] = useState([]),
     [contextError, setContextError] = useState("");
   const [data, setData] = useState(null),
@@ -627,7 +625,11 @@ export default function ParticipationAnalytics() {
               </p>
               <div className="pa-coverage">
                 {Object.entries(coverageLabels).map(([key, label]) => (
-                  <div key={key}>
+                  <Link
+                    className="pa-coverage-card"
+                    key={key}
+                    to={`/analytics/participation/coverage/${key}?${new URLSearchParams(filters)}`}
+                  >
                     <strong>
                       {number(
                         data.coverage.find((item) => item.bucket === key)
@@ -635,7 +637,8 @@ export default function ParticipationAnalytics() {
                       )}
                     </strong>
                     <span>{label}</span>
-                  </div>
+                    <small>Ver recebimentos →</small>
+                  </Link>
                 ))}
               </div>
             </section>

@@ -28,6 +28,24 @@ export function recentPeriod(days = 30) {
   };
 }
 
+export function participationFilters(params) {
+  const defaults = recentPeriod();
+  return Object.fromEntries(
+    Object.entries(defaults).map(([key, value]) => [
+      key,
+      params.get(key) ?? value,
+    ]),
+  );
+}
+export const coverageLabels = {
+  GENERATOR: "Geradores identificados",
+  PF: "Pessoas físicas identificadas",
+  PEV: "Coletas em PEVs",
+  DELIVERER: "Entregadores avulsos",
+  UNATTRIBUTED: "Origem não identificada",
+  CONFLICT: "Vínculos a conferir",
+};
+
 export const profileLabels = {
   PF: "Pessoa física",
   SMALL: "Pequeno gerador",

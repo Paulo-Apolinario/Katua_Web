@@ -26,6 +26,7 @@ const user = {
 };
 let mode = "normal";
 const queries = [],
+  agentReads = [],
   errors = [],
   mutations = [];
 const server = http.createServer((req, res) => {
@@ -85,10 +86,35 @@ try {
     if (req.method() === "OPTIONS")
       return route.fulfill({ status: 204, headers });
     if (url.pathname === "/auth/me") body = { user };
+    if (url.pathname.startsWith("/agents")) agentReads.push(url.pathname);
     if (url.pathname.includes("/analytics/participation/")) {
       queries.push(url);
       if (url.pathname.endsWith("/context")) body = { data: fixture.context };
-      else if (url.pathname.endsWith("/attendance")) {
+      else if (url.pathname.includes("/coverage/")) {
+        const [bucket, id] = url.pathname.split("/coverage/")[1].split("/");
+        if (mode === "coverage-error")
+          return route.fulfill({
+            status: 500,
+            headers,
+            body: JSON.stringify({ error: "Falha de teste nos recebimentos." }),
+          });
+        if (id) body = { data: fixture.coverage.detail };
+        else {
+          const source = fixture.coverage.lists[bucket];
+          const search = url.searchParams.get("search") || "";
+          const items = source.items.filter(
+            (row) => row.origin.includes(search) || row.id.includes(search),
+          );
+          body = {
+            data: {
+              ...source,
+              items,
+              total: items.length,
+              totalPages: items.length ? 1 : 0,
+            },
+          };
+        }
+      } else if (url.pathname.endsWith("/attendance")) {
         if (mode === "attendance-error")
           return route.fulfill({
             status: 500,
@@ -171,6 +197,16 @@ try {
     .getByRole("heading", { name: "Participantes ativos", exact: true })
     .waitFor();
   assert.equal(await page.locator(".pa-kpis article").count(), 5);
+  assert.equal(
+    await page.getByRole("button", { name: "Assistente", exact: true }).count(),
+    0,
+  );
+  assert.equal(
+    await page
+      .getByRole("link", { name: "Central de Agentes", exact: true })
+      .count(),
+    0,
+  );
   await page
     .getByRole("heading", { name: "Ordens de coleta extra", exact: true })
     .waitFor();
@@ -221,9 +257,14 @@ try {
   );
   await page.getByLabel("De", { exact: true }).fill("2026-10-01");
   await page.getByLabel("Até", { exact: true }).fill("2026-10-31");
-  await page
-    .getByRole("button", { name: "Aplicar filtros", exact: true })
-    .click();
+  await Promise.all([
+    page.waitForResponse(
+      (response) =>
+        response.url().includes("/analytics/participation/overview?") &&
+        new URL(response.url()).searchParams.get("start") === "2026-10-01",
+    ),
+    page.getByRole("button", { name: "Aplicar filtros", exact: true }).click(),
+  ]);
   await page
     .getByRole("heading", { name: "Participantes ativos", exact: true })
     .waitFor();
@@ -234,6 +275,99 @@ try {
         url.searchParams.get("end") === "2026-10-31",
     ),
   );
+  assert.equal(await page.locator(".pa-coverage-card").count(), 6);
+  await page
+    .getByRole("link", { name: /Geradores identificados.*Ver recebimentos/ })
+    .click();
+  await page
+    .getByRole("heading", { name: "Geradores identificados", exact: true })
+    .waitFor();
+  await page
+    .getByRole("heading", {
+      name: "4 recebimento(s) encontrado(s)",
+      exact: true,
+    })
+    .waitFor();
+  assert.equal(await page.locator(".pa-receipt-row").count(), 4);
+  await page
+    .getByRole("button", { name: "Ver recebimento old1", exact: true })
+    .click();
+  await page
+    .getByRole("heading", { name: "Materiais registrados", exact: true })
+    .waitFor();
+  assert.match(await page.locator(".pa-receipt-materials").innerText(), /80 L/);
+  assert.equal(
+    await page
+      .getByRole("link", { name: "Abrir coleta na operação" })
+      .getAttribute("href"),
+    "/waste-list?coleta=old1",
+  );
+  await page.screenshot({
+    path: path.join(out, "coverage-desktop.png"),
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.waitForTimeout(300);
+  assert(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth + 1,
+    ),
+    "Detalhe de recebimento transborda no celular",
+  );
+  await page.screenshot({
+    path: path.join(out, "coverage-mobile.png"),
+    fullPage: true,
+  });
+  await page
+    .getByRole("link", { name: "← Voltar ao Analytics", exact: true })
+    .click();
+  await page
+    .getByRole("heading", { name: "Participantes ativos", exact: true })
+    .waitFor();
+  assert.equal(
+    await page.getByLabel("De", { exact: true }).inputValue(),
+    "2026-10-01",
+  );
+  await page
+    .getByRole("link", { name: /Entregadores avulsos.*Ver recebimentos/ })
+    .click();
+  await page
+    .getByText("Nenhum recebimento encontrado nesta categoria e seleção.", {
+      exact: true,
+    })
+    .waitFor();
+  await page
+    .getByRole("link", { name: "← Voltar ao Analytics", exact: true })
+    .click();
+  await page
+    .getByRole("heading", { name: "Participantes ativos", exact: true })
+    .waitFor();
+  mode = "coverage-error";
+  await page
+    .getByRole("link", { name: /Geradores identificados.*Ver recebimentos/ })
+    .click();
+  await page
+    .getByRole("alert")
+    .filter({ hasText: "Falha de teste nos recebimentos." })
+    .waitFor();
+  assert.equal(await page.locator(".pa-receipt-row").count(), 0);
+  mode = "normal";
+  await page
+    .getByRole("button", { name: "Tentar consultar recebimentos" })
+    .click();
+  await page
+    .getByRole("heading", {
+      name: "4 recebimento(s) encontrado(s)",
+      exact: true,
+    })
+    .waitFor();
+  await page
+    .getByRole("link", { name: "← Voltar ao Analytics", exact: true })
+    .click();
+  await page
+    .getByRole("heading", { name: "Participantes ativos", exact: true })
+    .waitFor();
+  await page.setViewportSize({ width: 1440, height: 1000 });
   await page
     .getByRole("button", { name: "Ver detalhes de old", exact: true })
     .click();
@@ -316,6 +450,7 @@ try {
     "0",
   );
   assert.deepEqual(errors, []);
+  assert.deepEqual(agentReads, []);
   await page
     .getByRole("heading", { name: "Ordens de coleta extra", exact: true })
     .waitFor();
@@ -324,6 +459,18 @@ try {
     "0",
   );
   assert.deepEqual(mutations, []);
+  mode = "normal";
+  await page.goto("http://127.0.0.1:5187/agents");
+  await page.waitForURL("**/analytics/participation");
+  await page
+    .getByRole("heading", { name: "Participantes ativos", exact: true })
+    .waitFor();
+  assert.equal(
+    await page.getByRole("button", { name: "Assistente", exact: true }).count(),
+    0,
+  );
+  assert.deepEqual(agentReads, []);
+  assert.deepEqual(errors, []);
   console.log(
     "PASS: navigation placement, actual API fixture rendering, applied filters, detail, list-only search, desktop/mobile, empty/error states and GET-only access",
   );
