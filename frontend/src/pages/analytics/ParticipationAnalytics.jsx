@@ -19,6 +19,7 @@ import {
   dateTime,
 } from "../../services/participationAnalytics";
 import "./participationAnalytics.css";
+import AttendanceAnalytics from "./AttendanceAnalytics";
 
 const coverageLabels = {
   GENERATOR: "Geradores identificados",
@@ -638,6 +639,7 @@ export default function ParticipationAnalytics() {
                 ))}
               </div>
             </section>
+            <AttendanceAnalytics start={filters.start} end={filters.end} />
             <section className="pa-panel">
               <div className="pa-heading">
                 <h2>Participantes e solicitações</h2>

@@ -88,7 +88,37 @@ try {
     if (url.pathname.includes("/analytics/participation/")) {
       queries.push(url);
       if (url.pathname.endsWith("/context")) body = { data: fixture.context };
-      else if (url.pathname.includes("/participants/"))
+      else if (url.pathname.endsWith("/attendance")) {
+        if (mode === "attendance-error")
+          return route.fulfill({
+            status: 500,
+            headers,
+            body: JSON.stringify({ error: "Falha de teste no atendimento." }),
+          });
+        body = {
+          data:
+            mode === "empty"
+              ? {
+                  ...fixture.attendance,
+                  channels: fixture.attendance.channels.map((row) =>
+                    Object.fromEntries(
+                      Object.entries(row).map(([key, value]) => [
+                        key,
+                        typeof value === "number"
+                          ? 0
+                          : key === "statuses"
+                            ? []
+                            : key === "oldest_pending_at" ||
+                                key === "median_hours"
+                              ? null
+                              : value,
+                      ]),
+                    ),
+                  ),
+                }
+              : fixture.attendance,
+        };
+      } else if (url.pathname.includes("/participants/"))
         body = { data: fixture.detail };
       else if (url.pathname.endsWith("/participants"))
         body = {
@@ -141,6 +171,39 @@ try {
     .getByRole("heading", { name: "Participantes ativos", exact: true })
     .waitFor();
   assert.equal(await page.locator(".pa-kpis article").count(), 5);
+  await page
+    .getByRole("heading", { name: "Ordens de coleta extra", exact: true })
+    .waitFor();
+  assert.equal(await page.locator(".pa-attendance-card").count(), 3);
+  assert.equal(
+    await page
+      .locator(".pa-attendance-card")
+      .nth(1)
+      .locator(".pa-attendance-total")
+      .textContent(),
+    "5",
+  );
+  await page.locator(".pa-attendance-card").first().locator("summary").click();
+  await page
+    .locator(".pa-attendance-card")
+    .first()
+    .getByText("Tempo mediano: 24 hora(s), em 1 registro(s).", { exact: true })
+    .waitFor();
+  assert(
+    queries
+      .filter((url) => url.pathname.endsWith("/attendance"))
+      .every((url) =>
+        [...url.searchParams.keys()].every((key) =>
+          ["start", "end"].includes(key),
+        ),
+      ),
+  );
+  assert.equal(
+    await page
+      .getByRole("link", { name: "Abrir ordens extras", exact: true })
+      .getAttribute("href"),
+    "/extra-collection-orders",
+  );
   assert.equal(
     await page
       .locator(".pa-kpis article")
@@ -206,6 +269,27 @@ try {
     ),
     "Página transborda no celular",
   );
+  mode = "attendance-error";
+  await page
+    .getByRole("button", { name: "Atualizar dados", exact: true })
+    .click();
+  await page
+    .getByRole("alert")
+    .filter({ hasText: "Falha de teste no atendimento." })
+    .waitFor();
+  assert.equal(await page.locator(".pa-attendance-card").count(), 0);
+  assert.equal(
+    await page.locator(".pa-kpis article").count(),
+    5,
+    "Falha no atendimento não apaga os indicadores de participação",
+  );
+  mode = "normal";
+  await page
+    .getByRole("button", { name: "Tentar consultar atendimento", exact: true })
+    .click();
+  await page
+    .getByRole("heading", { name: "Ordens de coleta extra", exact: true })
+    .waitFor();
   mode = "error";
   await page
     .getByRole("button", { name: "Atualizar dados", exact: true })
@@ -232,6 +316,13 @@ try {
     "0",
   );
   assert.deepEqual(errors, []);
+  await page
+    .getByRole("heading", { name: "Ordens de coleta extra", exact: true })
+    .waitFor();
+  assert.equal(
+    await page.locator(".pa-attendance-total").nth(1).textContent(),
+    "0",
+  );
   assert.deepEqual(mutations, []);
   console.log(
     "PASS: navigation placement, actual API fixture rendering, applied filters, detail, list-only search, desktop/mobile, empty/error states and GET-only access",
