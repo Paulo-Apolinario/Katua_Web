@@ -1,5 +1,6 @@
 import AgentsCenter from "../pages/agents/AgentsCenter";
 import { ASSISTANT_VISIBLE } from '../config/features';
+import AnalyticsAccessGate from "../pages/analytics/AnalyticsAccessGate";
 import AnalyticsRecords from "../pages/analytics/AnalyticsRecords";
 import CoverageReceipts from '../pages/analytics/CoverageReceipts';
 import IntakeDeliverers from "../pages/waste-management/IntakeDeliverers";
@@ -325,10 +326,12 @@ const Router = () => {
             />
 
             {/* Reports */}
-            <Route path="analytics/participation" element={<ParticipationAnalytics />} />
-            <Route path="analytics/participation/coverage/:bucket" element={<CoverageReceipts />} />
-            <Route path="analytics/participation/requests/:outcome" element={<AnalyticsRecords kind="requests" />} />
-            <Route path="analytics/participation/quality/:issue" element={<AnalyticsRecords kind="quality" />} />
+            <Route path="analytics/participation" element={<AnalyticsAccessGate />}>
+            <Route index element={<ParticipationAnalytics />} />
+            <Route path="coverage/:bucket" element={<CoverageReceipts />} />
+            <Route path="requests/:outcome" element={<AnalyticsRecords kind="requests" />} />
+            <Route path="quality/:issue" element={<AnalyticsRecords kind="quality" />} />
+            </Route>
             <Route
               path="analytics-dashboard"
               element={<AnalyticsDashboard />}

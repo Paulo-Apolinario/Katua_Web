@@ -1,11 +1,21 @@
 import { apiRequest } from "./apiClient";
+import {
+  analyticsAccessHeaders,
+  clearAnalyticsAccess,
+} from "./analyticsAccess";
 
 export function participationRequest(path, filters, signal) {
   const query = filters ? `?${new URLSearchParams(filters)}` : "";
   return apiRequest(`/analytics/participation/${path}${query}`, {
     signal,
+    headers: analyticsAccessHeaders(),
     suppressReadNotice: true,
-  }).then((response) => response.data);
+  })
+    .then((response) => response.data)
+    .catch((error) => {
+      if (error.code === "ANALYTICS_LOCKED") clearAnalyticsAccess();
+      throw error;
+    });
 }
 
 export function recentPeriod(days = 30) {

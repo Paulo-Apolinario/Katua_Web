@@ -108,6 +108,7 @@ try {
       return url.hostname === "127.0.0.1" ? route.continue() : route.abort();
     if (
       !["GET", "OPTIONS"].includes(req.method()) &&
+      !url.pathname.startsWith("/analytics/access/") &&
       url.pathname !== "/analytics/usage/heartbeat"
     )
       mutations.push(req.method() + " " + url.pathname);
@@ -120,6 +121,15 @@ try {
     };
     if (req.method() === "OPTIONS")
       return route.fulfill({ status: 204, headers });
+    if (url.pathname === "/analytics/access/unlock") {
+      const valid = req.postDataJSON().password === process.env.KATUA_TEST_ANALYTICS_PASSWORD;
+      return route.fulfill({ status: valid ? 200 : 403, headers, body: JSON.stringify(valid
+        ? { data: { token: "fixture-manager-grant", expiresAt: new Date(Date.now() + 30 * 60_000).toISOString() } }
+        : { error: "Senha de liberação incorreta. Tente novamente.", code: "ANALYTICS_BAD_PASSWORD" }) });
+    }
+    if (url.pathname === "/analytics/access/lock") return route.fulfill({status: 200, headers, body: JSON.stringify({data: {locked: true}})});
+    if (url.pathname.startsWith("/analytics/participation/") && req.headers()["x-analytics-access"] !== "fixture-manager-grant")
+      return route.fulfill({status: 403, headers, body: JSON.stringify({error: "Acesso exclusivo aos gestores.", code: "ANALYTICS_LOCKED"})});
     if (url.pathname === "/auth/me") body = { user };
     if (url.pathname === "/analytics/usage/heartbeat") {
       usagePayloads.push(req.postDataJSON());
@@ -283,6 +293,21 @@ try {
   const page = await context.newPage();
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("http://127.0.0.1:5187/analytics/participation");
+  const gate = page.getByRole("heading", {name: "Analytics — acesso restrito", exact: true});
+  await gate.waitFor();
+  assert.equal(queries.length, 0, "Nenhum dado deve ser consultado antes da liberação");
+  await page.getByLabel("Senha de liberação", {exact: true}).fill("wrong");
+  await page.getByRole("button", {name: "Liberar acesso", exact: true}).click();
+  await page.getByRole("alert").filter({hasText: "Senha de liberação incorreta"}).waitFor();
+  assert.equal(queries.length, 0);
+  await page.screenshot({path: path.join(out, "analytics-access-desktop.png")});
+  const unlockGate = async () => {
+    await page.getByLabel("Senha de liberação", {exact: true}).fill(process.env.KATUA_TEST_ANALYTICS_PASSWORD);
+    await page.getByRole("button", {name: "Liberar acesso", exact: true}).click();
+    await gate.waitFor({state: "hidden"});
+  };
+  await unlockGate();
+
   await page
     .getByRole("heading", { name: "Participação e atendimento", exact: true })
     .waitFor();
@@ -703,6 +728,8 @@ try {
   assert.deepEqual(agentReads, []);
   await page.clock.install();
   await page.reload();
+  await gate.waitFor();
+  await unlockGate();
   await page
     .getByRole("heading", { name: "Participantes ativos", exact: true })
     .waitFor();
@@ -737,6 +764,8 @@ try {
   mode = "normal";
   await page.goto("http://127.0.0.1:5187/agents");
   await page.waitForURL("**/analytics/participation");
+  await gate.waitFor();
+  await unlockGate();
   await page
     .getByRole("heading", { name: "Participantes ativos", exact: true })
     .waitFor();
@@ -745,6 +774,16 @@ try {
     0,
   );
   assert.deepEqual(agentReads, []);
+  assert.deepEqual(errors, []);
+  await page.getByRole("button", {name: "Bloquear Analytics", exact: true}).click();
+  await gate.waitFor();
+  assert.equal(await page.getByRole("heading", {name: "Participantes ativos", exact: true}).count(), 0);
+  await page.setViewportSize({width: 390, height: 844});
+  await page.screenshot({path: path.join(out, "analytics-access-mobile.png")});
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+  await page.goto("http://127.0.0.1:5187/analytics/participation/requests/ALL?start=2026-10-01&end=2026-10-31");
+  await gate.waitFor();
+  assert.equal(await page.getByRole("button", {name: "Bloquear Analytics", exact: true}).count(), 0);
   assert.deepEqual(errors, []);
   console.log(
     "PASS: navigation placement, actual API fixture rendering, applied filters, detail, list-only search, desktop/mobile, empty/error states and GET-only access",
