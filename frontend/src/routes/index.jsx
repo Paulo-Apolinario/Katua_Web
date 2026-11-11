@@ -1,5 +1,6 @@
 import AgentsCenter from "../pages/agents/AgentsCenter";
 import { ASSISTANT_VISIBLE } from '../config/features';
+import AnalyticsRecords from "../pages/analytics/AnalyticsRecords";
 import CoverageReceipts from '../pages/analytics/CoverageReceipts';
 import IntakeDeliverers from "../pages/waste-management/IntakeDeliverers";
 import DriverTracking from "../pages/staff-management/DriverTracking";
@@ -326,6 +327,8 @@ const Router = () => {
             {/* Reports */}
             <Route path="analytics/participation" element={<ParticipationAnalytics />} />
             <Route path="analytics/participation/coverage/:bucket" element={<CoverageReceipts />} />
+            <Route path="analytics/participation/requests/:outcome" element={<AnalyticsRecords kind="requests" />} />
+            <Route path="analytics/participation/quality/:issue" element={<AnalyticsRecords kind="quality" />} />
             <Route
               path="analytics-dashboard"
               element={<AnalyticsDashboard />}

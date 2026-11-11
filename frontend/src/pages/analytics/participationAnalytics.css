@@ -35,6 +35,8 @@
   margin-bottom: 20px;
   min-width: 0;
 }
+.pa-count-link { color:#006b51; text-decoration:underline; text-underline-offset:3px; }
+.pa-count-link:focus-visible { outline:3px solid #76bd98; outline-offset:3px; }
 .pa-tabs {
   display: flex;
   flex-wrap: wrap;

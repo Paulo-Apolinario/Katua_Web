@@ -103,7 +103,17 @@ export default function AttendanceAnalytics({ start, end }) {
                 <article className="pa-attendance-card" key={row.channel}>
                   <h3>{config.title}</h3>
                   <strong className="pa-attendance-total">
-                    {number(row.total)}
+                    {row.channel === "SCHEDULE" ? (
+                      <Link
+                        className="pa-count-link"
+                        to={`/analytics/participation/requests/ALL?${new URLSearchParams({ start, end })}`}
+                        aria-label={`Ver todos os pedidos: ${number(row.total)}`}
+                      >
+                        {number(row.total)}
+                      </Link>
+                    ) : (
+                      number(row.total)
+                    )}
                   </strong>
                   <p>registro(s) criado(s) no período</p>
                   <div className="pa-attendance-pending">
@@ -127,7 +137,15 @@ export default function AttendanceAnalytics({ start, end }) {
                       }).map(([key, label]) => (
                         <div key={key}>
                           <dt>{label}</dt>
-                          <dd>{number(data.reconciliation?.[key])}</dd>
+                          <dd>
+                            <Link
+                              className="pa-count-link"
+                              to={`/analytics/participation/requests/${{ received: "RECEIVED", pending: "PENDING", cancelled: "CANCELLED", closed_without_receipt: "CLOSED_WITHOUT_RECEIPT", needs_check: "CHECK" }[key]}?${new URLSearchParams({ start, end })}`}
+                              aria-label={`Ver ${label}: ${number(data.reconciliation?.[key])}`}
+                            >
+                              {number(data.reconciliation?.[key])}
+                            </Link>
+                          </dd>
                         </div>
                       ))}
                     {row.channel === "EXTRA" && (

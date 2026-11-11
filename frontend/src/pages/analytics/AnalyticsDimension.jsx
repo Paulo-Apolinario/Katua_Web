@@ -6,6 +6,8 @@ import {
   dateTime,
   profileLabels,
   heatColor,
+  unitLabels,
+  materialQuantity,
 } from "../../services/participationAnalytics";
 import { ParticipantDetail } from "./ParticipationAnalytics";
 import NeighborhoodHeatMap from "./NeighborhoodHeatMap";
@@ -33,13 +35,20 @@ export default function AnalyticsDimension({ kind, filters }) {
     [search, setSearch] = useState(""),
     [draft, setDraft] = useState(""),
     [selected, setSelected] = useState(null),
-    [metric, setMetric] = useState("receipts");
+    [metric, setMetric] = useState("receipts"),
+    [materialKey, setMaterialKey] = useState("");
   const query = useMemo(
     () =>
       kind === "usage"
         ? { start: filters.start, end: filters.end, page, pageSize: 20 }
-        : { ...filters, page, pageSize: 20, search },
-    [kind, filters, page, search],
+        : {
+            ...filters,
+            page,
+            pageSize: 20,
+            search,
+            ...(kind === "territory" ? { materialKey } : {}),
+          },
+    [kind, filters, page, search, materialKey],
   );
   useEffect(() => {
     const controller = new AbortController();
@@ -126,6 +135,14 @@ export default function AnalyticsDimension({ kind, filters }) {
                 período. A primeira participação e a recência do histórico podem
                 ser consultadas em cada gerador.
               </p>
+              <p>
+                {number(data.summary.first_registered)} com primeira
+                participação registrada no período;{" "}
+                {number(data.summary.returning)} com recebimentos anteriores;{" "}
+                {number(data.summary.repeated)} com dois ou mais recebimentos
+                neste período. Essas últimas participações podem estar nos dois
+                primeiros grupos.
+              </p>
               <div className="pa-table-wrap">
                 <table>
                   <thead>
@@ -133,6 +150,7 @@ export default function AnalyticsDimension({ kind, filters }) {
                       <th>Gerador</th>
                       <th>Perfil / bairro</th>
                       <th>Recebimentos</th>
+                      <th>Participação no período</th>
                       <th>Última participação</th>
                       <th>Pedidos abertos</th>
                       <th>Histórico</th>
@@ -150,6 +168,15 @@ export default function AnalyticsDimension({ kind, filters }) {
                           </small>
                         </td>
                         <td>{number(row.period_count)}</td>
+                        <td>
+                          {row.period_count <= 0
+                            ? "Somente solicitações"
+                            : row.first_at &&
+                                new Date(row.first_at) >=
+                                  new Date(data.meta.effectiveStart)
+                              ? "Primeira participação registrada"
+                              : "Retorno de participante"}
+                        </td>
                         <td>{dateTime(row.last_at)}</td>
                         <td>{number(row.open_requests)}</td>
                         <td>
@@ -222,19 +249,38 @@ export default function AnalyticsDimension({ kind, filters }) {
           {kind === "territory" && (
             <>
               <p>{data.mapMethod}</p>
-              <label>
-                Intensidade do mapa
-                <select
-                  value={metric}
-                  onChange={(event) => setMetric(event.target.value)}
-                >
-                  <option value="receipts">Todos os recebimentos</option>
-                  <option value="identified_receipts">
-                    Recebimentos de origens identificadas
-                  </option>
-                  <option value="pev_receipts">Recebimentos em PEVs</option>
-                </select>
+              <label htmlFor="analytics-material">
+                Material no mapa e na tabela
               </label>
+              <select
+                id="analytics-material"
+                value={materialKey}
+                onChange={(event) => setMaterialKey(event.target.value)}
+              >
+                <option value="">Todos os materiais</option>
+                {(data.materialOptions || []).map((row) => (
+                  <option key={row.key} value={row.key}>
+                    {row.name} · {unitLabels[row.unit] || "Unidade a conferir"}
+                  </option>
+                ))}
+              </select>
+              <p>
+                A intensidade mostra o número de recebimentos com o material
+                selecionado. Quantidades registradas ficam na tabela, na unidade
+                original, e podem aguardar conferência.
+              </p>
+              <label htmlFor="analytics-map-metric">Intensidade do mapa</label>
+              <select
+                id="analytics-map-metric"
+                value={metric}
+                onChange={(event) => setMetric(event.target.value)}
+              >
+                <option value="receipts">Todos os recebimentos</option>
+                <option value="identified_receipts">
+                  Recebimentos de origens identificadas
+                </option>
+                <option value="pev_receipts">Recebimentos em PEVs</option>
+              </select>
               <NeighborhoodHeatMap items={data.items} metric={metric} />
               <div className="pa-table-wrap">
                 <table>
@@ -242,6 +288,7 @@ export default function AnalyticsDimension({ kind, filters }) {
                     <tr>
                       <th>Bairro / município</th>
                       <th>Recebimentos</th>
+                      {materialKey && <th>Quantidade registrada</th>}
                       <th>Origem identificada</th>
                       <th>Participantes únicos</th>
                       <th>Coletas em PEV</th>
@@ -271,6 +318,12 @@ export default function AnalyticsDimension({ kind, filters }) {
                           </small>
                         </td>
                         <td>{number(row.receipts)}</td>
+                        {materialKey && (
+                          <td>
+                            {materialQuantity(row.quantity)}{" "}
+                            {unitLabels[row.unit]}
+                          </td>
+                        )}
                         <td>{number(row.identified_receipts)}</td>
                         <td>{number(row.participants)}</td>
                         <td>{number(row.pev_receipts)}</td>
@@ -292,6 +345,40 @@ export default function AnalyticsDimension({ kind, filters }) {
           {kind === "usage" && (
             <>
               <p className="pa-notice">{data.method}</p>
+              <p>
+                <strong>
+                  Cobertura da medição:{" "}
+                  {data.summary.accounts > 0
+                    ? `${number((data.summary.measured_accounts / data.summary.accounts) * 100)}%`
+                    : "Sem contas vinculadas"}
+                  .
+                </strong>{" "}
+                {number(data.summary.accounts - data.summary.measured_accounts)}{" "}
+                conta(s) sem sinal no período. Primeiro sinal disponível para as
+                contas atuais:{" "}
+                {data.firstObservedDay
+                  ? data.firstObservedDay.split("-").reverse().join("/")
+                  : "Sem sinal disponível"}
+                .
+              </p>
+              <p>
+                {number(data.summary.web_accounts)} conta(s) com sinal do painel
+                e {number(data.summary.app_accounts)} com sinal do aplicativo. A
+                mesma conta pode aparecer nos dois clientes; esses números não
+                indicam instalações ou versões atualizadas.
+              </p>
+              <details>
+                <summary>Cobertura por perfil</summary>
+                <ul>
+                  {(data.coverageByRole || []).map((row) => (
+                    <li key={row.role}>
+                      {roleLabels[row.role] || "Outro perfil"}:{" "}
+                      {number(row.measured)} de {number(row.accounts)} conta(s)
+                      com medição.
+                    </li>
+                  ))}
+                </ul>
+              </details>
               <div className="pa-facts">
                 <div>
                   <strong>{number(data.summary.accounts)}</strong>Contas

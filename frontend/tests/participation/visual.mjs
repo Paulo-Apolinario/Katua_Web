@@ -4,6 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import http from "node:http";
 import { createActivityMeter } from "../../src/services/activityMeter.js";
+import ExcelJS from "exceljs";
 import { createRequire } from "node:module";
 const tools = process.env.KATUA_VALIDATION_TOOLS;
 if (!tools || !process.env.KATUA_ANALYTICS_FIXTURE)
@@ -128,6 +129,42 @@ try {
     if (url.pathname.includes("/analytics/participation/")) {
       queries.push(url);
       if (url.pathname.endsWith("/context")) body = { data: fixture.context };
+      else if (url.pathname.endsWith("/comparison")) {
+        if (mode === "comparison-error")
+          return route.fulfill({
+            status: 500,
+            headers,
+            body: JSON.stringify({ error: "Falha de teste na comparação." }),
+          });
+        body = {
+          data:
+            mode === "empty"
+              ? {
+                  ...fixture.insights.comparison,
+                  current: Object.fromEntries(
+                    Object.keys(fixture.insights.comparison.current).map(
+                      (key) => [key, 0],
+                    ),
+                  ),
+                  previous: Object.fromEntries(
+                    Object.keys(fixture.insights.comparison.previous).map(
+                      (key) => [key, 0],
+                    ),
+                  ),
+                  changes: Object.fromEntries(
+                    Object.keys(fixture.insights.comparison.changes).map(
+                      (key) => [key, { absolute: 0, percent: null }],
+                    ),
+                  ),
+                }
+              : fixture.insights.comparison,
+        };
+      } else if (url.pathname.endsWith("/executive"))
+        body = { data: fixture.insights.executive };
+      else if (url.pathname.includes("/requests/"))
+        body = { data: fixture.insights.requests };
+      else if (url.pathname.includes("/quality/"))
+        body = { data: fixture.insights.quality };
       else if (
         ["generators", "collectors", "territory", "usage"].some((kind) =>
           url.pathname.endsWith("/" + kind),
@@ -140,7 +177,12 @@ try {
             headers,
             body: JSON.stringify({ error: "Falha de teste na aba." }),
           });
-        body = { data: fixture.dimensions[kind] };
+        body = {
+          data:
+            kind === "territory" && url.searchParams.get("materialKey")
+              ? fixture.insights.oilMap
+              : fixture.dimensions[kind],
+        };
       } else if (url.pathname.includes("/coverage/")) {
         const [bucket, id] = url.pathname.split("/coverage/")[1].split("/");
         if (mode === "coverage-error")
@@ -330,6 +372,93 @@ try {
     ),
   );
   assert.equal(await page.locator(".pa-coverage-card").count(), 6);
+  const comparison = page.getByRole("region", {
+    name: "Comparação entre períodos",
+  });
+  await comparison
+    .getByText("Sem base para percentual", { exact: true })
+    .first()
+    .waitFor();
+  assert.match(await comparison.innerText(), /400%/);
+  await page
+    .getByRole("link", { name: "Ver Recebidos: 2", exact: true })
+    .click();
+  await page
+    .getByRole("heading", { name: "2 registro(s) encontrado(s)", exact: true })
+    .waitFor();
+  assert.equal(await page.locator(".pa-receipt-row").count(), 2);
+  assert(
+    await page
+      .getByRole("link", { name: "Abrir pedido", exact: true })
+      .first()
+      .getAttribute("href")
+      .then((href) => href.startsWith("/collection-requests?solicitacao=")),
+  );
+  await page
+    .getByRole("link", { name: "← Voltar ao Analytics", exact: true })
+    .click();
+  await page
+    .getByRole("heading", { name: "Participantes ativos", exact: true })
+    .waitFor();
+  await page
+    .getByText("Qualidade e limites dos dados", { exact: true })
+    .click();
+  await page
+    .getByRole("link", { name: "Recebimentos sem data", exact: true })
+    .click();
+  await page
+    .getByRole("heading", { name: "1 registro(s) encontrado(s)", exact: true })
+    .waitFor();
+  assert.match(
+    await page.locator(".pa-notice").innerText(),
+    /Todo o histórico/,
+  );
+  assert.equal(
+    await page
+      .getByRole("link", { name: "Abrir coleta", exact: true })
+      .getAttribute("href"),
+    "/waste-list?coleta=null-date",
+  );
+  await page.screenshot({
+    path: path.join(out, "quality-drilldown.png"),
+    fullPage: true,
+  });
+  await page
+    .getByRole("link", { name: "← Voltar ao Analytics", exact: true })
+    .click();
+  await page
+    .getByRole("heading", { name: "Participantes ativos", exact: true })
+    .waitFor();
+  const pdfWait = page.waitForEvent("download");
+  await page
+    .getByRole("button", { name: "Baixar resumo PDF", exact: true })
+    .click();
+  const pdf = await pdfWait;
+  await pdf.saveAs(path.join(out, "executive.pdf"));
+  assert(
+    fs
+      .readFileSync(path.join(out, "executive.pdf"))
+      .subarray(0, 4)
+      .toString() === "%PDF",
+  );
+  const excelWait = page.waitForEvent("download");
+  await page
+    .getByRole("button", { name: "Baixar resumo Excel", exact: true })
+    .click();
+  const excel = await excelWait;
+  await excel.saveAs(path.join(out, "executive.xlsx"));
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.readFile(path.join(out, "executive.xlsx"));
+  assert.equal(workbook.worksheets.length, 8);
+  assert.equal(
+    workbook.worksheets[0].getCell("B3").value,
+    "2026-10-01 a 2026-10-31",
+  );
+  assert(
+    JSON.stringify(
+      workbook.worksheets.map((sheet) => sheet.getSheetValues()),
+    ).includes("L"),
+  );
   await page
     .getByRole("link", { name: /Geradores identificados.*Ver recebimentos/ })
     .click();
@@ -440,6 +569,14 @@ try {
     await page.locator(".pa-heat-map .leaflet-interactive").count(),
     1,
   );
+  await page
+    .getByLabel("Material no mapa e na tabela", { exact: true })
+    .selectOption(fixture.insights.oilKey);
+  await page
+    .getByRole("columnheader", { name: "Quantidade registrada", exact: true })
+    .waitFor();
+  await page.getByRole("cell", { name: "80 L", exact: true }).waitFor();
+  assert.equal(await page.locator(".pa-dimension tbody tr").count(), 1);
   await page.screenshot({
     path: path.join(out, "heatmap-desktop.png"),
     fullPage: true,
@@ -492,8 +629,12 @@ try {
   });
   await page.getByLabel("Buscar nome na lista").fill("new");
   await page.getByRole("button", { name: "Buscar", exact: true }).click();
-  await page.waitForFunction(
-    () => document.querySelectorAll(".pa-table-wrap tbody tr").length === 1,
+  await page.waitForFunction(() =>
+    Array.from(document.querySelectorAll("table")).some(
+      (table) =>
+        table.querySelector("th")?.textContent === "Participante" &&
+        table.querySelectorAll("tbody tr").length === 1,
+    ),
   );
   assert.equal(
     await page

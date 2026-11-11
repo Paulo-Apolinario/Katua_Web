@@ -84,3 +84,36 @@ export const heatColor = (value, max) =>
         : value / max <= 0.75
           ? "#edbd65"
           : "#d96b45";
+
+export const requestOutcomeLabels = {
+  ALL: "Todos os pedidos",
+  RECEIVED: "Recebidos",
+  PENDING: "Pendentes",
+  CANCELLED: "Cancelados sem recebimento",
+  CLOSED_WITHOUT_RECEIPT: "Encerrados sem recebimento confirmado",
+  CHECK: "Registros a conferir",
+};
+export const qualityLabels = {
+  missing_received_date: "Recebimentos sem data",
+  future_received_date: "Recebimentos com data futura",
+  conflicting_relations: "Operações com vínculos conflitantes",
+  unweighed: "Recebimentos sem quantidade informada",
+  legacy_weight: "Recebimentos apenas com peso legado",
+  missing_neighborhood: "Recebimentos sem bairro",
+  unattributed_receipts: "Recebimentos sem origem identificável",
+  unattributed_requests: "Solicitações sem origem identificável",
+  request_status_mismatch: "Solicitações abertas com recebimento registrado",
+};
+export const unitLabels = {
+  KG: "kg",
+  TON: "t",
+  LITER: "L",
+  UNIT: "unidades",
+  CUBIC_METER: "m³",
+};
+export const materialQuantity = (value) =>
+  value == null
+    ? "Não disponível"
+    : new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 3 }).format(
+        value,
+      );

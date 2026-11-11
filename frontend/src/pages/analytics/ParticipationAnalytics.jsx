@@ -20,21 +20,16 @@ import {
   statusLabels,
   number,
   dateTime,
+  qualityLabels,
+  unitLabels,
+  materialQuantity,
 } from "../../services/participationAnalytics";
 import "./participationAnalytics.css";
 import AttendanceAnalytics from "./AttendanceAnalytics";
 import AnalyticsDimension from "./AnalyticsDimension";
+import PeriodComparison from "./PeriodComparison";
+import ExecutiveExport from "./ExecutiveExport";
 
-const qualityLabels = {
-  missing_received_date: "Recebimentos sem data",
-  future_received_date: "Recebimentos com data futura",
-  conflicting_relations: "Operações com vínculos conflitantes",
-  unweighed: "Recebimentos sem quantidade informada",
-  legacy_weight: "Recebimentos apenas com peso legado",
-  missing_neighborhood: "Recebimentos sem bairro",
-  unattributed_requests: "Solicitações sem origem identificável",
-  request_status_mismatch: "Solicitações abertas com recebimento registrado",
-};
 const cards = [
   [
     "active",
@@ -148,6 +143,28 @@ export function ParticipantDetail({ partyKey, filters, onClose }) {
               ? "Regularidade: histórico insuficiente. São necessárias pelo menos três datas distintas de participação."
               : `Intervalo mediano: ${number(data.regularity.median_days)} dias. Variação dos intervalos: ${number(data.regularity.deviation_days)} dias (desvio padrão).`}
           </p>
+          {!!data.materialSummary?.length && (
+            <>
+              <h3>Materiais registrados no período e nos filtros</h3>
+              <ul className="pa-receipt-materials">
+                {data.materialSummary.map((row, index) => (
+                  <li key={index}>
+                    <span>
+                      {row.name}
+                      <small>{number(row.receipts)} recebimento(s)</small>
+                    </span>
+                    <strong>
+                      {materialQuantity(row.quantity)} {unitLabels[row.unit]}
+                    </strong>
+                  </li>
+                ))}
+              </ul>
+              <p>
+                Quantidades registradas, que podem aguardar conferência;
+                unidades são mantidas separadas.
+              </p>
+            </>
+          )}
           <h3>Histórico registrado até a data de referência</h3>
           <p>Solicitação e coleta vinculadas aparecem no mesmo registro.</p>
           <ol className="pa-timeline">
@@ -486,6 +503,10 @@ export default function ParticipationAnalytics() {
         </div>
         {contextError && <p role="status">{contextError}</p>}
       </form>
+      <ExecutiveExport
+        key={new URLSearchParams(filters).toString()}
+        filters={filters}
+      />
       {activeTab !== "overview" ? (
         <AnalyticsDimension
           key={`${activeTab}:${new URLSearchParams(filters)}:${refresh}`}
@@ -522,6 +543,7 @@ export default function ParticipationAnalytics() {
                 atualização acima.
               </p>
             )}
+            <PeriodComparison filters={filters} />
             <div className="pa-kpis">
               {cards.map(([key, label, help]) => (
                 <article className="pa-panel" key={key}>
@@ -794,10 +816,22 @@ export default function ParticipationAnalytics() {
             <details className="pa-panel">
               <summary>Qualidade e limites dos dados</summary>
               <p>{data.qualityScope}</p>
+              <p>
+                Abra um indicador para conferir os registros e acessar a
+                operação correspondente. O mesmo registro pode aparecer em mais
+                de um diagnóstico; essas contagens não devem ser somadas.
+              </p>
               <dl className="pa-quality">
                 {Object.entries(qualityLabels).map(([key, label]) => (
                   <div key={key}>
-                    <dt>{label}</dt>
+                    <dt>
+                      <Link
+                        className="pa-count-link"
+                        to={`/analytics/participation/quality/${key}?${new URLSearchParams(filters)}`}
+                      >
+                        {label}
+                      </Link>
+                    </dt>
                     <dd>
                       {number(data.quality[key])} /{" "}
                       {number(
