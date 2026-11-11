@@ -751,7 +751,7 @@ const Sidebar = ({ active, setActive }) => {
                 <ChartLine />
               </div>
 
-              <span className="text">Relatórios e Análises</span>
+              <span className="text">Relatórios da operação</span>
 
               <ChevronRight className="ms-auto arrow align-middle" />
             </a>
@@ -926,7 +926,7 @@ const Sidebar = ({ active, setActive }) => {
             </ul>
           </li>
           {admin?.role === "COOPERATIVE" && (
-            <li className="nav-item"><NavLink to="/analytics/participation" onClick={closeSidebarOnMobile} className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}><div className="icon-wrap"><ChartLine /></div><span className="text">Analytics</span></NavLink></li>
+            <li className="nav-item"><NavLink to="/analytics/participation" onClick={closeSidebarOnMobile} className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}><div className="icon-wrap"><ChartLine /></div><span className="text">Participação e atendimento</span></NavLink></li>
           )}
         </ul>
       </div>

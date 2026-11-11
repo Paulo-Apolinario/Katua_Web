@@ -1,5 +1,6 @@
 import AgentsProvider from "../components/agents/AgentsProvider";
 import AgentChat from "../components/agents/AgentChat";
+import UsageTracker from '../components/analytics/UsageTracker';
 import { ASSISTANT_VISIBLE } from '../config/features';
 import { useAdminAuth } from "../context/AdminAuthContext";
 import PanelReadNotice from "../components/PanelReadNotice";
@@ -14,6 +15,7 @@ const AdminWorkspace = () => {
   const [active, setActive] = useState(true);
   return (
     <div className="katua-admin">
+      <UsageTracker />
       <HeadTags />
       <Sidebar active={active} setActive={setActive} />
       <Header active={active} setActive={setActive} />

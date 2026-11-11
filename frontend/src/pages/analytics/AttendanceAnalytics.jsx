@@ -116,13 +116,35 @@ export default function AttendanceAnalytics({ start, end }) {
                       <dt>{config.linked}</dt>
                       <dd>{number(row.linked)}</dd>
                     </div>
-                    {row.channel !== "PEV" && (
+                    {row.channel === "SCHEDULE" &&
+                      Object.entries({
+                        received: "Recebidos",
+                        pending: "Pendentes",
+                        cancelled: "Cancelados sem recebimento",
+                        closed_without_receipt:
+                          "Encerrados sem recebimento confirmado",
+                        needs_check: "Registros a conferir",
+                      }).map(([key, label]) => (
+                        <div key={key}>
+                          <dt>{label}</dt>
+                          <dd>{number(data.reconciliation?.[key])}</dd>
+                        </div>
+                      ))}
+                    {row.channel === "EXTRA" && (
                       <div>
                         <dt>Com recebimento confirmado</dt>
                         <dd>{number(row.received)}</dd>
                       </div>
                     )}
                   </dl>
+                  {row.channel === "SCHEDULE" && (
+                    <p>
+                      Recebidos + pendentes + cancelados sem recebimento +
+                      encerrados sem recebimento + registros a conferir ={" "}
+                      {number(data.reconciliation?.total)} pedidos. Os vínculos
+                      com ordens extras já estão incluídos nesse total.
+                    </p>
+                  )}
                   {!row.total && <p>Nenhum registro deste tipo no período.</p>}
                   <details>
                     <summary>Ver situações e tempo de espera</summary>

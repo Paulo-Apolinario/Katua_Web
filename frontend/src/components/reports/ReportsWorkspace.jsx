@@ -201,7 +201,7 @@ export default function ReportsWorkspace({ kind }) {
           title={current.title}
           description={current.description}
           hideNavigation
-          eyebrow="Relatórios e Análises"
+          eyebrow="Relatórios da operação"
           actions={
             <>
               <button
@@ -230,7 +230,7 @@ export default function ReportsWorkspace({ kind }) {
         />
         <nav
           className="management-nav d-flex gap-2 mb-4"
-          aria-label="Relatórios e Análises"
+          aria-label="Relatórios da operação"
         >
           <Link className="btn btn-sm btn-outline-secondary" to="/environmental-impact">Impacto ambiental</Link>
           {Object.entries(REPORTS).map(([key, r]) => (

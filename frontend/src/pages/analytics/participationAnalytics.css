@@ -35,6 +35,53 @@
   margin-bottom: 20px;
   min-width: 0;
 }
+.pa-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 20px 0;
+}
+.pa-tabs a {
+  padding: 11px 18px;
+  border: 1px solid #c9ded1;
+  border-radius: 9px;
+  color: #166246;
+  background: white;
+  text-decoration: none;
+}
+.pa-tabs a.active {
+  background: #007d5b;
+  color: white;
+  border-color: #007d5b;
+}
+.pa-tabs a:focus-visible {
+  outline: 3px solid #69b48c;
+  outline-offset: 3px;
+}
+.pa-heat-map {
+  height: 420px;
+  width: 100%;
+  border-radius: 12px;
+  margin: 18px 0;
+  z-index: 0;
+}
+.pa-heat-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.pa-heat-legend span {
+  padding: 6px 10px;
+  border-radius: 6px;
+  color: #243e30;
+}
+.pa-dimension > .pa-search {
+  margin: 15px 0;
+  justify-content: flex-start;
+}
+.pa-dimension > label {
+  max-width: 400px;
+}
 .pa-heading,
 .pa-actions,
 .pa-shortcuts,

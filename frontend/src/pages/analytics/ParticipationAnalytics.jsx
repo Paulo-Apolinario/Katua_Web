@@ -23,6 +23,7 @@ import {
 } from "../../services/participationAnalytics";
 import "./participationAnalytics.css";
 import AttendanceAnalytics from "./AttendanceAnalytics";
+import AnalyticsDimension from "./AnalyticsDimension";
 
 const qualityLabels = {
   missing_received_date: "Recebimentos sem data",
@@ -85,7 +86,7 @@ function Pagination({ page, total, size = 20, onChange, disabled }) {
   );
 }
 
-function ParticipantDetail({ partyKey, filters, onClose }) {
+export function ParticipantDetail({ partyKey, filters, onClose }) {
   const [page, setPage] = useState(1),
     [data, setData] = useState(null),
     [error, setError] = useState("");
@@ -182,9 +183,20 @@ function ParticipantDetail({ partyKey, filters, onClose }) {
 export default function ParticipationAnalytics() {
   const { admin } = useAdminAuth();
   const [params, setParams] = useSearchParams();
+  const tabs = {
+    overview: "Visão geral",
+    generators: "Geradores",
+    collectors: "Catadores",
+    territory: "Bairros",
+    usage: "Uso do sistema",
+  };
+  const activeTab = Object.hasOwn(tabs, params.get("tab"))
+    ? params.get("tab")
+    : "overview";
   const filters = useMemo(() => participationFilters(params), [params]);
   const [draft, setDraft] = useState(filters);
-  const setFilters = (value) => setParams(new URLSearchParams(value));
+  const setFilters = (value) =>
+    setParams(new URLSearchParams({ ...value, tab: activeTab }));
   useEffect(() => setDraft(filters), [filters]);
   const [locations, setLocations] = useState([]),
     [contextError, setContextError] = useState("");
@@ -216,6 +228,11 @@ export default function ParticipationAnalytics() {
   useEffect(() => {
     if (admin?.role !== "COOPERATIVE") return;
     const controller = new AbortController();
+    if (activeTab !== "overview") {
+      setLoading(false);
+      setData(null);
+      return;
+    }
     listController.current?.abort();
     setSelected(null);
     setData(null);
@@ -243,7 +260,7 @@ export default function ParticipationAnalytics() {
       controller.abort();
       listController.current?.abort();
     };
-  }, [filters, refresh, admin?.role]);
+  }, [filters, refresh, admin?.role, activeTab]);
   const cities = useMemo(
     () => [
       ...new Map(
@@ -306,6 +323,18 @@ export default function ParticipationAnalytics() {
           solicitações da sua cooperativa.
         </p>
       </header>
+      <nav className="pa-tabs" aria-label="Abas do Analytics">
+        {Object.entries(tabs).map(([key, label]) => (
+          <Link
+            key={key}
+            aria-current={activeTab === key ? "page" : undefined}
+            className={activeTab === key ? "active" : ""}
+            to={`?${new URLSearchParams({ ...filters, tab: key })}`}
+          >
+            {label}
+          </Link>
+        ))}
+      </nav>
       <form
         className="pa-panel pa-filters"
         onSubmit={(event) => {
@@ -362,6 +391,7 @@ export default function ParticipationAnalytics() {
           <label>
             Perfil
             <select
+              disabled={!["overview", "generators"].includes(activeTab)}
               value={draft.profile}
               onChange={(event) => update("profile", event.target.value)}
             >
@@ -376,6 +406,7 @@ export default function ParticipationAnalytics() {
           <label>
             Município / UF
             <select
+              disabled={activeTab === "usage"}
               value={draft.city ? `${draft.city}|${draft.state}` : ""}
               onChange={(event) => {
                 const [city = "", state = ""] = event.target.value.split("|");
@@ -401,6 +432,7 @@ export default function ParticipationAnalytics() {
           <label>
             Bairro
             <select
+              disabled={activeTab === "usage"}
               value={draft.neighborhood}
               onChange={(event) => update("neighborhood", event.target.value)}
             >
@@ -421,6 +453,7 @@ export default function ParticipationAnalytics() {
           <label>
             Agrupar evolução
             <select
+              disabled={activeTab !== "overview"}
               value={draft.group}
               onChange={(event) => update("group", event.target.value)}
             >
@@ -453,7 +486,13 @@ export default function ParticipationAnalytics() {
         </div>
         {contextError && <p role="status">{contextError}</p>}
       </form>
-      {loading ? (
+      {activeTab !== "overview" ? (
+        <AnalyticsDimension
+          key={`${activeTab}:${new URLSearchParams(filters)}:${refresh}`}
+          kind={activeTab}
+          filters={filters}
+        />
+      ) : loading ? (
         <p role="status" className="pa-panel">
           Consultando os registros da cooperativa…
         </p>
@@ -786,8 +825,9 @@ export default function ParticipationAnalytics() {
                 Os indicadores refletem a situação atual dos registros,
                 organizada pela data do evento. Correções posteriores podem
                 alterar períodos anteriores. Ausências de dados são mostradas
-                sem preencher valores presumidos. Acessos digitais e previsões
-                de comportamento não integram esta etapa.
+                sem preencher valores presumidos. O tempo ativo estimado está na
+                aba Uso do sistema. Previsões de comportamento não integram esta
+                análise.
               </p>
             </details>
           </>

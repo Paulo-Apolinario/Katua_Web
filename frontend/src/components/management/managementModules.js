@@ -94,7 +94,7 @@ const modules = [
   },
   {
     id: "reports",
-    label: "Relatórios e Análises",
+    label: "Relatórios da operação",
     paths: [
       "",
       "environmental-impact",

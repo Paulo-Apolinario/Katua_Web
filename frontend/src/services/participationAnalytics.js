@@ -73,3 +73,14 @@ export const dateTime = (value) =>
   value
     ? new Date(value).toLocaleString("pt-BR", { timeZone: "America/Fortaleza" })
     : "Sem registro";
+
+export const heatColor = (value, max) =>
+  value <= 0
+    ? "#f2f5f2"
+    : value / max <= 0.25
+      ? "#c2dfaa"
+      : value / max <= 0.5
+        ? "#73b994"
+        : value / max <= 0.75
+          ? "#edbd65"
+          : "#d96b45";
