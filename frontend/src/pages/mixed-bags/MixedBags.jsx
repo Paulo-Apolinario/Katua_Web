@@ -1,3 +1,4 @@
+import BagOperations, { ReverseWeighing } from "./BagOperations";
 import BagProgress from "./BagProgress";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router";
@@ -16,6 +17,7 @@ const eventLabels = {
   CLOSE: "Triagem concluída",
   ADJUST: "Ajuste de pesagem",
   CANCEL: "Cancelamento",
+  REVERSAL: "Estorno de pesagem",
 };
 const kg = (value) =>
   new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 3 }).format(
@@ -741,11 +743,15 @@ function BagDetail({ bag, context, onSaved }) {
           )}
         </section>
       )}
+      <ReverseWeighing bag={bag} manager={context.manager} onSaved={onSaved} />
       <section className="card p-4">
         <h2 className="h5">Histórico e lotes formados</h2>
         {bag.events.map((e) => (
           <article className="border-top pt-3 mt-3" key={e.id}>
-            <strong>{eventLabels[e.kind]}</strong>
+            <strong>
+              {eventLabels[e.kind]}
+              {e.reversedAt ? " — Estornada (fora dos totais)" : ""}
+            </strong>
             <small className="d-block">
               {date(e.createdAt)} · Lançado por {e.actorName}
             </small>
@@ -768,6 +774,18 @@ function BagDetail({ bag, context, onSaved }) {
               </div>
             ))}
             {num(e.rejectedKg) > 0 && <p>Rejeitos: {kg(e.rejectedKg)}</p>}
+            {e.kind === "REVERSAL" && (
+              <p className="small">
+                Devolvido ao saldo: {kg(e.after.reversedSortedKg)} de materiais
+                e {kg(e.after.reversedRejectedKg)} de rejeitos. Pesagem
+                original:{" "}
+                {date(
+                  bag.events.find((original) => original.id === e.reversalOfId)
+                    ?.createdAt || e.createdAt,
+                )}
+                .
+              </p>
+            )}
             {e.kind === "ADJUST" && (
               <p className="small">
                 Líquido anterior: {kg(e.before.netKg)} · Após ajuste:{" "}
@@ -790,6 +808,7 @@ export default function MixedBags() {
     useCallback(() => read("/mixed-bags/context"), []),
   );
   const progress = params.get("view") === "progress";
+  const controls = params.get("view") === "controls";
   const page = Number(params.get("page") || 1),
     status = params.get("status") || "ALL";
   const path = id
@@ -812,25 +831,27 @@ export default function MixedBags() {
                 className="btn btn-success"
                 onClick={() => {
                   setReceiving(true);
-                  if (progress) setParams({});
+                  if (progress || controls) setParams({});
                 }}
               >
                 Receber bag misturada
               </button>
             )}
-            <button
-              className="btn btn-outline-secondary"
-              onClick={() => resource.refresh()}
-            >
-              Atualizar
-            </button>
+            {!progress && !controls && (
+              <button
+                className="btn btn-outline-secondary"
+                onClick={() => resource.refresh()}
+              >
+                Atualizar
+              </button>
+            )}
           </>
         }
       />
       {!id && (
         <div className="d-flex gap-2 mb-3">
           <Link
-            className={`btn ${progress ? "btn-outline-success" : "btn-success"}`}
+            className={`btn ${progress || controls ? "btn-outline-success" : "btn-success"}`}
             to="/mixed-bags"
           >
             Recebimento e triagem
@@ -843,7 +864,17 @@ export default function MixedBags() {
           </Link>
         </div>
       )}
-      {!id && progress ? (
+      {!id && (
+        <Link
+          className={`btn ${controls ? "btn-success" : "btn-outline-success"} mb-3`}
+          to="/mixed-bags?view=controls"
+        >
+          Fechamento e alertas
+        </Link>
+      )}
+      {!id && controls ? (
+        <BagOperations />
+      ) : !id && progress ? (
         <BagProgress />
       ) : (
         <>
