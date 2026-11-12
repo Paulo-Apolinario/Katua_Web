@@ -1,3 +1,4 @@
+import BagProgress from "./BagProgress";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import { apiRequest, getStoredUser } from "../../services/apiClient";
@@ -788,6 +789,7 @@ export default function MixedBags() {
   const context = useWasteResource(
     useCallback(() => read("/mixed-bags/context"), []),
   );
+  const progress = params.get("view") === "progress";
   const page = Number(params.get("page") || 1),
     status = params.get("status") || "ALL";
   const path = id
@@ -808,7 +810,10 @@ export default function MixedBags() {
             ) : (
               <button
                 className="btn btn-success"
-                onClick={() => setReceiving(true)}
+                onClick={() => {
+                  setReceiving(true);
+                  if (progress) setParams({});
+                }}
               >
                 Receber bag misturada
               </button>
@@ -822,148 +827,175 @@ export default function MixedBags() {
           </>
         }
       />
-      <Notice resource={context} />
-      <Notice resource={resource} />
-      {context.data &&
-        (id ? (
-          resource.data?.bag && (
-            <BagDetail
-              key={id}
-              bag={resource.data.bag}
-              context={context.data}
-              onSaved={resource.refresh}
-            />
-          )
-        ) : (
-          <>
-            {receiving && (
-              <ReceiveForm
-                context={context.data}
-                onClose={() => setReceiving(false)}
-              />
-            )}
-            {resource.data && (
+      {!id && (
+        <div className="d-flex gap-2 mb-3">
+          <Link
+            className={`btn ${progress ? "btn-outline-success" : "btn-success"}`}
+            to="/mixed-bags"
+          >
+            Recebimento e triagem
+          </Link>
+          <Link
+            className={`btn ${progress ? "btn-success" : "btn-outline-success"}`}
+            to="/mixed-bags?view=progress"
+          >
+            Acompanhamento da triagem
+          </Link>
+        </div>
+      )}
+      {!id && progress ? (
+        <BagProgress />
+      ) : (
+        <>
+          <Notice resource={context} />
+          <Notice resource={resource} />
+          {context.data &&
+            (id ? (
+              resource.data?.bag && (
+                <BagDetail
+                  key={id}
+                  bag={resource.data.bag}
+                  context={context.data}
+                  onSaved={resource.refresh}
+                />
+              )
+            ) : (
               <>
-                <div className="row g-3 mb-4">
-                  {[
-                    [
-                      "Recebido líquido no filtro",
-                      resource.data.summary.receivedKg,
-                    ],
-                    ["Separado em materiais", resource.data.summary.sortedKg],
-                    ["Rejeitos", resource.data.summary.rejectedKg],
-                    ["Ainda a triar", resource.data.summary.pendingKg],
-                  ].map(([label, value]) => (
-                    <div className="col-6 col-lg-3" key={label}>
-                      <div className="card p-3">
-                        <small>{label}</small>
-                        <strong>{kg(value)}</strong>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <form
-                  className="d-flex flex-wrap gap-2 mb-3"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    setParams({ status, search, page: "1" });
-                  }}
-                >
-                  <input
-                    aria-label="Buscar bag"
-                    className="form-control"
-                    style={{ maxWidth: 350 }}
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Código, identificação ou origem"
+                {receiving && (
+                  <ReceiveForm
+                    context={context.data}
+                    onClose={() => setReceiving(false)}
                   />
-                  <select
-                    aria-label="Situação da bag"
-                    className="form-control"
-                    style={{ maxWidth: 250 }}
-                    value={status}
-                    onChange={(e) =>
-                      setParams({
-                        status: e.target.value,
-                        search: params.get("search") || "",
-                        page: "1",
-                      })
-                    }
-                  >
-                    <option value="ALL">Todas as situações</option>
-                    {Object.entries(labels).map(([key, label]) => (
-                      <option key={key} value={key}>
-                        {label}
-                      </option>
-                    ))}
-                  </select>
-                  <button className="btn btn-outline-success">Buscar</button>
-                </form>
-                <div className="card p-3">
-                  {resource.data.items.length === 0 ? (
-                    <p>Nenhuma bag neste filtro.</p>
-                  ) : (
-                    resource.data.items.map((b) => (
-                      <article className="border-bottom py-3" key={b.id}>
-                        <strong>
-                          {b.code} · {labels[b.status]}
-                        </strong>
-                        <p className="mb-1">
-                          {b.originLabel}
-                          {b.externalTag ? ` · ${b.externalTag}` : ""}
-                        </p>
-                        <p className="small mb-2">
-                          Líquido {kg(b.netKg)} · Ainda a triar{" "}
-                          {kg(b.remainingKg)} · {date(b.receivedAt)}
-                        </p>
-                        <Link
-                          className="btn btn-outline-success btn-sm"
-                          to={`/mixed-bags/${b.id}`}
-                        >
-                          Abrir bag e triagem
-                        </Link>
-                      </article>
-                    ))
-                  )}
-                </div>
-                <div className="d-flex gap-2 align-items-center mt-3">
-                  <button
-                    className="btn btn-outline-secondary btn-sm"
-                    disabled={page <= 1 || resource.loading}
-                    onClick={() =>
-                      setParams({
-                        status,
-                        search: params.get("search") || "",
-                        page: String(page - 1),
-                      })
-                    }
-                  >
-                    Anterior
-                  </button>
-                  <span>
-                    Página {page} de {resource.data.pagination.totalPages}
-                  </span>
-                  <button
-                    className="btn btn-outline-secondary btn-sm"
-                    disabled={
-                      page >= resource.data.pagination.totalPages ||
-                      resource.loading
-                    }
-                    onClick={() =>
-                      setParams({
-                        status,
-                        search: params.get("search") || "",
-                        page: String(page + 1),
-                      })
-                    }
-                  >
-                    Próxima
-                  </button>
-                </div>
+                )}
+                {resource.data && (
+                  <>
+                    <div className="row g-3 mb-4">
+                      {[
+                        [
+                          "Recebido líquido no filtro",
+                          resource.data.summary.receivedKg,
+                        ],
+                        [
+                          "Separado em materiais",
+                          resource.data.summary.sortedKg,
+                        ],
+                        ["Rejeitos", resource.data.summary.rejectedKg],
+                        ["Ainda a triar", resource.data.summary.pendingKg],
+                      ].map(([label, value]) => (
+                        <div className="col-6 col-lg-3" key={label}>
+                          <div className="card p-3">
+                            <small>{label}</small>
+                            <strong>{kg(value)}</strong>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <form
+                      className="d-flex flex-wrap gap-2 mb-3"
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        setParams({ status, search, page: "1" });
+                      }}
+                    >
+                      <input
+                        aria-label="Buscar bag"
+                        className="form-control"
+                        style={{ maxWidth: 350 }}
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Código, identificação ou origem"
+                      />
+                      <select
+                        aria-label="Situação da bag"
+                        className="form-control"
+                        style={{ maxWidth: 250 }}
+                        value={status}
+                        onChange={(e) =>
+                          setParams({
+                            status: e.target.value,
+                            search: params.get("search") || "",
+                            page: "1",
+                          })
+                        }
+                      >
+                        <option value="ALL">Todas as situações</option>
+                        {Object.entries(labels).map(([key, label]) => (
+                          <option key={key} value={key}>
+                            {label}
+                          </option>
+                        ))}
+                      </select>
+                      <button className="btn btn-outline-success">
+                        Buscar
+                      </button>
+                    </form>
+                    <div className="card p-3">
+                      {resource.data.items.length === 0 ? (
+                        <p>Nenhuma bag neste filtro.</p>
+                      ) : (
+                        resource.data.items.map((b) => (
+                          <article className="border-bottom py-3" key={b.id}>
+                            <strong>
+                              {b.code} · {labels[b.status]}
+                            </strong>
+                            <p className="mb-1">
+                              {b.originLabel}
+                              {b.externalTag ? ` · ${b.externalTag}` : ""}
+                            </p>
+                            <p className="small mb-2">
+                              Líquido {kg(b.netKg)} · Ainda a triar{" "}
+                              {kg(b.remainingKg)} · {date(b.receivedAt)}
+                            </p>
+                            <Link
+                              className="btn btn-outline-success btn-sm"
+                              to={`/mixed-bags/${b.id}`}
+                            >
+                              Abrir bag e triagem
+                            </Link>
+                          </article>
+                        ))
+                      )}
+                    </div>
+                    <div className="d-flex gap-2 align-items-center mt-3">
+                      <button
+                        className="btn btn-outline-secondary btn-sm"
+                        disabled={page <= 1 || resource.loading}
+                        onClick={() =>
+                          setParams({
+                            status,
+                            search: params.get("search") || "",
+                            page: String(page - 1),
+                          })
+                        }
+                      >
+                        Anterior
+                      </button>
+                      <span>
+                        Página {page} de {resource.data.pagination.totalPages}
+                      </span>
+                      <button
+                        className="btn btn-outline-secondary btn-sm"
+                        disabled={
+                          page >= resource.data.pagination.totalPages ||
+                          resource.loading
+                        }
+                        onClick={() =>
+                          setParams({
+                            status,
+                            search: params.get("search") || "",
+                            page: String(page + 1),
+                          })
+                        }
+                      >
+                        Próxima
+                      </button>
+                    </div>
+                  </>
+                )}
               </>
-            )}
-          </>
-        ))}
+            ))}
+        </>
+      )}
     </div>
   );
 }

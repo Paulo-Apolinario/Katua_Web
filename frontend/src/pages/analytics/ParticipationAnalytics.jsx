@@ -1,15 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Legend,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { DistributionPie, HeatTiles } from "../../components/charts/DataCharts";
 import { useAdminAuth } from "../../context/AdminAuthContext";
 import {
   participationRequest,
@@ -562,7 +553,7 @@ export default function ParticipationAnalytics() {
             </p>
             <div className="pa-chart-grid">
               <section className="pa-panel">
-                <h2>Evolução da participação</h2>
+                <h2>Mapa de calor da participação</h2>
                 <p>
                   Recebimentos e participantes identificados, por{" "}
                   {filters.group === "week"
@@ -574,39 +565,27 @@ export default function ParticipationAnalytics() {
                 </p>
                 {data.series.length ? (
                   <>
-                    <div className="pa-chart">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={data.series}>
-                          <CartesianGrid
-                            strokeDasharray="3 3"
-                            vertical={false}
-                          />
-                          <XAxis
-                            dataKey="date"
-                            tickFormatter={(value) =>
-                              value.slice(5).split("-").reverse().join("/")
-                            }
-                          />
-                          <YAxis allowDecimals={false} />
-                          <Tooltip />
-                          <Legend />
-                          <Bar
-                            isAnimationActive={false}
-                            dataKey="operations"
-                            name="Participações"
-                            fill="#007f62"
-                            radius={[4, 4, 0, 0]}
-                          />
-                          <Bar
-                            isAnimationActive={false}
-                            dataKey="participants"
-                            name="Participantes"
-                            fill="#81bca9"
-                            radius={[4, 4, 0, 0]}
-                          />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
+                    <HeatTiles
+                      label="Participações por intervalo"
+                      unit="recebimentos"
+                      data={data.series.map((s) => ({
+                        key: s.date,
+                        name: s.date.split("-").reverse().join("/"),
+                        value: s.operations,
+                      }))}
+                    />
+                    <h3 className="h6 mt-3">
+                      Participantes identificados por intervalo
+                    </h3>
+                    <HeatTiles
+                      label="Participantes por intervalo"
+                      unit="participantes"
+                      data={data.series.map((s) => ({
+                        key: s.date,
+                        name: s.date.split("-").reverse().join("/"),
+                        value: s.participants,
+                      }))}
+                    />
                     <details>
                       <summary>Consultar valores do gráfico</summary>
                       <ul>
@@ -633,40 +612,37 @@ export default function ParticipationAnalytics() {
                   Localidade do cadastro atual. Pessoas físicas sem endereço
                   estruturado aparecem em “Bairro não informado”.
                 </p>
-                <div className="pa-neighborhoods">
-                  {data.neighborhoods.length ? (
-                    data.neighborhoods.map((item) => (
-                      <div
-                        key={`${item.city_key}|${item.state_key}|${item.neighborhood_key}`}
-                      >
-                        <span>
-                          <strong>{item.neighborhood}</strong>
-                          <small>
-                            {item.city} / {item.state || "UF não informada"}
-                          </small>
-                        </span>
-                        <span>
-                          {number(item.operations)} recebimentos
-                          <small>
-                            {number(item.participants)} participantes
-                          </small>
-                          <progress
-                            aria-label={`Recebimentos em ${item.neighborhood}`}
-                            max={Math.max(
-                              ...data.neighborhoods.map(
-                                (row) => row.operations,
-                              ),
-                              1,
-                            )}
-                            value={item.operations}
-                          />
-                        </span>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="pa-empty">Sem registros para esta seleção.</p>
-                  )}
-                </div>
+                <HeatTiles
+                  label="Concentração de recebimentos por bairro"
+                  unit="recebimentos"
+                  data={data.neighborhoods.map((item) => ({
+                    key: `${item.city_key}|${item.state_key}|${item.neighborhood_key}`,
+                    name: `${item.neighborhood} · ${item.city} / ${item.state || "UF não informada"}`,
+                    value: item.operations,
+                  }))}
+                />
+                <h3 className="h6 mt-4">Perfil de recorrência no período</h3>
+                <DistributionPie
+                  label="Primeira participação e participantes recorrentes"
+                  unit="participantes"
+                  data={[
+                    {
+                      key: "first",
+                      name: "Primeira participação registrada",
+                      value: data.summary.first_registered,
+                    },
+                    {
+                      key: "returning",
+                      name: "Recorrentes",
+                      value: data.summary.returning,
+                    },
+                  ]}
+                />
+                <p className="small">
+                  Primeira participação e recorrentes formam grupos distintos de
+                  participantes ativos. A pizza não soma participantes entre
+                  semanas ou meses.
+                </p>
               </section>
             </div>
             <section className="pa-panel">

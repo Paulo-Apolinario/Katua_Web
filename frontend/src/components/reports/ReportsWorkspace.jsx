@@ -1,16 +1,7 @@
+import { operationHeatSeries } from "../charts/chartData";
 import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
-import {
-  BarChart,
-  Bar,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-  LineChart,
-  Line,
-} from "recharts";
+import { DistributionPie, HeatTiles } from "../charts/DataCharts";
 import { reportService as api } from "../../services/reportService";
 import { getStoredUser } from "../../services/apiClient";
 import {
@@ -232,7 +223,12 @@ export default function ReportsWorkspace({ kind }) {
           className="management-nav d-flex gap-2 mb-4"
           aria-label="Relatórios da operação"
         >
-          <Link className="btn btn-sm btn-outline-secondary" to="/environmental-impact">Impacto ambiental</Link>
+          <Link
+            className="btn btn-sm btn-outline-secondary"
+            to="/environmental-impact"
+          >
+            Impacto ambiental
+          </Link>
           {Object.entries(REPORTS).map(([key, r]) => (
             <Link
               key={key}
@@ -885,7 +881,7 @@ export default function ReportsWorkspace({ kind }) {
             )}
             {kind !== "waste" && (
               <section className="card p-4 mt-4">
-                <h2>Evolução no período</h2>
+                <h2>Mapa de calor da operação no período</h2>
                 <Field
                   label="Unidade de visualização do gráfico"
                   value={chartUnit}
@@ -894,27 +890,16 @@ export default function ReportsWorkspace({ kind }) {
                 />
                 {data.series.length ? (
                   <>
-                    <ResponsiveContainer width="100%" height={270}>
-                      <LineChart
-                        data={data.series.map((s) => ({
-                          date: s.date,
-                          quantity: s.units[chartUnit] ?? 0,
-                        }))}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="date" />
-                        <YAxis />
-                        <Tooltip
-                          formatter={(v) => num(v) + " " + UNITS[chartUnit]}
-                        />
-                        <Line
-                          type="monotone"
-                          dataKey="quantity"
-                          stroke="#176944"
-                          name={"Quantidade (" + UNITS[chartUnit] + ")"}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
+                    <HeatTiles
+                      label="Concentração da operação por período"
+                      unit={UNITS[chartUnit]}
+                      data={operationHeatSeries(
+                        data.series,
+                        data.meta.query.start,
+                        data.meta.query.end,
+                        chartUnit,
+                      )}
+                    />
                     <p className="small text-muted">
                       Datas sem quantidade na unidade selecionada aparecem sem
                       movimento dessa medida; registros sem medição são
@@ -931,33 +916,24 @@ export default function ReportsWorkspace({ kind }) {
                 <h2>Materiais por unidade</h2>
                 {data.materialTotals.filter((m) => m.unit === chartUnit)
                   .length ? (
-                  <ResponsiveContainer width="100%" height={280}>
-                    <BarChart
-                      data={data.materialTotals
-                        .filter((m) => m.unit === chartUnit)
-                        .slice(0, 10)}
-                      layout="vertical"
-                      margin={{ left: 20, right: 20 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis type="number" />
-                      <YAxis type="category" dataKey="name" width={120} />
-                      <Tooltip
-                        formatter={(v) => num(v) + " " + UNITS[chartUnit]}
-                      />
-                      <Bar
-                        dataKey="quantity"
-                        fill="#176944"
-                        name={"Quantidade (" + UNITS[chartUnit] + ")"}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
+                  <DistributionPie
+                    label="Distribuição dos materiais"
+                    unit={UNITS[chartUnit]}
+                    data={data.materialTotals
+                      .filter((m) => m.unit === chartUnit)
+                      .map((m, i) => ({
+                        key: String(i),
+                        name: m.name,
+                        value: m.quantity,
+                      }))}
+                  />
                 ) : (
                   <p>Nenhum material registrado na unidade selecionada.</p>
                 )}
                 <p className="small text-muted">
-                  Até dez materiais na unidade selecionada; o relatório completo
-                  está disponível na tabela e exportação.
+                  Materiais da unidade selecionada. Quando houver muitas
+                  categorias, a pizza agrupa as menores em “Outros”; todos os
+                  valores permanecem na tabela e exportação.
                 </p>
               </section>
             )}

@@ -1,3 +1,4 @@
+import { DistributionPie, HeatTiles } from "../../components/charts/DataCharts";
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import {
@@ -163,6 +164,45 @@ export default function AttendanceAnalytics({ start, end }) {
                       com ordens extras já estão incluídos nesse total.
                     </p>
                   )}
+                  <h4 className="h6">
+                    Distribuição dos registros por situação
+                  </h4>
+                  <DistributionPie
+                    label={`Situações — ${config.title}`}
+                    unit="registros"
+                    data={
+                      row.channel === "SCHEDULE"
+                        ? Object.entries({
+                            received: "Recebidos",
+                            pending: "Pendentes",
+                            cancelled: "Cancelados sem recebimento",
+                            closed_without_receipt:
+                              "Encerrados sem recebimento",
+                            needs_check: "A conferir",
+                          }).map(([key, name]) => ({
+                            key,
+                            name,
+                            value: data.reconciliation?.[key] ?? 0,
+                          }))
+                        : row.statuses.map((s) => ({
+                            key: s.status,
+                            name: labels[s.status] || "Situação a conferir",
+                            value: s.count,
+                          }))
+                    }
+                  />
+                  <h4 className="h6 mt-3">
+                    Concentração das pendências por idade
+                  </h4>
+                  <HeatTiles
+                    label={`Idade das pendências — ${config.title}`}
+                    unit="registros"
+                    data={[
+                      { name: "Menos de 7 dias", value: row.pending_under7 },
+                      { name: "7 a 29 dias", value: row.pending_7to29 },
+                      { name: "30 dias ou mais", value: row.pending_30plus },
+                    ]}
+                  />
                   {!row.total && <p>Nenhum registro deste tipo no período.</p>}
                   <details>
                     <summary>Ver situações e tempo de espera</summary>
