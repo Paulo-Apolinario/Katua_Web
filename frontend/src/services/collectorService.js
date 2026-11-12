@@ -265,7 +265,7 @@ export const updateCollector = async (id, payload) => {
   const fields = ["name", "email", "status", "isAutonomous", "socialName", "phone", "cpf", "rg", "birthDate", "sex", "gender", "address", "associationDate", "registrationNumber", "membershipCategory", "incomeRange", "socialBenefits", "occupationalDiseases", "socioeconomicNotes"];
   const body = {};
   for (const key of fields) {
-    if (!Object.prototype.hasOwnProperty.call(payload, key)) continue;
+    if (!Object.prototype.hasOwnProperty.call(payload, key) || payload[key] === undefined) continue;
     body[key] = key === "isAutonomous" ? payload[key] === true || payload[key] === "true" : key === "cpf" ? normalizeCpf(payload[key]) : normalizeText(payload[key]);
   }
   if (body.email) body.email = body.email.toLowerCase();

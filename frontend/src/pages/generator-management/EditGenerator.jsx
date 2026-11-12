@@ -1,3 +1,4 @@
+import RegistrationStatus from "../../components/registrations/RegistrationStatus";
 import useAddressLocation, { ADDRESS_FIELDS } from "../../components/generators/useAddressLocation";
 import GeneratorDocumentField from "../../components/generators/GeneratorDocumentField";
 import { formatDocument, validDocument, documentType } from "../../utils/generatorDocument";
@@ -132,6 +133,7 @@ const EditGenerator = () => {
 
   const buildPayload = () => ({
     type: form.type,
+    email: !generator?.userId && form.email.trim() !== (generator?.email || "") ? form.email.trim() : undefined,
     documentNumber: form.documentNumber.trim() || undefined,
     name: form.name.trim(),
     companyName: form.companyName.trim() || undefined,
@@ -147,7 +149,7 @@ const EditGenerator = () => {
   });
 
   const validate = () => {
-    if (pendingLocation || (locationChanged && !hasCoordinates(form))) {
+    if (hasCoordinates(generator) && (pendingLocation || (locationChanged && !hasCoordinates(form)))) {
       toast.error("Confirme a nova localização do endereço no mapa ou informe as coordenadas válidas."); return false;
     }
     if (form.documentNumber && !validDocument(form.documentNumber)) {
@@ -288,6 +290,7 @@ const EditGenerator = () => {
         }
       />
 
+      {generator && <div className="card p-3 mb-3"><RegistrationStatus kind="GENERATOR" record={generator} /></div>}
       <form onSubmit={handleSubmit}>
         <div className="card p-25 mb-4">
           <h4 className="fw-600 mb-4">Dados do Gerador</h4>
@@ -337,13 +340,16 @@ const EditGenerator = () => {
             <div className="col-md-6">
               <label className="form-label">E-mail</label>
               <input
+                name="email"
+                type="email"
                 value={form.email}
+                onChange={handleChange}
                 className="form-control"
-                disabled
-                title="O e-mail é identificador único do gerador."
+                disabled={loading || saving || Boolean(generator?.userId)}
+                title="E-mail de acesso do gerador"
               />
               <small className="text-muted">
-                O e-mail é identificador único e não será alterado por esta tela.
+                {generator?.userId ? "Este e-mail já está vinculado ao login do gerador." : "Opcional. Informe o e-mail pessoal para permitir a ativação do acesso depois."}
               </small>
             </div>
 

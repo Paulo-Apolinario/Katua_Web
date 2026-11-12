@@ -1,3 +1,5 @@
+import { validDocument } from "../../utils/generatorDocument";
+import RegistrationStatus from "../../components/registrations/RegistrationStatus";
 import { ManagementHeader } from "../../components/management/ManagementWorkspace";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
@@ -146,7 +148,7 @@ const normalizeCpf = (value) => {
 const isValidCpfLength = (value) => {
   const cpf = normalizeCpf(value);
 
-  return !cpf || cpf.length === 11;
+  return !cpf || (cpf.length === 11 && validDocument(cpf));
 };
 
 const AddCollector = () => {
@@ -159,6 +161,7 @@ const AddCollector = () => {
   const fileInputRef = useRef(null);
 
   const [form, setForm] = useState(initialForm);
+  const [savedCollector, setSavedCollector] = useState(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -170,6 +173,7 @@ const AddCollector = () => {
       if (!active) return;
       const collector = response?.collector;
       if (!collector?.id) throw new Error("Cadastro não encontrado.");
+      setSavedCollector(collector);
       const values = Object.fromEntries(Object.keys(initialForm).map(key => [key, collector[key] ?? initialForm[key]]));
       setForm({ ...values, associationDate: collector.associationDate?.slice(0, 10) || "", isAutonomous: collector.isAutonomous ? "true" : "false", status: collector.status === "INACTIVE" ? "INACTIVE" : "AVAILABLE", documents: [] });
     }).catch(error => { if (active) setLoadError(error?.error || error?.message || "Não foi possível carregar o cadastro."); }).finally(() => { if (active) setLoading(false); });
@@ -280,13 +284,9 @@ const AddCollector = () => {
       return false;
     }
 
-    if (!form.email.trim()) {
-      toast.error("Informe o e-mail do catador.");
-      return false;
-    }
 
-    if (!isValidCpfLength(form.cpf)) {
-      toast.error("O CPF deve possuir 11 dígitos.");
+    if ((!isEditing || normalizeCpf(form.cpf) !== normalizeCpf(savedCollector?.cpf)) && !isValidCpfLength(form.cpf)) {
+      toast.error("Informe um CPF válido, incluindo os dígitos verificadores.");
       return false;
     }
 
@@ -320,7 +320,7 @@ const AddCollector = () => {
         socialName: form.socialName.trim(),
         email: form.email.trim().toLowerCase(),
         phone: form.phone.trim(),
-        cpf: normalizeCpf(form.cpf),
+        cpf: isEditing && normalizeCpf(form.cpf) === normalizeCpf(savedCollector?.cpf) ? undefined : normalizeCpf(form.cpf),
         rg: form.rg.trim(),
         address: form.address.trim(),
         socialBenefits: form.socialBenefits.trim(),
@@ -396,6 +396,7 @@ const AddCollector = () => {
         }
       />
 
+      {isEditing && <div className="card p-3 mb-3"><RegistrationStatus kind="COLLECTOR" record={{ ...form, userId: savedCollector?.userId }} /></div>}
       <form onSubmit={handleSubmit}>
         <div className="card p-25 mb-4">
           <div className="d-flex align-items-center gap-3 mb-4">
@@ -472,8 +473,7 @@ const AddCollector = () => {
                 htmlFor="email"
                 className="form-label"
               >
-                E-mail{" "}
-                <span className="text-danger">*</span>
+                E-mail (opcional)
               </label>
 
               <input
@@ -486,7 +486,6 @@ const AddCollector = () => {
                 placeholder="email@exemplo.com"
                 maxLength={255}
                 disabled={saving}
-                required
               />
             </div>
 

@@ -1,3 +1,5 @@
+import RegistrationStatus from "../../components/registrations/RegistrationStatus";
+import { missingRegistrationFields } from "../../utils/registrationSummary";
 import PrivacyAcceptanceStatus from "../../components/registrations/PrivacyAcceptanceStatus";
 import RegistrationPdfExport from "../../components/registrations/RegistrationPdfExport";
 import { ManagementHeader } from "../../components/management/ManagementWorkspace";
@@ -88,6 +90,7 @@ const CollectorList = () => {
   const [collections, setCollections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState("");
+  const [showIncomplete, setShowIncomplete] = useState(false);
 
   const loadData = async () => {
     try {
@@ -193,6 +196,7 @@ const CollectorList = () => {
     });
   }, [collectors, searchText]);
 
+  const visibleCollectors = showIncomplete ? filteredCollectors.filter(record => missingRegistrationFields("COLLECTOR", record).length > 0) : filteredCollectors;
   return (
     <>
       <HeadTags title="Catadores" />
@@ -215,6 +219,7 @@ const CollectorList = () => {
               <RefreshCw size={16} />
               Atualizar
             </button>
+            <Link to="/quick-registration/collector" className="primary-btn btn-sm">Cadastro rápido</Link>
             <Link
               to="/create-collector"
               className="primary-btn btn-sm border-0"
@@ -225,6 +230,7 @@ const CollectorList = () => {
           </>
         }
       />
+      <label className="d-flex align-items-center gap-2 my-3"><input type="checkbox" checked={showIncomplete} onChange={event => setShowIncomplete(event.target.checked)} />Mostrar somente cadastros a completar</label>
 
       <div className="card p-20 mb-4">
         <div className="management-search">
@@ -258,14 +264,14 @@ const CollectorList = () => {
             </thead>
 
             <tbody>
-              {filteredCollectors.length === 0 ? (
+              {visibleCollectors.length === 0 ? (
                 <tr>
                   <td colSpan="8">
                     {loading ? "Carregando..." : "Nenhum catador encontrado."}
                   </td>
                 </tr>
               ) : (
-                filteredCollectors.map((collector) => {
+                visibleCollectors.map((collector) => {
                   const stats = collectorStats[collector.id] || {
                     totalCollections: 0,
                     completedCollections: 0,
@@ -276,6 +282,7 @@ const CollectorList = () => {
                     <tr key={collector.id}>
                       <td>
                         <strong>{collector.name}</strong>
+                        <RegistrationStatus kind="COLLECTOR" record={collector} to={`/edit-collector/${collector.id}`} />
                         {collector.registrationNumber && <div className="small text-muted">Inscrição: {collector.registrationNumber}</div>}
                         {collector.membershipCategory && <div className="small text-muted">{CATEGORY_LABELS[collector.membershipCategory]}</div>}
                       </td>

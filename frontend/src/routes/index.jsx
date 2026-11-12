@@ -1,3 +1,4 @@
+import QuickRegistration from "../pages/registrations/QuickRegistration";
 import AgentsCenter from "../pages/agents/AgentsCenter";
 import { ASSISTANT_VISIBLE } from '../config/features';
 import AnalyticsAccessGate from "../pages/analytics/AnalyticsAccessGate";
@@ -173,6 +174,7 @@ const Router = () => {
             {/* Generator Management */}
             <Route path="generator-list" element={<GeneratorList />} />
 
+            <Route path="quick-registration/:kind" element={<QuickRegistration />} />
             <Route path="create-generator" element={<AddGenerator />} />
 
             <Route path="edit-generator/:id" element={<EditGenerator />} />

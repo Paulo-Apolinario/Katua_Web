@@ -10,7 +10,6 @@ import toast from "react-hot-toast";
 import HeadTags from "../../components/HeadTags";
 import TopProgressBar from "../../components/TopProgressBar";
 import generatorService from "../../services/generatorService";
-import { hasCoordinates } from "../../components/maps/mapPin";
 
 import { loadGoogleMapsScript } from "../../components/generators/geocodeAddress";
 
@@ -329,29 +328,18 @@ const AddGenerator = () => {
     if (form.type === "LARGE" && documentType(form.documentNumber) === "CPF") {
       toast.error("Para grande gerador, informe um CNPJ."); return false;
     }
-    if (form.type === "SMALL" && !form.documentNumber.trim()) {
-      toast.error("Informe o CPF ou CNPJ para classificar o pequeno gerador."); return false;
-    }
 
     if (!form.name.trim()) {
       toast.error("Informe o nome do responsável ou do gerador.");
       return false;
     }
 
-    if (!form.email.trim()) {
-      toast.error("Informe o e-mail do gerador.");
-      return false;
-    }
 
     if (!form.type) {
       toast.error("Selecione o tipo do gerador.");
       return false;
     }
 
-    if (!hasCoordinates(selectedLocation)) {
-      toast.error("Clique no mapa e confirme a localização do gerador.");
-      return false;
-    }
 
     return true;
   };
@@ -383,7 +371,7 @@ const AddGenerator = () => {
 
       <ManagementHeader
         title="Novo Gerador"
-        description="Cadastre um residencial com CPF, pequeno gerador com CNPJ ou grande gerador vinculado à cooperativa."
+        description="Preencha o que já sabe. Documentos, e-mail e localização podem ser completados depois."
         actions={
           <>
             <Link to="/generator-list" className="secondary-btn btn-sm">
@@ -438,7 +426,7 @@ const AddGenerator = () => {
                onChange={documentNumber => setForm(previous => ({ ...previous, documentNumber }))} />
 
             <div className="col-md-6">
-              <label className="form-label">E-mail *</label>
+              <label className="form-label">E-mail (opcional)</label>
               <input
                 name="email"
                 type="email"
@@ -561,7 +549,7 @@ const AddGenerator = () => {
 
             <div className="col-12">
               <label className="form-label">
-                Marcar localização no Google Maps *
+                Marcar localização no Google Maps (opcional)
               </label>
 
               <p role="status" className="small text-muted">{addressLookup.message}</p>

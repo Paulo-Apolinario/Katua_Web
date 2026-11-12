@@ -1,3 +1,5 @@
+import RegistrationStatus from "../../components/registrations/RegistrationStatus";
+import { missingRegistrationFields } from "../../utils/registrationSummary";
 import "./generatorList.css";
 import NeighborhoodFilter from "../../components/generators/NeighborhoodFilter";
 import {
@@ -66,6 +68,7 @@ const GeneratorList = () => {
   const [generators, setGenerators] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState("");
+  const [showIncomplete, setShowIncomplete] = useState(false);
   const [category, setCategory] = useState("");
   const [neighborhood, setNeighborhood] = useState("");
 
@@ -136,6 +139,7 @@ const GeneratorList = () => {
     };
   }, [generators]);
 
+  const visibleGenerators = showIncomplete ? filteredGenerators.filter(record => missingRegistrationFields("GENERATOR", record).length > 0) : filteredGenerators;
   return (
     <>
       <HeadTags title="Gestão de Geradores" />
@@ -147,6 +151,7 @@ const GeneratorList = () => {
         actions={
           <>
             <RegistrationPdfExport kind="generators" />
+            <Link to="/quick-registration/generator" className="primary-btn btn-sm">Cadastro rápido</Link>
             <Link to="/create-generator" className="primary-btn btn-sm">
               <CirclePlus />
               Novo gerador
@@ -154,6 +159,7 @@ const GeneratorList = () => {
           </>
         }
       />
+      <label className="d-flex align-items-center gap-2 my-3"><input type="checkbox" checked={showIncomplete} onChange={event => setShowIncomplete(event.target.checked)} />Mostrar somente cadastros a completar</label>
 
       <div className="row g-4 mb-4">
         <div className="col-md-6 col-xl-3">
@@ -245,7 +251,7 @@ const GeneratorList = () => {
           </div>
           <div className="generator-filters-footer">
             <span className="small text-muted" role="status">
-              {filteredGenerators.length} de {generators.length} gerador(es)
+              {visibleGenerators.length} de {generators.length} gerador(es)
             </span>
             <button
               type="button"
@@ -276,7 +282,7 @@ const GeneratorList = () => {
             </thead>
 
             <tbody>
-              {filteredGenerators.length === 0 ? (
+              {visibleGenerators.length === 0 ? (
                 <tr>
                   <td colSpan="7">
                     {loading
@@ -285,7 +291,7 @@ const GeneratorList = () => {
                   </td>
                 </tr>
               ) : (
-                filteredGenerators.map((generator) => (
+                visibleGenerators.map((generator) => (
                   <tr key={generator.id}>
                     <td>
                       <div className="d-flex align-items-center gap-2">
@@ -303,6 +309,7 @@ const GeneratorList = () => {
                           </div>
                         </div>
                       </div>
+                      <RegistrationStatus kind="GENERATOR" record={generator} to={`/edit-generator/${generator.id}`} />
                     </td>
 
                     <td>

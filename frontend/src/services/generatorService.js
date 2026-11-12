@@ -10,7 +10,11 @@ function normalizeGenerator(generator = {}) {
     registrationCategory: generatorCategory(generator),
     name: generator.name,
     companyName: generator.companyName || "",
-    email: generator.email,
+    email: generator.email || "",
+    userId: generator.userId || null,
+    registrationStatus: generator.registrationStatus,
+    missingRegistrationFields: generator.missingRegistrationFields,
+    hasOnlineAccess: generator.hasOnlineAccess ?? Boolean(generator.userId),
     phone: generator.phone || "",
     zipCode: generator.zipCode || "",
     street: generator.street || "",
@@ -112,6 +116,7 @@ export const generatorService = {
   async update(id, payload) {
     const body = cleanPayload({
       type: payload.type,
+      email: payload.email?.trim().toLowerCase(),
       name: payload.name?.trim(),
       companyName: payload.companyName?.trim(),
       phone: payload.phone?.trim(),
