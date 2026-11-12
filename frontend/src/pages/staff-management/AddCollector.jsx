@@ -1,3 +1,4 @@
+import RecoveryEmailField from "../../components/registrations/RecoveryEmailField";
 import { validDocument } from "../../utils/generatorDocument";
 import RegistrationStatus from "../../components/registrations/RegistrationStatus";
 import { ManagementHeader } from "../../components/management/ManagementWorkspace";
@@ -33,6 +34,7 @@ const initialForm = {
   name: "",
   socialName: "",
   email: "",
+  recoveryEmail: "",
   phone: "",
   cpf: "",
   rg: "",
@@ -489,6 +491,7 @@ const AddCollector = () => {
               />
             </div>
 
+            <RecoveryEmailField value={form.recoveryEmail} onChange={recoveryEmail=>setForm(previous=>({...previous,recoveryEmail}))} disabled={saving} record={savedCollector} kind="collectors" canSend={form.recoveryEmail.trim()===(savedCollector?.recoveryEmail||"") && form.email.trim()===(savedCollector?.email||"") && form.phone.trim()===(savedCollector?.phone||"")} />
             <div className="col-md-6">
               <label
                 htmlFor="phone"

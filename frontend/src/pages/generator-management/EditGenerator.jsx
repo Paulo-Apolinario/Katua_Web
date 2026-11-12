@@ -1,3 +1,4 @@
+import RecoveryEmailField from "../../components/registrations/RecoveryEmailField";
 import RegistrationStatus from "../../components/registrations/RegistrationStatus";
 import useAddressLocation, { ADDRESS_FIELDS } from "../../components/generators/useAddressLocation";
 import GeneratorDocumentField from "../../components/generators/GeneratorDocumentField";
@@ -28,6 +29,7 @@ const initialForm = {
   companyName: "",
   documentNumber: "",
   email: "",
+  recoveryEmail: "",
   phone: "",
   zipCode: "",
   street: "",
@@ -86,6 +88,7 @@ const EditGenerator = () => {
         companyName: data.companyName || "",
         documentNumber: formatDocument(data.documentNumber || ""),
         email: data.email || "",
+        recoveryEmail: data.recoveryEmail || "",
         phone: data.phone || "",
         zipCode: data.zipCode || "",
         street: data.street || "",
@@ -133,7 +136,8 @@ const EditGenerator = () => {
 
   const buildPayload = () => ({
     type: form.type,
-    email: !generator?.userId && form.email.trim() !== (generator?.email || "") ? form.email.trim() : undefined,
+    recoveryEmail: form.recoveryEmail.trim(),
+    email: (!generator?.userId || generator?.accessActivationPending) && form.email.trim() !== (generator?.email || "") ? form.email.trim() : undefined,
     documentNumber: form.documentNumber.trim() || undefined,
     name: form.name.trim(),
     companyName: form.companyName.trim() || undefined,
@@ -334,6 +338,7 @@ const EditGenerator = () => {
               />
             </div>
 
+            <RecoveryEmailField value={form.recoveryEmail} onChange={recoveryEmail=>setForm(previous=>({...previous,recoveryEmail}))} disabled={loading||saving} record={generator} kind="generators" canSend={form.recoveryEmail.trim()===(generator?.recoveryEmail||"") && form.email.trim()===(generator?.email||"") && form.phone.trim()===(generator?.phone||"")} />
             <GeneratorDocumentField value={form.documentNumber} type={form.type} disabled={loading || saving}
               legacy={!generator?.documentNumber} onChange={documentNumber => setForm(previous => ({ ...previous, documentNumber }))} />
 
@@ -345,11 +350,11 @@ const EditGenerator = () => {
                 value={form.email}
                 onChange={handleChange}
                 className="form-control"
-                disabled={loading || saving || Boolean(generator?.userId)}
+                disabled={loading || saving || Boolean(generator?.userId && !generator?.accessActivationPending)}
                 title="E-mail de acesso do gerador"
               />
               <small className="text-muted">
-                {generator?.userId ? "Este e-mail já está vinculado ao login do gerador." : "Opcional. Informe o e-mail pessoal para permitir a ativação do acesso depois."}
+                {generator?.userId && !generator?.accessActivationPending ? "Este e-mail já está vinculado ao login do gerador." : "Opcional. Informe o e-mail pessoal para permitir a ativação do acesso depois."}
               </small>
             </div>
 

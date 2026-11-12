@@ -157,7 +157,7 @@ try {
   await page
     .getByRole("heading", { name: "Cadastro rápido de gerador", exact: true })
     .waitFor();
-  assert.equal(await page.locator('input[type="email"]').count(), 0);
+  assert.equal(await page.locator('input[name="email"]').count(), 0);
   await page
     .getByLabel("Nome da pessoa ou estabelecimento")
     .fill("Mercadinho novo");

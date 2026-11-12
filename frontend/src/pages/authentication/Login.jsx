@@ -45,7 +45,7 @@ const Login = () => {
     setErrors({});
 
     if (!linkToken && (!email || (!quickAccess && !password))) {
-      toast.error(quickAccess ? "Informe seu e-mail." : "Informe email e senha.");
+      toast.error(quickAccess ? "Informe seu e-mail." : "Informe e-mail ou celular e senha.");
       return;
     }
 
@@ -140,7 +140,7 @@ const Login = () => {
                   className="form-label"
                   style={{ fontWeight: 700, color: "#111827", fontSize: 14 }}
                 >
-                  Email <span className="text-danger">*</span>
+                  {quickAccess ? "E-mail" : "E-mail ou celular"} <span className="text-danger">*</span>
                 </label>
 
                 <div style={{ position: "relative" }}>
@@ -156,12 +156,12 @@ const Login = () => {
                   />
 
                   <input
-                    type="email"
-                    id="email" autoComplete="username" inputMode="email" autoCapitalize="none"
+                    type={quickAccess ? "email" : "text"}
+                    id="email" autoComplete="username" inputMode={quickAccess ? "email" : "text"} autoCapitalize="none"
                     className={`form-control ${
                       errors.email ? "border-danger" : ""
                     }`}
-                    placeholder="email@cooperativa.com"
+                    placeholder={quickAccess ? "email@cooperativa.com" : "E-mail ou celular com DDD"}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     disabled={submitting}

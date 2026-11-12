@@ -1,3 +1,4 @@
+import RecoveryEmailField from "../../components/registrations/RecoveryEmailField";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import toast from "react-hot-toast";
@@ -5,7 +6,7 @@ import HeadTags from "../../components/HeadTags";
 import { ManagementHeader } from "../../components/management/ManagementWorkspace";
 import generatorService from "../../services/generatorService";
 import { createCollector } from "../../services/collectorService";
-const empty = { name: "", type: "SMALL", phone: "", address: "" };
+const empty = { name: "", type: "SMALL", phone: "", address: "", recoveryEmail: "" };
 export default function QuickRegistration() {
   const { kind } = useParams();
   const generator = kind === "generator";
@@ -42,6 +43,7 @@ export default function QuickRegistration() {
     try {
       const body = {
         name: form.name.trim(),
+        ...(form.recoveryEmail.trim() ? { recoveryEmail:form.recoveryEmail.trim().toLowerCase() } : {}),
         ...(form.phone.trim() ? { phone: form.phone.trim() } : {}),
         ...(form.address.trim() ? { address: form.address.trim() } : {}),
       };
@@ -158,7 +160,8 @@ export default function QuickRegistration() {
               rows={2}
             />
           </div>
-          <p className="small text-muted">
+          <RecoveryEmailField value={form.recoveryEmail} onChange={recoveryEmail=>setForm(previous=>({...previous,recoveryEmail}))} disabled={busy} />
+        <p className="small text-muted mt-3">
             Salvar este cadastro não cria login nem envia senha. O acesso ao
             aplicativo será ativado separadamente.
           </p>

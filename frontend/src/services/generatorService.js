@@ -12,6 +12,8 @@ function normalizeGenerator(generator = {}) {
     companyName: generator.companyName || "",
     email: generator.email || "",
     userId: generator.userId || null,
+    recoveryEmail: generator.recoveryEmail || "",
+    accessActivationPending: Boolean(generator.accessActivationPending),
     registrationStatus: generator.registrationStatus,
     missingRegistrationFields: generator.missingRegistrationFields,
     hasOnlineAccess: generator.hasOnlineAccess ?? Boolean(generator.userId),
@@ -80,6 +82,7 @@ export const generatorService = {
       name: payload.name?.trim(),
       companyName: payload.companyName?.trim(),
       email: payload.email?.trim().toLowerCase(),
+      recoveryEmail: payload.recoveryEmail?.trim().toLowerCase(),
       phone: payload.phone?.trim(),
       documentNumber: payload.documentNumber?.trim() ? normalizeDocument(payload.documentNumber) : undefined,
 
@@ -117,6 +120,7 @@ export const generatorService = {
     const body = cleanPayload({
       type: payload.type,
       email: payload.email?.trim().toLowerCase(),
+      recoveryEmail: payload.recoveryEmail?.trim().toLowerCase(),
       name: payload.name?.trim(),
       companyName: payload.companyName?.trim(),
       phone: payload.phone?.trim(),
@@ -140,6 +144,7 @@ export const generatorService = {
           : Number(payload.longitude),
     });
 
+    if (payload.recoveryEmail !== undefined) body.recoveryEmail = payload.recoveryEmail?.trim().toLowerCase() || null;
     const response = await apiRequest(`/generators/${id}`, {
       method: "PATCH",
       body,

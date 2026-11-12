@@ -24,6 +24,7 @@ const normalizeCollectorJsonPayload = (payload = {}) => {
   };
 
   const optionalFields = [
+    "recoveryEmail",
     "socialName",
     "phone",
     "rg",
@@ -77,6 +78,7 @@ const normalizeCollectorFormData = (payload = {}) => {
 
   const formData = new FormData();
 
+  appendFormDataValue(formData, "recoveryEmail", normalizeText(payload.recoveryEmail).toLowerCase());
   appendFormDataValue(formData, "name", normalizeText(payload.name));
   appendFormDataValue(
     formData,
@@ -262,7 +264,7 @@ export const updateCollector = async (id, payload) => {
     throw new Error("ID do catador não informado.");
   }
 
-  const fields = ["name", "email", "status", "isAutonomous", "socialName", "phone", "cpf", "rg", "birthDate", "sex", "gender", "address", "associationDate", "registrationNumber", "membershipCategory", "incomeRange", "socialBenefits", "occupationalDiseases", "socioeconomicNotes"];
+  const fields = ["recoveryEmail","name", "email", "status", "isAutonomous", "socialName", "phone", "cpf", "rg", "birthDate", "sex", "gender", "address", "associationDate", "registrationNumber", "membershipCategory", "incomeRange", "socialBenefits", "occupationalDiseases", "socioeconomicNotes"];
   const body = {};
   for (const key of fields) {
     if (!Object.prototype.hasOwnProperty.call(payload, key) || payload[key] === undefined) continue;

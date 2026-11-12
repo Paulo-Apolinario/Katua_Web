@@ -8,7 +8,7 @@ export const login = async (credentials) => {
   return apiRequest("/auth/login", {
     method: "POST",
     body: JSON.stringify({
-      email: credentials.email?.trim().toLowerCase(),
+      identifier: (credentials.identifier || credentials.email)?.trim().toLowerCase(),
       password: credentials.password,
     }),
   });
@@ -32,7 +32,8 @@ export const forgotPassword = async (payload) => {
   return apiRequest("/auth/forgot-password", {
     method: "POST",
     body: JSON.stringify({
-      email: payload.email?.trim().toLowerCase(),
+      identifier: (payload.identifier || payload.email)?.trim().toLowerCase(),
+      identifierType: payload.identifierType,
       audience: "PANEL",
     }),
   });
@@ -54,7 +55,7 @@ export const resetPassword = async (payload) => {
   return apiRequest("/auth/reset-password", {
     method: "POST",
     body: JSON.stringify({
-      email: payload.email?.trim().toLowerCase(),
+      email: payload.email?.trim().toLowerCase() || undefined,
       token: payload.token?.trim(),
 
       temporaryPassword,

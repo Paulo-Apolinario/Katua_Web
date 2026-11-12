@@ -36,9 +36,6 @@ const ResetPassword = () => {
   const validateForm = () => {
     const nextErrors = {};
 
-    if (!email) {
-      nextErrors.email = ["E-mail não encontrado no link de recuperação."];
-    }
 
     if (!token) {
       nextErrors.token = ["Token de recuperação não encontrado ou inválido."];
@@ -139,15 +136,15 @@ const ResetPassword = () => {
 
           <div className="form-group">
             <label className="form-label" htmlFor="email">
-              E-mail<span className="required-asterisk">*</span>
+              Conta de acesso
             </label>
 
             <input
-              type="email"
+              type="text"
               id="email"
               className="form-input"
               placeholder="E-mail"
-              value={email}
+              value={email || "Conta identificada pelo link"}
               disabled
             />
 

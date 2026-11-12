@@ -7,6 +7,7 @@ import HeadTags from "../../components/HeadTags";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
+  const [identifierType, setIdentifierType] = useState("EMAIL");
   const [showEmailSent, setShowEmailSent] = useState(false);
   const [countdown, setCountdown] = useState(6);
   const [loading, setLoading] = useState(false);
@@ -14,11 +15,11 @@ const ForgotPassword = () => {
 
   const validateEmail = () => {
     if (!email.trim()) {
-      setError("Informe seu e-mail cadastrado.");
+      setError("Informe CPF, celular ou e-mail cadastrado.");
       return false;
     }
 
-    if (!/\S+@\S+\.\S+/.test(email)) {
+    if (identifierType === "EMAIL" && !/\S+@\S+\.\S+/.test(email)) {
       setError("Informe um e-mail válido.");
       return false;
     }
@@ -36,7 +37,8 @@ const ForgotPassword = () => {
       setLoading(true);
 
       const response = await forgotPassword({
-        email: email.trim().toLowerCase(),
+        identifier: email.trim().toLowerCase(),
+        identifierType,
       });
 
       if (response?.success === false) {
@@ -56,7 +58,7 @@ const ForgotPassword = () => {
 
       toast.success(
         response?.message || (typeof response?.error === "string" ? response.error : "") ||
-          "Enviamos uma senha temporária e o link de redefinição para seu e-mail."
+          "Se os dados identificarem uma conta, enviaremos as instruções ao e-mail de recuperação cadastrado."
       );
     } catch (err) {
       if (err?.errors?.email) {
@@ -112,7 +114,7 @@ const ForgotPassword = () => {
           <div className="notification-content">
             <h5>Solicitação de recuperação recebida</h5>
             <p>
-              Se o e-mail estiver habilitado, enviaremos as instruções de recuperação.
+              Se os dados identificarem uma conta habilitada, enviaremos as instruções ao e-mail de recuperação cadastrado.
               Verifique sua caixa de entrada e spam.
             </p>
           </div>
@@ -130,21 +132,23 @@ const ForgotPassword = () => {
         <h1 className="form-heading">Esqueci minha senha</h1>
 
         <p className="form-description">
-          Informe seu e-mail cadastrado. Enviaremos uma senha temporária e um
-          link seguro para você criar uma nova senha.
+          Informe CPF, celular ou e-mail cadastrado. Enviaremos uma senha temporária e um
+          link ao e-mail de recuperação cadastrado, que pode ser o da cooperativa.
         </p>
 
         <form onSubmit={handleSubmit}>
+          <div className="form-group"><label htmlFor="recovery-type" className="form-label">Identificar por</label><select id="recovery-type" className="form-input" value={identifierType} onChange={event => {setIdentifierType(event.target.value);setEmail("");setError("");}} disabled={loading}><option value="EMAIL">E-mail de acesso</option><option value="PHONE">Celular com DDD</option><option value="CPF">CPF</option></select></div>
           <div className="form-group">
             <label className="form-label" htmlFor="email">
-              E-mail<span className="required-asterisk">*</span>
+              {identifierType === "CPF" ? "CPF" : identifierType === "PHONE" ? "Celular" : "E-mail de acesso"}<span className="required-asterisk">*</span>
             </label>
 
             <input
-              type="email"
+              type={identifierType === "EMAIL" ? "email" : "text"}
+              inputMode={identifierType === "EMAIL" ? "email" : "numeric"}
               id="email"
               className="form-input"
-              placeholder="Digite seu e-mail"
+              placeholder={identifierType === "EMAIL" ? "Digite seu e-mail de acesso" : identifierType === "CPF" ? "Digite seu CPF" : "Celular com DDD"}
               value={email}
               onChange={(e) => {
                 setEmail(e.target.value);

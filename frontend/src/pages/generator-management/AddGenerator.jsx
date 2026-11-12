@@ -1,3 +1,4 @@
+import RecoveryEmailField from "../../components/registrations/RecoveryEmailField";
 import useAddressLocation, { ADDRESS_FIELDS } from "../../components/generators/useAddressLocation";
 import GeneratorDocumentField from "../../components/generators/GeneratorDocumentField";
 import { validDocument, documentType } from "../../utils/generatorDocument";
@@ -19,6 +20,7 @@ const initialForm = {
   companyName: "",
   documentNumber: "",
   email: "",
+  recoveryEmail: "",
   phone: "",
   zipCode: "",
   street: "",
@@ -309,6 +311,7 @@ const AddGenerator = () => {
     name: form.name.trim(),
     companyName: form.companyName.trim() || undefined,
     email: form.email.trim().toLowerCase(),
+    recoveryEmail: form.recoveryEmail.trim(),
     phone: form.phone.trim() || undefined,
     zipCode: form.zipCode.trim() || undefined,
     street: form.street.trim() || undefined,
@@ -422,6 +425,7 @@ const AddGenerator = () => {
               />
             </div>
 
+            <RecoveryEmailField value={form.recoveryEmail} onChange={recoveryEmail=>setForm(previous=>({...previous,recoveryEmail}))} disabled={loading} />
             <GeneratorDocumentField value={form.documentNumber} type={form.type} disabled={loading}
                onChange={documentNumber => setForm(previous => ({ ...previous, documentNumber }))} />
 

@@ -26,7 +26,7 @@ export default function RegistrationStatus({ kind, record, to }) {
       <small className="d-block text-muted">
         {hasAccess
           ? "Conta de acesso ativada"
-          : "Cadastro operacional · acesso não ativado"}
+          : record.accessActivationPending ? "Aguardando definição da senha" : "Cadastro operacional · acesso não ativado"}
       </small>
       {missing.length > 0 && to && (
         <Link to={to} className="d-inline-block mt-1">
