@@ -64,7 +64,9 @@ export function internalDocumentSections(d) {
   if (s.dispatch) {
     const a = s.dispatch;
     sections.push(["Saída de material", [["Protocolo", a.operationId], ["Material", a.materialName], ["Tipo", label(a.kind)], ["Quantidade total", `${a.quantity} ${a.unit}`], ["Data e hora da saída", dateLabel(a.movementDate, true)], ["Registrado em", dateLabel(a.recordedAt, true)], ["Destinatário", a.destinationName], ["CPF / CNPJ", a.destinationDocument], ["Endereço de destino", a.destinationAddress], ["Motorista", a.transportDriverName], ["Placa", a.transportVehiclePlate], ["Documento de transporte", a.transportDocument], ["Documento ambiental", a.environmentalDocument], ["Observações", a.notes]]]);
-    for (const lot of a.allocations || []) sections.push([`Lote ${lot.lotCode}`, [["Identificador", lot.lotId], ["Coleta de origem", lot.originCollectionId], ["Movimentação", lot.movementId], ["Saldo anterior", `${lot.before} ${a.unit}`], ["Quantidade retirada", `${lot.quantity} ${a.unit}`], ["Saldo restante", `${lot.after} ${a.unit}`]]]);
+    for (const lot of a.allocations || []) { sections.push([`Lote ${lot.lotCode}`, [["Identificador", lot.lotId], ["Coleta de origem", lot.originCollectionId], ["Movimentação", lot.movementId], ["Saldo anterior", `${lot.before} ${a.unit}`], ["Quantidade retirada", `${lot.quantity} ${a.unit}`], ["Saldo restante", `${lot.after} ${a.unit}`]]]);
+      if(lot.bagComposition?.length) sections.push(["Composição de entradas por bags — não é rateio da saída",lot.bagComposition.map(b=>[b.bagCode,`${b.origin} · entrada no lote: ${b.inputQuantityKg} kg`])]);
+    }
   }
   if (s.historicalReconstruction) sections.push(["Origem deste registro", [["Reconstrução", "Emitido com os dados disponíveis na implantação. Não comprova autorização ou emissão na data original do serviço."]]]);
   if (s.route) {

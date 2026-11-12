@@ -1,3 +1,4 @@
+import MixedBags from "../pages/mixed-bags/MixedBags";
 import QuickRegistration from "../pages/registrations/QuickRegistration";
 import AgentsCenter from "../pages/agents/AgentsCenter";
 import { ASSISTANT_VISIBLE } from '../config/features';
@@ -318,6 +319,8 @@ const Router = () => {
             <Route path="edit-waste-type/:id" element={<EditWasteType />} />
 
             {/* Waste Stock Management */}
+            <Route path="mixed-bags" element={<MixedBags />} />
+            <Route path="mixed-bags/:id" element={<MixedBags />} />
             <Route path="waste-stock" element={<WasteStockList />} />
 
             <Route path="waste-stock/create" element={<AddWasteStockLot />} />

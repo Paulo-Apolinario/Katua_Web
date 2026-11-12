@@ -1,3 +1,4 @@
+import { Link } from "react-router";
 import { completionBlockers, collectionEntries } from "../../utils/materialDisposition";
 import { useRef, useState } from "react";
 import {
@@ -40,6 +41,7 @@ export default function CollectionStageActions({
   const closing = collection.status === "SORTING" || (collection.status === "RECEIVED" && collection.quantityReviewVersion > 0 && entries.length > 0 && entries.every(entry => Number(entry.remainingQuantity) <= 0));
   const stage = closing ? stages.SORTING : stages[collection.status];
   const blockers = closing ? completionBlockers(collection) : [];
+  if (collection.intakeKind === "MIXED_BAG") return <div className="alert alert-info">Este recebimento é acompanhado por bags. <Link to="/mixed-bags">Abrir triagem e bags</Link></div>;
   if (
     !stage ||
     (collection.status === "RECEIVED" && !collection.quantityReviewVersion)

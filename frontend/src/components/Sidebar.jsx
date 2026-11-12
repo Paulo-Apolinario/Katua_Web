@@ -709,6 +709,7 @@ const Sidebar = ({ active, setActive }) => {
                 </NavLink>
               </li>
 
+              <li className="nav-item"><NavLink to="/mixed-bags" onClick={closeSidebarOnMobile} className={({isActive})=>`nav-link ${isActive?"active":""}`}><span className="submenu-text">Triagem e bags</span></NavLink></li>
               <li>
                 <NavLink
                   to="/waste-stock"

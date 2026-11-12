@@ -1,3 +1,4 @@
+import MixedBagLineage from "../waste/MixedBagLineage";
 import MaterialProfileForm from "./MaterialProfileForm";
 import { emptyProfile } from "../../utils/materialIdentification";
 import StockLotMovements from "../waste/StockLotMovements";
@@ -368,7 +369,7 @@ function LotForm({ lotId }) {
             : "Entrada manual de estoque. Para materiais de uma coleta, registre a destinação da entrada para gerar o lote vinculado."
       }
     >
-      {lotId && lot && <StockLotMovements lot={lot} onChange={resource.refresh} />}
+      {lotId && lot && <><MixedBagLineage lot={lot}/><StockLotMovements lot={lot} onChange={resource.refresh} /></>}
       <ResourceState resource={resource}>
         {loaded && lotId && !lot ? (
           <p role="alert" className="alert alert-danger">
