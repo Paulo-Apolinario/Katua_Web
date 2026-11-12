@@ -116,6 +116,7 @@ const Sidebar = ({ active, setActive }) => {
 
   const isWasteManagementSectionActive =
     location.pathname.startsWith("/collected-waste") ||
+    location.pathname.startsWith("/mixed-bags") ||
     location.pathname.startsWith("/waste-destinations") ||
     location.pathname.startsWith("/waste-stock") ||
     location.pathname.startsWith("/waste-type-list") ||
@@ -704,12 +705,23 @@ const Sidebar = ({ active, setActive }) => {
                   </span>
 
                   <span className="submenu-text">
-                    Movimentações e Destinações
+                    Movimentações
                   </span>
                 </NavLink>
               </li>
 
-              <li className="nav-item"><NavLink to="/mixed-bags" onClick={closeSidebarOnMobile} className={({isActive})=>`nav-link ${isActive?"active":""}`}><span className="submenu-text">Triagem e bags</span></NavLink></li>
+              <li>
+                <NavLink
+                  to="/mixed-bags"
+                  onClick={closeSidebarOnMobile}
+                  className={({ isActive }) => (isActive ? "active" : "")}
+                >
+                  <span className="dot-wrap">
+                    <span className="dot" />
+                  </span>
+                  <span className="submenu-text">Triagem e bags</span>
+                </NavLink>
+              </li>
               <li>
                 <NavLink
                   to="/waste-stock"

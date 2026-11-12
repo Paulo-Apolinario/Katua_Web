@@ -351,7 +351,7 @@ function DestinationList({ entryId }) {
   }
   return (
     <WastePage
-      title="Movimentações e Destinações"
+      title="Movimentações"
       description="Consulte, revise e cancele movimentações mantendo o vínculo com a entrada, o responsável e o lote gerado."
       actions={
         <>
