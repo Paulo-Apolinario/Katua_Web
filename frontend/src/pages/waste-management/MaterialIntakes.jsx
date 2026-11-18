@@ -1,3 +1,4 @@
+import GeneratorPicker from "../../components/intakes/GeneratorPicker";
 import DelivererPicker from "../../components/intakes/DelivererPicker";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
@@ -99,6 +100,8 @@ function Intakes() {
     collectorId: "",
     routeId: "",
     delivererId: "",
+    originType: "OTHER",
+    generator: null,
     delivererVersion: undefined,
   });
   async function mutate(fn) {
@@ -118,7 +121,7 @@ function Intakes() {
   }
   async function save(e) {
     e.preventDefault();
-    if (delivererEditing) return;
+    if (delivererEditing || (form.originType === "GENERATOR" && !form.generator)) return;
     void mutate(async () => {
       const {
         operationId,
@@ -131,6 +134,8 @@ function Intakes() {
         notes,
         delivererId,
         delivererVersion,
+        originType,
+        generator,
         ...team
       } = form;
       const created = await apiRequest("/material-intakes", {
@@ -138,6 +143,7 @@ function Intakes() {
         body: {
           operationId,
           kind,
+          ...(originType === "GENERATOR" && generator ? { generatorId: generator.id } : {}),
           ...(kind === "DIRECT" && delivererId
             ? { delivererId, delivererVersion }
             : {}),
@@ -178,7 +184,7 @@ function Intakes() {
         value={form[key]}
         onChange={(e) => setForm({ ...form, [key]: e.target.value })}
         readOnly={
-          !!form.delivererId && ["name", "document", "phone"].includes(key)
+          (!!form.delivererId || !!form.generator) && ["name", "document", "phone"].includes(key)
         }
         {...props}
       />
@@ -239,7 +245,17 @@ function Intakes() {
                 ? "Não exige catador cadastrado, motorista ou rota. Não será atribuída produção a um colaborador do sistema."
                 : "Informe a origem do material. O cadastro da pessoa ou organização como gerador não é obrigatório."}
             </p>
-            {form.kind === "DIRECT" && (
+            {form.kind === "DIRECT" && <label className="d-block mb-3">Origem da entrega
+              <select className="form-select" value={form.originType} onChange={e => {
+                setDelivererEditing(false);
+                setForm(f => ({ ...f, originType: e.target.value, generator: null, delivererId: "", delivererVersion: undefined, name: "", phone: "", document: "", address: "" }));
+              }}>
+                <option value="OTHER">Entregador avulso / outra origem</option>
+                <option value="GENERATOR">Gerador cadastrado — entrega na cooperativa</option>
+              </select>
+            </label>}
+            {form.kind === "DIRECT" && form.originType === "GENERATOR" && <GeneratorPicker selected={form.generator} onSelect={g => setForm(f => ({ ...f, generator: g, name: g?.name || "", phone: g?.phone || "", document: g?.documentNumber || "", address: g?.address || [g?.street,g?.number,g?.neighborhood,g?.city,g?.state].filter(Boolean).join(", ") }))} />}
+            {form.kind === "DIRECT" && form.originType === "OTHER" && (
               <DelivererPicker
                 onEditingChange={setDelivererEditing}
                 selectedId={form.delivererId}
@@ -343,7 +359,7 @@ function Intakes() {
               <button
                 className="btn btn-success"
                 type="submit"
-                disabled={delivererEditing}
+                disabled={delivererEditing || (form.originType === "GENERATOR" && !form.generator)}
               >
                 {busy ? "Salvando..." : "Registrar entrada / coleta"}
               </button>
@@ -402,8 +418,8 @@ function Intakes() {
                   </strong>
                   <div>
                     {c.intakeKind === "DIRECT"
-                      ? "Entrega direta na cooperativa"
-                      : "Coleta em endereço avulso"}{" "}
+                      ? c.generatorId ? "Entrega do gerador na cooperativa" : "Entrega direta na cooperativa"
+                      : c.intakeOrigin?.performedBy === "COOPERATIVE" ? "Coleta efetuada pela cooperativa" : "Coleta em endereço avulso"}{" "}
                     · #{c.id.slice(-8).toUpperCase()}
                   </div>
                   <small>

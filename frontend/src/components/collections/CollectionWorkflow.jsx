@@ -132,6 +132,8 @@ export default function CollectionWorkflow({
           </button>
         </div>
       )}
+      {c.intakeOrigin?.performedBy === "COOPERATIVE" && <p className="alert alert-info">Coleta efetuada pela cooperativa. Sem atribuição automática de produção individual.</p>}
+      {c.intakeKind === "DIRECT" && c.generatorId && <p className="alert alert-info">Material entregue diretamente pelo gerador na cooperativa.</p>}
       <fieldset
         disabled={stale || receiving || working}
         style={{ minWidth: 0 }}
