@@ -134,6 +134,12 @@ export default function CollectionWorkflow({
       )}
       {c.intakeOrigin?.performedBy === "COOPERATIVE" && <p className="alert alert-info">Coleta efetuada pela cooperativa. Sem atribuição automática de produção individual.</p>}
       {c.intakeKind === "DIRECT" && c.generatorId && <p className="alert alert-info">Material entregue diretamente pelo gerador na cooperativa.</p>}
+      {(c.intakeOrigin?.description || c.intakeOrigin?.catalogMaterials?.length > 0) && <div className="alert alert-light border">
+        <strong>Materiais informados na coleta</strong>
+        {!!c.intakeOrigin?.catalogMaterials?.length && <p className="mb-1">{c.intakeOrigin.catalogMaterials.map(m => m.name).join(", ")}</p>}
+        {c.intakeOrigin?.description && <p className="mb-1">{c.intakeOrigin.description}</p>}
+        <small>Identificação preliminar. As quantidades são registradas na pesagem e conferência.</small>
+      </div>}
       <fieldset
         disabled={stale || receiving || working}
         style={{ minWidth: 0 }}

@@ -426,6 +426,7 @@ function Intakes() {
                     {c.intakeOrigin?.address || "Entrega na sede"}
                     <br />
                     {c.intakeOrigin?.description}
+                    {!!c.intakeOrigin?.catalogMaterials?.length && <><br />Materiais informados: {c.intakeOrigin.catalogMaterials.map(m => m.name).join(", ")} · A conferir na pesagem</>}
                   </small>
                 </td>
                 <td>
