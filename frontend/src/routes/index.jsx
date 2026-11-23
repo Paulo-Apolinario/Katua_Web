@@ -1,3 +1,4 @@
+import SimulationWorkspace, { AdministratorSimulation } from "../pages/simulation/SimulationWorkspace";
 import AdminCooperatives from "../pages/platform/AdminCooperatives";
 import UsageMonitoring, { MonitoringAdministrator } from "../pages/analytics/UsageMonitoring";
 import MixedBags from "../pages/mixed-bags/MixedBags";
@@ -126,6 +127,7 @@ const Router = () => {
         <Routes>
           <Route path="/analytics/monitoring" element={<MonitoringAdministrator />} />
           <Route path="/admin/cooperatives" element={<AdminCooperatives />} />
+          <Route path="/admin/simulation/:cooperativeId" element={<AdministratorSimulation />} />
           <Route
             path="/"
             element={
@@ -257,6 +259,7 @@ const Router = () => {
             <Route path="edit-route/:id" element={<EditRoute />} />
 
             <Route path="mtr-online" element={<MtrOnlineStatus />} />
+            <Route path="simulation" element={<SimulationWorkspace />} />
 
             <Route
               path="operational-calendar"

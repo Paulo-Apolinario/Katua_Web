@@ -1,6 +1,6 @@
 import SinirConnection from "./SinirConnection";
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { useAdminAuth } from "../../context/AdminAuthContext";
 import { environmentalService as api } from "../../services/environmentalService";
 import { ManagementHeader } from "../management/ManagementWorkspace";
@@ -88,6 +88,8 @@ function Central() {
     context?.grants.some(
       (g) => g.municipalityCode === municipality && g.permission !== "VIEWER",
     );
+  const { admin } = useAdminAuth();
+  const adminRoleSimulationLink = () => admin?.role === "COOPERATIVE" ? <Link className="btn btn-outline-warning mb-3" to="/simulation">Abrir simulação de venda, NF-e e MTR</Link> : null;
   const title = editor
     ? "Preparar documento ambiental"
     : "Central ambiental e SINIR";
@@ -100,6 +102,7 @@ function Central() {
         title={title}
         description="Prepare documentos, revise informações e acompanhe a habilitação da integração oficial, dentro do KATUÁ."
       />
+      {adminRoleSimulationLink()}
       {loading ? (
         <div className="card p-4" role="status">
           Consultando seu acesso e as unidades...

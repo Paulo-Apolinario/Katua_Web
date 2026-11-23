@@ -1,0 +1,10 @@
+.simulation-workspace .sim-warning { background:#fff5d9;color:#634b07;border:2px solid #dcad29;padding:18px;border-radius:12px;margin:18px 0; }
+.simulation-workspace .sim-warning p { margin:8px 0 0; }
+.simulation-workspace .sim-line { display:flex;gap:12px;flex-wrap:wrap;align-items:end;margin:14px 0; }
+.simulation-workspace .sim-line label { min-width:150px;flex:1; }
+.simulation-workspace label { display:flex;flex-direction:column;gap:6px;margin:10px 0; }
+.simulation-workspace .sim-document { padding:16px;border:1px solid #dce7e2;border-radius:10px;margin:12px 0; }
+.simulation-workspace .sim-document button { margin:6px 8px 6px 0; }
+.simulation-workspace table { min-width:580px; }
+.simulation-workspace .pa-table-wrap { overflow-x:auto; }
+.simulation-workspace details { margin:12px 0; }
