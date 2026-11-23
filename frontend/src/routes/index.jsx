@@ -1,3 +1,4 @@
+import UsageMonitoring, { MonitoringAdministrator } from "../pages/analytics/UsageMonitoring";
 import MixedBags from "../pages/mixed-bags/MixedBags";
 import QuickRegistration from "../pages/registrations/QuickRegistration";
 import AgentsCenter from "../pages/agents/AgentsCenter";
@@ -122,6 +123,7 @@ const Router = () => {
     <AdminAuthProvider>
       <BrowserRouter>
         <Routes>
+          <Route path="/analytics/monitoring" element={<MonitoringAdministrator />} />
           <Route
             path="/"
             element={
@@ -333,6 +335,7 @@ const Router = () => {
             {/* Reports */}
             <Route path="analytics/participation" element={<AnalyticsAccessGate />}>
             <Route index element={<ParticipationAnalytics />} />
+            <Route path="monitoring" element={<UsageMonitoring />} />
             <Route path="coverage/:bucket" element={<CoverageReceipts />} />
             <Route path="requests/:outcome" element={<AnalyticsRecords kind="requests" />} />
             <Route path="quality/:issue" element={<AnalyticsRecords kind="quality" />} />

@@ -332,6 +332,7 @@ export default function ParticipationAnalytics() {
         </p>
       </header>
       <nav className="pa-tabs" aria-label="Abas do Analytics">
+        <Link to={`/analytics/participation/monitoring?${new URLSearchParams({ start: filters.start, end: filters.end })}`}>Uso e adesão</Link>
         {Object.entries(tabs).map(([key, label]) => (
           <Link
             key={key}

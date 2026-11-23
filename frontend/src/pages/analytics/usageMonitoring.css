@@ -1,0 +1,9 @@
+.usage-monitoring .um-filters { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin:16px 0; }
+.usage-monitoring .um-filters label { display:flex; flex-direction:column;gap:6px; }
+.usage-monitoring th,.usage-monitoring td { min-width:130px;vertical-align:top; }
+.usage-monitoring tbody th { min-width:220px; }
+.usage-monitoring .um-status { display:inline-block;padding:4px 8px;border-radius:8px;font-size:.8rem;background:#eef2f6;color:#25374a; }
+.usage-monitoring .um-READY { background:#e4f5ed;color:#09583d; }
+.usage-monitoring .um-BLOCKED { background:#fff0ef;color:#8a231e; }
+.usage-monitoring .um-PENDING { background:#fff5dc;color:#785600; }
+.usage-monitoring .pa-table-wrap { border:1px solid #dce8e3;border-radius:10px;overflow-x:auto; }

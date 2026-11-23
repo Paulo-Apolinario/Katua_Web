@@ -11,7 +11,7 @@ import { getMe } from "../services/authService";
 const AdminAuthContext = createContext();
 
 const isPanelUser = (user) => {
-  return ["COOPERATIVE", "MUNICIPAL_MANAGER"].includes(user?.role);
+  return ["COOPERATIVE", "MUNICIPAL_MANAGER", "ADMIN"].includes(user?.role);
 };
 
 export const AdminAuthProvider = ({ children }) => {

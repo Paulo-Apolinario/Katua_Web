@@ -15,6 +15,8 @@ const AdminPrivateRoute = ({ children }) => {
     return <Navigate to="/login" replace />;
   }
 
+  if (admin?.role === "ADMIN") return <Navigate to="/analytics/monitoring" replace />;
+
   if (admin?.role === "MUNICIPAL_MANAGER") {
     return pathname === "/mtr-online" ? children : <Navigate to="/mtr-online" replace />;
   }
