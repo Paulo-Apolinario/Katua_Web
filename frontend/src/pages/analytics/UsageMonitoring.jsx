@@ -1,19 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, Navigate, useSearchParams } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { useAdminAuth } from "../../context/AdminAuthContext";
-import SessionRecovery from "../../components/SessionRecovery";
+import AdminWorkspace from "../../components/platform/AdminWorkspace";
 import { recentPeriod } from "../../services/participationAnalytics";
 import { accessLabels, roleLabels, monitoringDate, activeTime, systemsUsed, monitoringRequest, exportMonitoring } from "../../services/monitoringAnalytics";
 import "./participationAnalytics.css";
 import "./usageMonitoring.css";
 const defaults = () => { const { start, end } = recentPeriod(30); return { start, end, search: "", city: "", status: "", activity: "", inactiveDays: "" }; };
 export function MonitoringAdministrator() {
-  const { admin, loading, bootstrapError, logout } = useAdminAuth();
-  if (bootstrapError) return <SessionRecovery />;
-  if (loading) return <p role="status">Confirmando sessão...</p>;
-  if (!admin) return <Navigate to="/login" replace />;
-  if (admin.role !== "ADMIN") return <Navigate to="/analytics/participation/monitoring" replace />;
-  return <main className="container-fluid"><header className="d-flex justify-content-between align-items-center p-3 border-bottom"><strong>KATUÁ · Administração · Analytics</strong><button className="btn btn-outline-secondary" onClick={logout}>Sair da conta</button></header><UsageMonitoring key={admin.id} /></main>;
+  return <AdminWorkspace><UsageMonitoring /></AdminWorkspace>;
 }
 export default function UsageMonitoring() {
   const { admin } = useAdminAuth();

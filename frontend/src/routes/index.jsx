@@ -1,3 +1,4 @@
+import AdminCooperatives from "../pages/platform/AdminCooperatives";
 import UsageMonitoring, { MonitoringAdministrator } from "../pages/analytics/UsageMonitoring";
 import MixedBags from "../pages/mixed-bags/MixedBags";
 import QuickRegistration from "../pages/registrations/QuickRegistration";
@@ -124,6 +125,7 @@ const Router = () => {
       <BrowserRouter>
         <Routes>
           <Route path="/analytics/monitoring" element={<MonitoringAdministrator />} />
+          <Route path="/admin/cooperatives" element={<AdminCooperatives />} />
           <Route
             path="/"
             element={
