@@ -147,3 +147,40 @@
 .waste-workspace .waste-freshness {
   margin-bottom: 12px;
 }
+
+/* Shared operational hierarchy: context, search, summary, records, details. */
+.waste-workspace { max-width:1600px; margin:0 auto; }
+.waste-workspace > header { padding:22px 24px; background:#f5f9f6; border:1px solid var(--waste-border); border-radius:16px; }
+.waste-workspace > header h1 { font-size:1.6rem; margin-bottom:8px; }
+.waste-workspace > header p { font-size:.94rem; max-width:680px; }
+.waste-workspace > header .btn-success { order:-1; }
+.waste-workspace .waste-section-nav { display:flex; flex-wrap:wrap; gap:4px; padding:5px; border:1px solid var(--waste-border); background:#fff; border-radius:12px; margin-bottom:16px; }
+.waste-section-link { padding:10px 13px; text-decoration:none; border-radius:8px; color:#50645a; font-weight:600; font-size:.87rem; }
+.waste-section-link:hover { background:#f0f6f2; color:#155b49; }
+.waste-section-link.is-active { background:#17684e; color:#fff; }
+.waste-page-help { padding:10px 14px; background:#f7faf8; border-radius:9px; color:#5a6c62; font-size:.86rem; }
+.waste-page-help summary { font-weight:600; }
+.waste-page-help p { margin-top:10px; max-width:940px; }
+.waste-stage-filter { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+.waste-stage-filter label { font-weight:600; }
+.waste-stage-filter select { width:auto; min-width:240px; }
+.waste-workspace .waste-freshness { font-size:.75rem !important; border:0; margin:0 0 10px; padding:0; }
+.waste-workspace .table thead th { text-transform:none; letter-spacing:0; }
+.waste-workspace .table td { line-height:1.55; }
+.waste-workspace .table td .btn { margin-top:4px; }
+.waste-workspace .waste-row-options { min-width:150px; }
+.waste-workspace .waste-empty { text-align:center; padding:40px 20px; color:#52685b; }
+.waste-workspace .waste-empty h2 { font-size:1.15rem; }
+.waste-workspace .alert { border-radius:10px; }
+.waste-workspace .form-label,.waste-workspace form label { font-size:.87rem; font-weight:600; }
+.waste-workspace details summary:focus-visible { outline:3px solid #227951; outline-offset:3px; }
+.waste-workspace .form-control,.waste-workspace .form-select { min-height:42px; border-color:#d0ded6; font-weight:400; }
+.waste-workspace .waste-tabs { padding-bottom:8px; gap:6px; }
+.waste-workspace .waste-tabs .btn { border-radius:20px; padding:7px 14px; }
+@media(max-width:767px){
+ .waste-workspace > header { padding:18px; }
+ .waste-workspace .waste-section-nav { flex-wrap:nowrap; overflow-x:auto; }
+ .waste-section-link { white-space:nowrap; flex-shrink:0; }
+ .waste-workspace .waste-stage-filter select { width:100%; }
+ .waste-workspace .row { --bs-gutter-x:1rem; }
+}

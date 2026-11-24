@@ -64,7 +64,7 @@ export default function CollectedCollections({ editor, revision }) {
   return (
     <WastePage
       title="Resíduos Coletados"
-      description="Uma coleta por registro, com seus materiais, conferência e saldo para movimentação."
+      description="Confira o que chegou à cooperativa e encaminhe os materiais para a próxima etapa."
       actions={
         <>
           <ExportButton
@@ -110,17 +110,7 @@ export default function CollectedCollections({ editor, revision }) {
         </>
       }
     >
-      <div className="waste-tabs" role="group" aria-label="Etapa dos materiais">
-        {stages.map(([value, label]) => (
-          <button
-            key={value}
-            className={`btn btn-sm ${filters.stage === value ? "btn-success" : "btn-outline-secondary"}`}
-            onClick={() => stage(value)}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      <div className="waste-stage-filter mb-3"><label htmlFor="collected-stage">Etapa da coleta</label><select id="collected-stage" className="form-select" value={filters.stage} onChange={e=>stage(e.target.value)}>{stages.map(([value,label])=><option value={value} key={value}>{label}</option>)}</select></div>
       <Summary
         cards={[
           ["Coletas encontradas", r.data?.pagination.total ?? "—"],
@@ -129,7 +119,7 @@ export default function CollectedCollections({ editor, revision }) {
             r.data ? units(r.data.units, "collectedQuantity") : "—",
           ],
           [
-            "Saldo sem encaminhamento",
+            "A encaminhar",
             r.data ? units(r.data.units, "remainingQuantity") : "—",
           ],
         ]}

@@ -48,6 +48,7 @@ const Sidebar = ({ active, setActive }) => {
   }, [admin?.id, admin?.role]);
 
   useEffect(()=>{if(window.innerWidth<1366)setActive(true);},[location.pathname]);
+  useEffect(()=>{let mobile=window.innerWidth<1366;const resize=()=>{const next=window.innerWidth<1366;if(next&&!mobile)setActive(true);mobile=next;};window.addEventListener("resize",resize);return()=>window.removeEventListener("resize",resize);},[setActive]);
   useEffect(()=>{if(active||window.innerWidth>=1366)return;const previous=document.body.style.overflow;document.body.style.overflow='hidden';const escape=e=>{if(e.key==='Escape')setActive(true);};window.addEventListener('keydown',escape);return()=>{document.body.style.overflow=previous;window.removeEventListener('keydown',escape);};},[active,setActive]);
   const isWasteSectionActive =
     location.pathname.startsWith("/service-orders") ||
@@ -115,6 +116,7 @@ const Sidebar = ({ active, setActive }) => {
   ].some((p) => location.pathname.startsWith(p));
 
   const isWasteManagementSectionActive =
+    location.pathname.startsWith("/sales") ||
     location.pathname.startsWith("/collected-waste") ||
     location.pathname.startsWith("/mixed-bags") ||
     location.pathname.startsWith("/waste-destinations") ||
@@ -735,6 +737,7 @@ const Sidebar = ({ active, setActive }) => {
                 </NavLink>
               </li>
 
+              <li><NavLink to="/sales" onClick={closeSidebarOnMobile} className={({ isActive }) => isActive ? "active" : ""}><span className="dot-wrap"><span className="dot" /></span><span className="submenu-text">Vendas</span></NavLink></li>
               <li>
                 <NavLink
                   to="/waste-type-list"
@@ -744,7 +747,7 @@ const Sidebar = ({ active, setActive }) => {
                     <span className="dot" />
                   </span>
 
-                  <span className="submenu-text">Catálogo de Resíduos</span>
+                  <span className="submenu-text">Catálogo de materiais</span>
                 </NavLink>
               </li>
             </ul>

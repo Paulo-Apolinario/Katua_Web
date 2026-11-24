@@ -164,6 +164,7 @@ function Filters({
             </select>
           </div>
         ))}
+        <details className="col-12 waste-advanced-filters"><summary>Filtrar por período{draft.dateFrom||draft.dateTo?" · definido":""}</summary><div className="row g-3 mt-1">
         {[
           ["dateFrom", "Data inicial"],
           ["dateTo", "Data final"],
@@ -183,6 +184,7 @@ function Filters({
             />
           </div>
         ))}
+        </div></details>
       </div>
       <p className="small text-muted mt-3">
         Período por{" "}
@@ -352,7 +354,7 @@ function DestinationList({ entryId }) {
   return (
     <WastePage
       title="Movimentações"
-      description="Consulte, revise e cancele movimentações mantendo o vínculo com a entrada, o responsável e o lote gerado."
+      description="Acompanhe para onde os materiais das entradas foram encaminhados. Saídas de lotes estão no Estoque; vendas também aparecem em Vendas."
       actions={
         <>
           <ExportButton
@@ -446,7 +448,7 @@ function DestinationList({ entryId }) {
                 ? "Canceladas"
                 : "Todas",
           ],
-          ["Registros nesta página", resource.data ? rows.length : "—"],
+
         ]}
       />
       <p className="small text-muted">

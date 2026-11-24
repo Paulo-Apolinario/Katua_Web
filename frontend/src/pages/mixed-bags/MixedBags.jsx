@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import { apiRequest, getStoredUser } from "../../services/apiClient";
 import { useWasteResource } from "../../components/waste-workspace/useWasteResource";
-import { ManagementHeader } from "../../components/management/ManagementWorkspace";
+import { WastePage } from "../../components/waste-workspace/WastePage";
 const labels = {
   WAITING: "Aguardando triagem",
   SORTING: "Em triagem",
@@ -816,8 +816,7 @@ export default function MixedBags() {
     : `/mixed-bags?${new URLSearchParams({ page: String(page), status, search: params.get("search") || "" })}`;
   const resource = useWasteResource(useCallback(() => read(path), [path]));
   return (
-    <div className="management-workspace">
-      <ManagementHeader
+    <WastePage
         title="Triagem e bags"
         description="Recebimento misturado, separação e formação de lotes."
         actions={
@@ -847,7 +846,7 @@ export default function MixedBags() {
             )}
           </>
         }
-      />
+      >
       {!id && (
         <div className="d-flex gap-2 mb-3">
           <Link
@@ -1027,6 +1026,6 @@ export default function MixedBags() {
             ))}
         </>
       )}
-    </div>
+    </WastePage>
   );
 }

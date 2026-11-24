@@ -19,7 +19,7 @@ const localNow = () => {
     .toISOString()
     .slice(0, 16);
 };
-export default function StockMaterialDispatch({ item, onClose, onSaved }) {
+export default function StockMaterialDispatch({ item, onClose, onSaved, saleOnly = false }) {
   const [form, setForm] = useState({
     stockItemId: item.id,
     unit: item.unit || "KG",
@@ -178,7 +178,7 @@ export default function StockMaterialDispatch({ item, onClose, onSaved }) {
   );
   return (
     <CollectionDialog
-      title={`Saída por quantidade · ${item.name}`}
+      title={`${saleOnly ? "Registrar venda" : "Saída por quantidade"} · ${item.name}`}
       busy={busy}
       onClose={onClose}
     >
@@ -282,6 +282,7 @@ export default function StockMaterialDispatch({ item, onClose, onSaved }) {
                 ))}
               </select>
             </div>
+            {saleOnly && <p className="small text-muted">A confirmação registra a saída dos lotes. Depois, em Vendas, use Preparar nota para informar o preço.</p>}
             {field("quantity", "Quantidade total", "text", true)}
             <div className="col-md-6">
               <label className="form-label" htmlFor="dispatch-kind">
@@ -289,9 +290,9 @@ export default function StockMaterialDispatch({ item, onClose, onSaved }) {
               </label>
               <select
                 id="dispatch-kind"
+                disabled={saleOnly || frozen}
                 className="form-select"
                 value={form.kind}
-                disabled={frozen}
                 onChange={(e) => change("kind", e.target.value)}
               >
                 {Object.entries(labels).map(([v, l]) => (

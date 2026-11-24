@@ -26,10 +26,12 @@ try{
  await page.goto('http://127.0.0.1:4179/simulation');
  await page.getByRole('heading',{name:'1. Estoque demonstrativo'}).waitFor();
  await page.getByRole('button',{name:'Ver prévia dos lotes',exact:true}).click();
- await page.getByText('Total demonstrativo:').waitFor();
- assert.match(await page.locator('body').innerText(),/320,00/);
+ await page.getByText('Prévia das quantidades por lote').waitFor();
  await page.getByRole('button',{name:'Salvar venda simulada',exact:true}).click();
  await page.getByRole('heading',{name:/SIM-VENDA-1/}).waitFor();
+ await page.getByLabel('Preço unitário de Papelão',{exact:true}).fill('0,80');
+ await page.getByRole('button',{name:'Salvar valores da nota simulada',exact:true}).click();
+ await page.getByText('Total preparado:',{exact:false}).waitFor();
  await page.getByLabel('Cenário de resposta NFE').selectOption('UNCERTAIN');
  await page.getByRole('button',{name:'Gerar NF-e simulada',exact:true}).click();
  await page.getByRole('button',{name:'Consultar resultado do documento NFE',exact:true}).click();

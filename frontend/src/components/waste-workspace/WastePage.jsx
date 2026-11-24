@@ -1,4 +1,4 @@
-import { Link, NavLink } from "react-router";
+import { Link, NavLink, useLocation } from "react-router";
 import HeadTags from "../HeadTags";
 import { useAdminAuth } from "../../context/AdminAuthContext";
 import "./wasteWorkspace.css";
@@ -6,7 +6,17 @@ export function WasteScope({ children }) {
   const { admin } = useAdminAuth();
   return admin?.id ? <div key={admin.id}>{children}</div> : null;
 }
+const sections = [
+  ["/collected-waste", "Resíduos coletados", "Conferir os materiais recebidos e encaminhar cada entrada."],
+  ["/mixed-bags", "Triagem e bags", "Pesar o material misturado, separar e formar lotes por material."],
+  ["/waste-stock", "Estoque e lotes", "Consultar saldos e registrar a saída de uma quantidade."],
+  ["/waste-destinations", "Movimentações", "Acompanhar os encaminhamentos das entradas e seus destinos."],
+  ["/sales", "Vendas", "Consultar saídas vendidas e informar preços ao preparar a nota."],
+  ["/waste-type-list", "Catálogo", "Definir nome, unidade e identificação dos materiais. Não gera estoque."],
+];
 export function WastePage({ title, description, children, actions }) {
+  const {pathname}=useLocation();
+  const current=sections.find(([url])=>pathname.startsWith(url)) || sections.at(-1);
   return (
     <div className="container-fluid py-4 waste-workspace">
       <HeadTags title={`${title} | KATUÁ`} />
@@ -18,28 +28,10 @@ export function WastePage({ title, description, children, actions }) {
         </div>
         <div className="d-flex flex-wrap gap-2">{actions}</div>
       </header>
-      <nav
-        aria-label="Gestão de resíduos"
-        className="d-flex gap-2 flex-wrap mb-4"
-      >
-        {[
-          ["/collected-waste", "Resíduos coletados"],
-          ["/waste-destinations", "Destinações"],
-          ["/waste-stock", "Estoque"],
-          ["/waste-type-list", "Catálogo"],
-        ].map(([url, label]) => (
-          <NavLink
-            key={url}
-            end
-            to={url}
-            className={({ isActive }) =>
-              `btn btn-sm ${isActive ? "btn-success" : "btn-outline-secondary"}`
-            }
-          >
-            {label}
-          </NavLink>
-        ))}
+      <nav aria-label="Gestão de resíduos" className="waste-section-nav">
+        {sections.map(([url,label])=><NavLink key={url} to={url} className={({isActive})=>`waste-section-link ${isActive?"is-active":""}`}>{label}</NavLink>)}
       </nav>
+      <details className="waste-page-help mb-3"><summary>Como usar esta etapa</summary><p>{current[2]}</p><p className="mb-0">Material misturado vai para Triagem e bags. Material identificado pode formar lotes no Estoque. A aba Vendas acompanha as saídas do tipo Venda; os valores são preenchidos na preparação da nota.</p></details>
       {children}
     </div>
   );
@@ -90,7 +82,7 @@ export function ResourceState({ resource, children }) {
             dateStyle: "short",
             timeStyle: "medium",
           }).format(resource.updatedAt)}
-          . {resource.deferred ? "Atualização automática pausada durante a consulta ou edição." : "Atualização automática com esta tela visível."}
+          . {resource.deferred ? "Edição em andamento." : ""}
         </p>
       )}
       {children}

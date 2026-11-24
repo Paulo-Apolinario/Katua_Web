@@ -156,11 +156,11 @@ export default function WorkspaceInventoryList({ catalog = false }) {
   }
   return (
     <WastePage
-      title={catalog ? "Catálogo de Resíduos" : "Estoque e Lotes"}
+      title={catalog ? "Catálogo de materiais" : "Estoque e lotes"}
       description={
         catalog
-          ? "Identificação dos materiais da cooperativa. O cadastro não cria estoque."
-          : "Saldos disponíveis e reservados, com acesso aos lotes e suas origens."
+          ? "Cadastre nomes, unidades e identificação dos materiais usados na operação."
+          : "Veja quanto há de cada material e abra os lotes para consultar a origem ou registrar uma saída."
       }
       actions={
         <>
@@ -233,7 +233,7 @@ export default function WorkspaceInventoryList({ catalog = false }) {
           catalog
             ? [
                 ["Materiais encontrados", r.data?.pagination.total ?? "—"],
-                ["Cadastro", "Sem geração de estoque"],
+
               ]
             : [
                 ["Materiais", r.data?.pagination.total ?? "—"],
@@ -488,9 +488,9 @@ function InventoryItem({
         <td>{i._count.lots}</td>
         <td>
           <div className="d-flex gap-2 flex-wrap">
-            {!catalog && view === "current" && <button className="btn btn-sm btn-success" disabled={busy} onClick={dispatch}>Destinar quantidade</button>}
+            {!catalog && view === "current" && <button className="btn btn-sm btn-success" disabled={busy} onClick={dispatch}>Registrar saída</button>}
             {catalog ? (
-              <>
+              <details className="waste-row-options"><summary>Opções do material</summary><div className="d-flex gap-2 flex-wrap mt-2">
                 <Link
                   className="btn btn-sm btn-outline-secondary"
                   to={`/edit-waste-type/${i.id}`}
@@ -503,8 +503,8 @@ function InventoryItem({
                   onClick={changeStatus}
                 >
                   {i.status === "ACTIVE" ? "Inativar" : "Reativar"}
-                </button>
-              </>
+                </button></div>
+              </details>
             ) : (
               <button
                 className="btn btn-sm btn-outline-success"

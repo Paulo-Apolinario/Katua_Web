@@ -1,3 +1,4 @@
+import Sales from "../pages/sales/Sales";
 import SimulationWorkspace, { AdministratorSimulation } from "../pages/simulation/SimulationWorkspace";
 import AdminCooperatives from "../pages/platform/AdminCooperatives";
 import UsageMonitoring, { MonitoringAdministrator } from "../pages/analytics/UsageMonitoring";
@@ -260,6 +261,7 @@ const Router = () => {
 
             <Route path="mtr-online" element={<MtrOnlineStatus />} />
             <Route path="simulation" element={<SimulationWorkspace />} />
+            <Route path="sales" element={<Sales />} />
 
             <Route
               path="operational-calendar"

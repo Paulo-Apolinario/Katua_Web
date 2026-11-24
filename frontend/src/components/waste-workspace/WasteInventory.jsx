@@ -119,7 +119,7 @@ function TypeForm({ id }) {
   }
   return (
     <WastePage
-      title={id ? "Editar Tipo de Resíduo" : "Cadastrar Tipo de Resíduo"}
+      title={id ? "Editar material" : "Cadastrar material"}
       description="Defina a identificação e a unidade usada nas próximas operações. Este cadastro não gera estoque."
     >
       <ResourceState resource={resource}>
@@ -174,7 +174,7 @@ function TypeForm({ id }) {
                   {...{ form, setForm }}
                 />
               </div>
-              <MaterialProfileForm value={form.technicalProfile} onChange={technicalProfile=>setForm(f=>({...f,technicalProfile}))} />
+              <details className="waste-page-help mt-4"><summary>Composição e classificação técnica (opcional)</summary><MaterialProfileForm value={form.technicalProfile} onChange={technicalProfile=>setForm(f=>({...f,technicalProfile}))} /></details>
             </fieldset>
             <p className="small text-muted mt-3">
               Confirme os códigos e a classificação com o responsável técnico.

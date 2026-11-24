@@ -23,14 +23,16 @@ async function service(name, names) {
       "apiRequest",
       "optionalFields",
       "calendarIso",
+      "clearWasteCatalogCache",
       source + `;return {${names.join(",")}}`,
     )(
       async (url, opts) => {
-        calls.push({ url, ...opts });
+        calls.push({ url, ...opts, ...(opts?.body ? {body:JSON.parse(JSON.stringify(opts.body))} : {}) });
         return { success: true };
       },
       optionalFields,
       calendarIso,
+      () => {},
     ),
   };
 }
