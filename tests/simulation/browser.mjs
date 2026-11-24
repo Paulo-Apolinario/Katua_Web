@@ -53,6 +53,18 @@ try{
  await page.setViewportSize({width:390,height:844});
  await page.screenshot({path:'/tmp/katua-simulation-mobile.png',fullPage:true});
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth),false,'Page overflows mobile viewport');
+ await page.getByRole('button',{name:'Reiniciar simulação',exact:true}).click();
+ const resetDialog=page.getByRole('dialog',{name:'Reiniciar simulação?',exact:true});await resetDialog.waitFor();
+ assert.equal(await resetDialog.getByRole('button',{name:'Confirmar reinício',exact:true}).isDisabled(),true);
+ await resetDialog.getByRole('button',{name:'Voltar',exact:true}).click();
+ await page.getByRole('button',{name:'Baixar CDF simulado (PDF)',exact:true}).waitFor();
+ await page.getByRole('button',{name:'Reiniciar simulação',exact:true}).click();
+ await resetDialog.getByRole('checkbox').check();await resetDialog.getByRole('button',{name:'Confirmar reinício',exact:true}).click();
+ await page.getByText('Nenhuma venda simulada criada.',{exact:true}).waitFor();
+ const restored=page.getByRole('row').filter({has:page.getByRole('rowheader',{name:'SIM-LOT-003',exact:true})}).first();assert.match(await restored.innerText(),/130 kg/);
+ assert.equal(await page.getByLabel('Quantidade 1',{exact:true}).inputValue(),'400');
+ await page.reload();await page.getByText('Nenhuma venda simulada criada.',{exact:true}).waitFor();
+ console.log('PASS: reinício com confirmação, voltar sem alterações, saldos restaurados, formulários limpos e persistência após recarregar');
  assert.deepEqual(errors,[]);
  console.log('PASS: Chromium com API real — prévia, rascunho, resposta perdida/consulta, download PDF, MTR, saldo parcial, recebimento/CDF, pagamento, cancelamento e tela móvel');
 }finally{await browser?.close();vite.kill('SIGTERM');}

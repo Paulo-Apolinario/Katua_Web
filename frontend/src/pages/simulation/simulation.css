@@ -8,3 +8,8 @@
 .simulation-workspace table { min-width:580px; }
 .simulation-workspace .pa-table-wrap { overflow-x:auto; }
 .simulation-workspace details { margin:12px 0; }
+
+.sim-reset-toolbar { display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:16px 0; }
+.simulation-workspace .sim-reset-toolbar small { color:#5d6e64; }
+.sim-reset-confirm { display:flex;align-items:flex-start;gap:8px;margin:16px 0; }
+.sim-reset-confirm input { margin-top:4px; }
